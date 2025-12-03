@@ -5,11 +5,11 @@ const userSchema = new mongoose.Schema(
     fullName: { type: String, required: true },
 
     // 👇 email cá nhân để nhận thông tin, không dùng login
-    secondaryEmail: { type: String, required: true },
+    personalEmail: { type: String, required: true },
 
     role: {
       type: String,
-      enum: ["ADMIN", "CEO", "ACCOUNTANT", "EMPLOYEE"],
+      enum: ["ADMIN", "ACCOUNTANT", "EMPLOYEE"],
       default: "EMPLOYEE",
     },
 

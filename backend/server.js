@@ -20,6 +20,13 @@ app.get("/", (req, res) => {
   res.status(200).json({ message: "Welcome to ExpressJS server" });
 });
 
+const userRouter = require("./routes/user.route");
+const accountRouter = require("./routes/account.route");
+const teamRouter = require("./routes/team.route");
+app.use("/user", userRouter);
+app.use("/account", accountRouter);
+app.use("/team", teamRouter);
+
 // --- Xử lý lỗi ---
 
 // 1. Lỗi 404 (Route không tồn tại)

@@ -10,7 +10,7 @@ const networkSchema = new mongoose.Schema(
       default: "ACTIVE",
     },
 
-    email: { type: mongoose.Schema.Types.ObjectId, ref: "Email" },
+    linkedAccount: { type: mongoose.Schema.Types.ObjectId, ref: "Account" },
     mainChannel: { type: mongoose.Schema.Types.ObjectId, ref: "Channel" },
 
     monthRevenue: { type: Number, default: 0 },
