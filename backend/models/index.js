@@ -1,15 +1,15 @@
-const User = require("./User");
-const Team = require("./Team");
-const Email = require("./Email");
-const Channel = require("./Channel");
-const Network = require("./Network");
-const Task = require("./Task");
-const KPI = require("./KPI");
+const User = require("./user.model");
+const Team = require("./team.model");
+const Account = require("./account.model");
+const Channel = require("./channel.model");
+const Network = require("./network.model");
+const Task = require("./task.model");
+const KPI = require("./kpi.model");
 
 module.exports = {
   User,
   Team,
-  Email,
+  Account,
   Channel,
   Network,
   Task,

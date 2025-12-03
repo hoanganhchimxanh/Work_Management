@@ -1,9 +1,8 @@
 const express = require("express");
 const {
-  getAll,
-  getPersonal,
   createNew,
-} = require("../controllers/user.controller");
+  applyAccountForUser,
+} = require("../controllers/account.controller");
 
 const router = express.Router();
 const logRequestTime = (req, res, next) => {
@@ -14,8 +13,7 @@ const logRequestTime = (req, res, next) => {
 router.use(logRequestTime);
 router.use(express.json());
 
-router.get("/get-all", getAll);
-router.get("/get-one/:id", getPersonal);
 router.post("/create-new", createNew);
+router.post("/apply", applyAccountForUser);
 
 module.exports = router;
