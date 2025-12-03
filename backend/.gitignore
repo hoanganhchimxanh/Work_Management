@@ -1,0 +1,48 @@
+# Dependencies
+/node_modules
+/npm-debug.log*
+/yarn-error.log
+/yarn-debug.log*
+/pnpm-debug.log*
+/lerna-debug.log*
+
+# build directories (directories/files where compiled code lives)
+/dist
+/build
+/out
+
+# Runtime data
+/tmp
+/logs
+
+# Environment variables (Crucial: NEVER commit secrets!)
+.env
+.env.local
+.env.*.local
+.env.development
+.env.test
+.env.production
+
+# Uploads/Static files (if saved locally)
+/uploads
+/public/images/uploaded
+
+# Testing & Coverage
+/coverage
+/.nyc_output
+/test-results.xml
+
+# IDEs and Editors
+# VS Code
+.vscode/
+
+# JetBrains IDEs (WebStorm, IntelliJ)
+.idea/
+
+# macOS
+.DS_Store
+
+# Thumbnails/Metadata
+*.log
+*.sqlite
+/session-storage
