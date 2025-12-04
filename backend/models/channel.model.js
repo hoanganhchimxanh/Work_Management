@@ -11,7 +11,6 @@ const channelSchema = new mongoose.Schema(
       default: "ACTIVE",
     },
 
-    // Email công ty quản lý channel này
     email: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Account",
@@ -22,7 +21,7 @@ const channelSchema = new mongoose.Schema(
     network: { type: mongoose.Schema.Types.ObjectId, ref: "Network" },
 
     subscriber: { type: Number, default: 0 },
-    monthRevenue: { type: Number, default: 0 },
+
     bktEnabled: { type: Boolean, default: false },
     bktDay: { type: Date },
   },

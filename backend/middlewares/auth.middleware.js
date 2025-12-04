@@ -37,6 +37,7 @@ const authenticateJWT = (req, res, next) => {
 
 // Kiểm tra quyền dựa trên role
 const authorizeRoles = (allowedRoles) => {
+  if (!Array.isArray(allowedRoles)) allowedRoles = [allowedRoles];
   return (req, res, next) => {
     if (!req.user || !req.user.role) {
       return next(createError(500, "Thông tin người dùng không xác định!"));
