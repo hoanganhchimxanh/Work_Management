@@ -1,12 +1,21 @@
 import "./App.css";
 import { Routes, Route } from "react-router-dom";
 import Login from "./pages/Login";
+// Public pages
 import ChangePassword from "./pages/ChangePassword";
 import Unauthorized from "./pages/Unauthorized";
+
+// Admin pages
 import Dashboard from "./pages/admin/Dashboard";
+import AdminLayout from "./layouts/AdminLayout";
+
+// Employee pages
 import EmployeePage from "./pages/employee/EmployeePage";
+
+// Accountant pages
 import AccountantPage from "./pages/accountant/AccountantPage";
 
+// Protected route
 import ProtectedRoute from "./components/ProtectedRoute";
 import RoleBasedRoute from "./components/RoleBasedRoute";
 
@@ -22,13 +31,15 @@ function App() {
       {/* PROTECTED */}
       <Route element={<ProtectedRoute />}>
         <Route
-          path="/admin/dashboard"
+          path="/admin/*"
           element={
             <RoleBasedRoute allowedRoles={["ADMIN"]}>
-              <Dashboard />
+              <AdminLayout />
             </RoleBasedRoute>
           }
-        />
+        >
+          <Route path="dashboard" element={<Dashboard />} />
+        </Route>
         <Route
           path="/accountant/page"
           element={
