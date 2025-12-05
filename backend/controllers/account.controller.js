@@ -4,6 +4,7 @@ const User = db.User;
 const Account = db.Account;
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
+const generator = require("generate-password");
 
 // Đăng nhập
 const login = async (req, res, next) => {
@@ -99,7 +100,8 @@ const changePassword = async (req, res, next) => {
     // Mã hoá mật khẩu
     const hashedPw = await bcrypt.hash(newPassword, 10);
 
-    user.password = hashedPw;
+    account.password = hashedPw;
+    await account.save();
     user.isFirstLogin = false;
     await user.save();
 
@@ -120,10 +122,10 @@ const createNew = async (req, res, next) => {
         .status(400)
         .json({ success: false, message: "Thiếu dữ liệu đầu vào!" });
     }
-
+    const hashedPassword = await bcrypt.hash(password, 10);
     const newAccount = await Account.create({
       companyEmail,
-      password,
+      password: hashedPassword,
       owner,
       channel,
       isActive,
@@ -143,25 +145,93 @@ const applyAccountForUser = async (req, res, next) => {
     if (!userId || !accountId) {
       return res.status(400).json({
         success: false,
-        message: "Thiếu dữ liệu đầu vào!",
+        message: "Thiếu userId hoặc accountId!",
       });
     }
 
-    const user = await User.findById(userId);
-    const account = await Account.findById(accountId);
+    const [user, account] = await Promise.all([
+      User.findById(userId),
+      Account.findById(accountId),
+    ]);
 
     if (!user || !account) {
       return res.status(404).json({
         success: false,
-        message: "Không tìm thấy người dùng hoặc tài khoản!",
+        message: "Không tìm thấy user hoặc account!",
+      });
+    }
+
+    if (account.owner) {
+      return res.status(400).json({
+        success: false,
+        message: "Account này đã được gán cho nhân viên khác!",
       });
     }
 
     account.owner = userId;
-
     await account.save();
 
-    res.json({ success: true, data: account });
+    // Optional: populate để trả về thông tin đầy đủ
+    const updatedAccount = await Account.findById(accountId)
+      .populate("owner", "fullName personalEmail role")
+      .lean();
+
+    return res.json({
+      success: true,
+      message: "Gắn tài khoản thành công!",
+      data: updatedAccount,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Reset mật khẩu tự động, khi người dùng quên
+const autoResetPassword = async (req, res, next) => {
+  try {
+    const { companyEmail } = req.body;
+
+    if (!companyEmail) {
+      return res.status(400).json({
+        success: false,
+        message: "Thiếu email công ty!",
+      });
+    }
+
+    // Tìm account và populate owner
+    const account = await Account.findOne(companyEmail).populate("owner");
+    if (!account) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy account!",
+      });
+    }
+
+    // Tạo mật khẩu mới tự động
+    const newPassword = generator.generate({
+      length: 10,
+      numbers: true,
+      uppercase: true,
+      lowercase: true,
+      symbols: false,
+      strict: true,
+    });
+
+    // Mã hóa mật khẩu
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Cập nhật password của account (hoặc user nếu bạn lưu ở user)
+    account.password = hashedPassword;
+    await account.save();
+
+    // TODO: Gửi password mới cho nhân viên qua email
+    // Ví dụ: sendEmail(account.owner.personalEmail, newPassword)
+
+    res.json({
+      success: true,
+      message: "Reset mật khẩu thành công!",
+      newPassword, // Chỉ nên gửi ra API nếu dùng cho testing. Thực tế nên gửi qua email.
+    });
   } catch (err) {
     next(err);
   }
@@ -172,4 +242,5 @@ module.exports = {
   changePassword,
   createNew,
   applyAccountForUser,
+  autoResetPassword,
 };

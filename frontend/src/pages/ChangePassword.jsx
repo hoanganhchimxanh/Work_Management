@@ -1,53 +1,110 @@
-// import React, { useState } from "react";
-// import { Button, Container, Form, Row, Col, Alert } from "react-bootstrap";
-// import { useNavigate, useParams } from "react-router-dom";
-// import axios from "axios";
-// import "../../styles/change-password.style.css";
+import React, { useState, useContext } from "react";
+import { Button, Container, Form, Row, Col, Alert } from "react-bootstrap";
+import { useParams, useNavigate } from "react-router-dom";
+import axios from "axios";
+import { AuthContext } from "../contexts/AuthContext";
+import "../styles/changePassword.style.css";
 
-// function ChangePassword() {
-//   return (
-//     <div
-//       className="cp-bg"
-//       style={{ backgroundImage: "url(/images/background.jpg)" }}
-//     >
-//       <Container className="cp-container">
-//         <Row className="justify-content-center">
-//           <Col xs={12} md={6}>
-//             <h2 className="cp-title">Đổi mật khẩu mới</h2>
+function ChangePassword() {
+  const { accountId } = useParams();
+  const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
 
-//             {error && <Alert variant="danger">{error}</Alert>}
-//             {success && <Alert variant="success">{success}</Alert>}
+  const [password1, setPassword1] = useState("");
+  const [password2, setPassword2] = useState("");
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [loading, setLoading] = useState(false);
 
-//             <Form onSubmit={handleSubmit}>
-//               <Form.Group className="mb-3">
-//                 <Form.Label>Mật khẩu mới</Form.Label>
-//                 <Form.Control
-//                   type="password"
-//                   placeholder="Nhập mật khẩu mới"
-//                   value={password1}
-//                   onChange={(e) => setPassword1(e.target.value)}
-//                 />
-//               </Form.Group>
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
 
-//               <Form.Group className="mb-3">
-//                 <Form.Label>Nhập lại mật khẩu</Form.Label>
-//                 <Form.Control
-//                   type="password"
-//                   placeholder="Nhập lại mật khẩu"
-//                   value={password2}
-//                   onChange={(e) => setPassword2(e.target.value)}
-//                 />
-//               </Form.Group>
+    if (password1 !== password2) {
+      return setError("Mật khẩu nhập lại không khớp!");
+    }
+    if (password1.length < 6) {
+      return setError("Mật khẩu phải có ít nhất 6 ký tự!");
+    }
 
-//               <Button type="submit" className="w-100 cp-btn">
-//                 Xác nhận đổi mật khẩu
-//               </Button>
-//             </Form>
-//           </Col>
-//         </Row>
-//       </Container>
-//     </div>
-//   );
-// }
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("token");
+      await axios.put(
+        `http://localhost:9999/account/change-password/${accountId}`,
+        { newPassword: password1 },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
-// export default ChangePassword;
+      setSuccess("Đổi mật khẩu thành công! Đang chuyển về trang chủ...");
+      setTimeout(() => {
+        switch (user.role) {
+          case "ADMIN":
+            return navigate("/admin/dashboard");
+          case "ACCOUNTANT":
+            return navigate("/accountant/page");
+          case "EMPLOYEE":
+            return navigate("/employee/page");
+          default:
+            return navigate("/unauthorized");
+        }
+      }, 2000);
+    } catch (err) {
+      setError(err.response?.data?.message || "Đổi mật khẩu thất bại!");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div
+      className="cp-bg"
+      style={{ backgroundImage: "url(/images/background.jpg)" }}
+    >
+      <Container className="cp-container">
+        <Row className="justify-content-center">
+          <Col xs={12} md={6}>
+            <h2 className="cp-title">Đổi mật khẩu lần đầu</h2>
+
+            {error && <Alert variant="danger">{error}</Alert>}
+            {success && <Alert variant="success">{success}</Alert>}
+
+            <Form onSubmit={handleSubmit}>
+              <Form.Group className="mb-3">
+                <Form.Label>Mật khẩu mới</Form.Label>
+                <Form.Control
+                  type="password"
+                  placeholder="Nhập mật khẩu mới"
+                  value={password1}
+                  onChange={(e) => setPassword1(e.target.value)}
+                  required
+                  minLength={6}
+                />
+              </Form.Group>
+
+              <Form.Group className="mb-3">
+                <Form.Label>Nhập lại mật khẩu mới</Form.Label>
+                <Form.Control
+                  type="password"
+                  placeholder="Nhập lại mật khẩu"
+                  value={password2}
+                  onChange={(e) => setPassword2(e.target.value)}
+                  required
+                />
+              </Form.Group>
+
+              <Button type="submit" className="w-100 cp-btn" disabled={loading}>
+                {loading ? "Đang xử lý..." : "Xác nhận đổi mật khẩu"}
+              </Button>
+            </Form>
+          </Col>
+        </Row>
+      </Container>
+    </div>
+  );
+}
+
+export default ChangePassword;
