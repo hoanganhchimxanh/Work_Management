@@ -1,6 +1,8 @@
 const express = require("express");
 const {
   createNew,
+  getAll,
+  getById,
   editInfo,
   deleteTeam,
 } = require("../controllers/team.controller");
@@ -19,6 +21,9 @@ router.use(logRequestTime);
 router.use(express.json());
 
 router.post("/create-new", authenticateJWT, authorizeRoles("ADMIN"), createNew);
+router.get("/get-all-team", authenticateJWT, authorizeRoles("ADMIN"), getAll);
+router.get("/get-team/:id", authenticateJWT, authorizeRoles("ADMIN"), getById);
+
 router.put(
   "/edit-team-info/:id",
   authenticateJWT,
