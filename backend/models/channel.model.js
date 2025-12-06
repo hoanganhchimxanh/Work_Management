@@ -11,14 +11,25 @@ const channelSchema = new mongoose.Schema(
       default: "ACTIVE",
     },
 
-    email: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Account",
+    // Email/tài khoản YouTube được gắn vào kênh (do Admin gửi riêng)
+    channelEmail: {
+      type: String,
       required: true,
       unique: true,
     },
 
+    // Password của tài khoản kênh (tùy chọn, có thể Admin giữ riêng)
+    channelPassword: { type: String },
+
+    // Network mà kênh này thuộc về
     network: { type: mongoose.Schema.Types.ObjectId, ref: "Network" },
+
+    // User quản lý kênh này
+    owner: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
 
     subscriber: { type: Number, default: 0 },
 

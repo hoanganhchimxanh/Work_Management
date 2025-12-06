@@ -10,7 +10,7 @@ const networkSchema = new mongoose.Schema(
       default: "ACTIVE",
     },
 
-    linkedAccount: { type: mongoose.Schema.Types.ObjectId, ref: "Account" },
+    // Kênh chính của Network
     mainChannel: { type: mongoose.Schema.Types.ObjectId, ref: "Channel" },
 
     note: { type: String },
