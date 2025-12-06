@@ -2,11 +2,62 @@ const db = require("../models");
 const User = db.User;
 const Account = db.Account;
 const Channel = db.Channel;
+const bcrypt = require("bcrypt");
+const generator = require("generate-password");
 
-// Tạo người dùng mới
-const createNew = async (req, res, next) => {
+// Tạo người dùng mới (bởi user tự đăng ký)
+const registerByUser = async (req, res, next) => {
   try {
-    const { fullName, personalEmail, role, status, team } = req.body;
+    const { fullName, personalEmail } = req.body;
+
+    if (!fullName || !personalEmail) {
+      return res.status(400).json({
+        success: false,
+        message: "Thiếu thông tin bắt buộc!",
+      });
+    }
+
+    // Kiểm tra email đã tồn tại chưa
+    const existingUser = await User.findOne({ personalEmail });
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: "Email cá nhân này đã được đăng ký!",
+      });
+    }
+
+    // Tạo user với status PENDING
+    const newUser = await User.create({
+      fullName,
+      personalEmail,
+      role: "EMPLOYEE", // Mặc định
+      status: "PENDING", // Chờ admin duyệt
+      team: null,
+      isFirstLogin: true,
+    });
+
+    // TODO: Gửi thông báo cho admin về user mới cần duyệt
+    // sendNotificationToAdmin(newUser);
+
+    res.status(201).json({
+      success: true,
+      message: "Đăng ký thành công! Vui lòng chờ admin phê duyệt.",
+      data: {
+        userId: newUser._id,
+        fullName: newUser.fullName,
+        personalEmail: newUser.personalEmail,
+        status: newUser.status,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Tạo người dùng mới (bởi Admin)
+const createByAdmin = async (req, res, next) => {
+  try {
+    const { fullName, personalEmail, role, team } = req.body;
 
     if (!fullName || !personalEmail) {
       return res.status(400).json({
@@ -24,19 +75,159 @@ const createNew = async (req, res, next) => {
       });
     }
 
+    // Tạo user với status ACTIVE
     const newUser = await User.create({
       fullName,
       personalEmail,
       role: role || "EMPLOYEE",
-      status: status || "ACTIVE",
+      status: "ACTIVE",
       team: team || null,
+      isFirstLogin: true,
     });
+
+    // Tạo tài khoản đăng nhập tự động
+    const loginEmail = `${personalEmail.split("@")[0]}@company.com`;
+    const tempPassword = generator.generate({
+      length: 10,
+      numbers: true,
+      uppercase: true,
+      lowercase: true,
+      symbols: false,
+      strict: true,
+    });
+
+    const hashedPassword = await bcrypt.hash(tempPassword, 10);
+
+    const newAccount = await Account.create({
+      email: loginEmail,
+      password: hashedPassword,
+      user: newUser._id,
+      isActive: false, // INACTIVE cho đến khi user đổi mật khẩu
+    });
+
+    // TODO: Gửi email cho user với thông tin đăng nhập
+    // sendWelcomeEmail(newUser.personalEmail, loginEmail, tempPassword);
+
+    const populatedUser = await User.findById(newUser._id)
+      .populate("team", "name")
+      .lean();
 
     res.status(201).json({
       success: true,
+      message: "Tạo nhân viên thành công!",
       data: {
-        user: newUser,
+        user: populatedUser,
+        account: {
+          email: loginEmail,
+          tempPassword, // Chỉ để testing, thực tế gửi qua email
+        },
       },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Admin phê duyệt user đăng ký
+const approveUser = async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+    const { role, team } = req.body;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy người dùng!",
+      });
+    }
+
+    if (user.status !== "PENDING") {
+      return res.status(400).json({
+        success: false,
+        message: "User này không ở trạng thái PENDING!",
+      });
+    }
+
+    // Cập nhật user thành ACTIVE
+    user.status = "ACTIVE";
+    user.role = role || "EMPLOYEE";
+    user.team = team || null;
+    await user.save();
+
+    // Tạo tài khoản đăng nhập
+    const loginEmail = `${user.personalEmail.split("@")[0]}@company.com`;
+    const tempPassword = generator.generate({
+      length: 10,
+      numbers: true,
+      uppercase: true,
+      lowercase: true,
+      symbols: false,
+      strict: true,
+    });
+
+    const hashedPassword = await bcrypt.hash(tempPassword, 10);
+
+    const newAccount = await Account.create({
+      email: loginEmail,
+      password: hashedPassword,
+      user: user._id,
+      isActive: false, // INACTIVE cho đến khi user đổi mật khẩu
+    });
+
+    // TODO: Gửi email cho user
+    // sendApprovalEmail(user.personalEmail, loginEmail, tempPassword);
+
+    const populatedUser = await User.findById(user._id)
+      .populate("team", "name")
+      .lean();
+
+    res.json({
+      success: true,
+      message: "Phê duyệt thành công!",
+      data: {
+        user: populatedUser,
+        account: {
+          email: loginEmail,
+          tempPassword, // Chỉ để testing
+        },
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Admin từ chối user đăng ký
+const rejectUser = async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+    const { reason } = req.body;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy người dùng!",
+      });
+    }
+
+    if (user.status !== "PENDING") {
+      return res.status(400).json({
+        success: false,
+        message: "User này không ở trạng thái PENDING!",
+      });
+    }
+
+    // TODO: Gửi email thông báo từ chối
+    // sendRejectionEmail(user.personalEmail, reason);
+
+    // Xóa user
+    await User.findByIdAndDelete(userId);
+
+    res.json({
+      success: true,
+      message: "Đã từ chối và xóa user!",
     });
   } catch (err) {
     next(err);
@@ -46,7 +237,10 @@ const createNew = async (req, res, next) => {
 // Lấy thông tin toàn bộ người dùng
 const getAll = async (req, res, next) => {
   try {
-    const users = await User.find().populate("team", "name").lean();
+    const { status } = req.query; // Filter by status nếu có
+
+    const filter = status ? { status } : {};
+    const users = await User.find(filter).populate("team", "name").lean();
 
     const usersWithDetails = await Promise.all(
       users.map(async (user) => {
@@ -63,8 +257,10 @@ const getAll = async (req, res, next) => {
           personalEmail: user.personalEmail,
           loginEmail: account ? account.email : null,
           hasAccount: !!account,
+          accountIsActive: account ? account.isActive : false,
           status: user.status,
           team: user.team ? user.team.name : null,
+          isFirstLogin: user.isFirstLogin,
           channelCount: channels.length,
           joinedAt: user.createdAt,
         };
@@ -194,7 +390,10 @@ const deleteUser = async (req, res, next) => {
 };
 
 module.exports = {
-  createNew,
+  registerByUser,
+  createByAdmin,
+  approveUser,
+  rejectUser,
   getAll,
   getPersonal,
   updateUser,

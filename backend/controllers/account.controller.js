@@ -113,7 +113,9 @@ const changePassword = async (req, res, next) => {
     const hashedPw = await bcrypt.hash(newPassword, 10);
 
     account.password = hashedPw;
+    account.isActive = true; // Kích hoạt tài khoản sau khi đổi mật khẩu
     await account.save();
+
     user.isFirstLogin = false;
     await user.save();
 
@@ -124,8 +126,8 @@ const changePassword = async (req, res, next) => {
   }
 };
 
-// Thêm tài khoản mới
-const createNew = async (req, res, next) => {
+// Đăng ký tài khoản (tạo mới bởi Admin hoặc hệ thống)
+const register = async (req, res, next) => {
   try {
     const { email, password, userId, isActive } = req.body;
 
@@ -153,12 +155,14 @@ const createNew = async (req, res, next) => {
       });
     }
 
+    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
+
     const newAccount = await Account.create({
       email,
       password: hashedPassword,
       user: userId,
-      isActive: isActive !== undefined ? isActive : true,
+      isActive: isActive !== undefined ? isActive : false, // Mặc định INACTIVE
     });
 
     const populatedAccount = await Account.findById(newAccount._id)
@@ -263,7 +267,7 @@ const updateStatus = async (req, res, next) => {
 module.exports = {
   login,
   changePassword,
-  createNew,
+  register,
   autoResetPassword,
   updateStatus,
 };
