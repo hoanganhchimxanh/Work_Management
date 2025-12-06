@@ -5,8 +5,24 @@ import { Navigate, Outlet } from "react-router-dom";
 const ProtectedRoute = () => {
   const { user, loading } = useContext(AuthContext);
 
-  if (loading) return <div>Đang tải...</div>;
-  if (!user) return <Navigate to="/login" replace />;
+  if (loading) {
+    return (
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+        }}
+      >
+        <div>Đang tải...</div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
 
   return <Outlet />;
 };
