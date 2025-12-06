@@ -84,15 +84,15 @@ function Login() {
               >
                 {loading ? "Đang đăng nhập..." : "Đăng nhập"}
               </Button>
-              <p>Bạn chưa có tài khoản?</p>
-              <Button
-                variant="primary"
-                className="w-100 mb-3"
-                onClick={navigate("/register")}
-              >
-                Đăng ký
-              </Button>
             </Form>
+            <p>Bạn chưa có tài khoản?</p>
+            <Button
+              variant="primary"
+              className="w-100 mb-3"
+              onClick={() => navigate("/register")}
+            >
+              Đăng ký
+            </Button>
           </Col>
         </Row>
       </Container>

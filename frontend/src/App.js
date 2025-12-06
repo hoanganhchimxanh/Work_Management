@@ -10,7 +10,6 @@ import Unauthorized from "./pages/Unauthorized";
 import AdminLayout from "./layouts/AdminLayout";
 import Dashboard from "./pages/admin/Dashboard";
 import User_Management from "./pages/admin/User_Management";
-import Account_Management from "./pages/admin/Account_Management";
 
 // Employee pages
 import EmployeePage from "./pages/employee/EmployeePage";
@@ -58,7 +57,6 @@ function App() {
         >
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="users" element={<User_Management />} />
-          <Route path="accounts" element={<Account_Management />} />
         </Route>
         <Route
           path="/accountant/page"

@@ -32,11 +32,6 @@ const Sidebar = () => {
   const menuItems = [
     { to: "/admin/dashboard", icon: <HouseDoorFill />, label: "Dashboard" },
     { to: "/admin/users", icon: <PeopleFill />, label: "Quản lý nhân viên" },
-    {
-      to: "/admin/accounts",
-      icon: <PersonFill />,
-      label: "Quản lý tài khoản công ty",
-    },
     { to: "/admin/network", icon: <CashStack />, label: "Quản lý Network" },
     {
       to: "/admin/kpi_job",

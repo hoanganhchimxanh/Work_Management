@@ -7,7 +7,6 @@ function UserModal({ show, onHide, user, teams, onSaved }) {
     fullName: "",
     personalEmail: "",
     role: "EMPLOYEE",
-    status: "ACTIVE",
     team: "",
   });
   const [loading, setLoading] = useState(false);
@@ -19,7 +18,6 @@ function UserModal({ show, onHide, user, teams, onSaved }) {
         fullName: user.fullName || "",
         personalEmail: user.personalEmail || "",
         role: user.role || "EMPLOYEE",
-        status: user.status || "ACTIVE",
         team: user.team || "",
       });
     } else {
@@ -27,7 +25,6 @@ function UserModal({ show, onHide, user, teams, onSaved }) {
         fullName: "",
         personalEmail: "",
         role: "EMPLOYEE",
-        status: "ACTIVE",
         team: "",
       });
     }
@@ -58,17 +55,27 @@ function UserModal({ show, onHide, user, teams, onSaved }) {
 
       if (user) {
         // Update existing user
-        await axios.put(
+        const response = await axios.put(
           `http://localhost:9999/user/update/${user.userId}`,
           payload
         );
+        console.log("Update response:", response.data);
       } else {
-        // Create new user
-        await axios.post("http://localhost:9999/user/create-new", payload);
+        // Create new user (by admin)
+        const response = await axios.post(
+          "http://localhost:9999/user/create-by-admin",
+          payload
+        );
+        console.log("Create response:", response.data);
       }
 
-      onSaved();
+      // Call onSaved after successful operation
+      if (onSaved) {
+        await onSaved();
+      }
     } catch (err) {
+      console.error("Error in handleSubmit:", err);
+      console.error("Error response:", err.response);
       setError(err.response?.data?.message || "Có lỗi xảy ra");
     } finally {
       setLoading(false);
@@ -146,24 +153,12 @@ function UserModal({ show, onHide, user, teams, onSaved }) {
             </Form.Select>
           </Form.Group>
 
-          <Form.Group className="mb-3">
-            <Form.Label>Trạng thái</Form.Label>
-            <Form.Select
-              name="status"
-              value={formData.status}
-              onChange={handleChange}
-            >
-              <option value="PENDING">PENDING</option>
-              <option value="ACTIVE">ACTIVE</option>
-              <option value="QUIT">QUIT</option>
-            </Form.Select>
-          </Form.Group>
-
           {!user && (
             <Alert variant="info">
               <small>
-                <strong>Lưu ý:</strong> Sau khi tạo user, Admin cần tạo tài
-                khoản đăng nhập riêng cho user này.
+                <strong>Lưu ý:</strong> Sau khi tạo user, hệ thống sẽ tự động
+                gửi tài khoản đăng nhập mới cho người dùng qua gmail cá nhân đã
+                nhập.
               </small>
             </Alert>
           )}
