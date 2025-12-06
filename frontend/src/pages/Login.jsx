@@ -4,7 +4,7 @@ import { AuthContext } from "../contexts/AuthContext";
 import "../styles/login.style.css";
 
 function Login() {
-  const [companyEmail, setCompanyEmail] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
@@ -14,11 +14,14 @@ function Login() {
   const handleLogin = async (e) => {
     e.preventDefault();
     setErrorMsg("");
+    setLoading(true);
 
     try {
-      await login(companyEmail, password);
+      await login(email, password);
     } catch (err) {
       setErrorMsg(err || "Đăng nhập thất bại. Vui lòng thử lại.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -49,12 +52,12 @@ function Login() {
 
             <Form onSubmit={handleLogin}>
               <Form.Group className="mb-3">
-                <Form.Label>Email công ty</Form.Label>
+                <Form.Label>Email đăng nhập</Form.Label>
                 <Form.Control
-                  type="text"
-                  placeholder="Nhập email công ty"
-                  value={companyEmail}
-                  onChange={(e) => setCompanyEmail(e.target.value)}
+                  type="email"
+                  placeholder="Nhập email đăng nhập"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
                 />
               </Form.Group>

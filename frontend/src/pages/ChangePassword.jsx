@@ -31,7 +31,7 @@ function ChangePassword() {
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
-      await axios.put(
+      await axios.patch(
         `http://localhost:9999/account/change-password/${accountId}`,
         { newPassword: password1 },
         {
@@ -41,7 +41,8 @@ function ChangePassword() {
 
       setSuccess("Đổi mật khẩu thành công! Đang chuyển về trang chủ...");
       setTimeout(() => {
-        switch (user.role) {
+        const roleUpper = user.role?.toUpperCase();
+        switch (roleUpper) {
           case "ADMIN":
             return navigate("/admin/dashboard");
           case "ACCOUNTANT":
