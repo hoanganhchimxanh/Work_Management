@@ -6,8 +6,9 @@ import ChangePassword from "./pages/ChangePassword";
 import Unauthorized from "./pages/Unauthorized";
 
 // Admin pages
-import Dashboard from "./pages/admin/Dashboard";
 import AdminLayout from "./layouts/AdminLayout";
+import Dashboard from "./pages/admin/Dashboard";
+import User_Management from "./pages/admin/User_Management";
 
 // Employee pages
 import EmployeePage from "./pages/employee/EmployeePage";
@@ -39,6 +40,7 @@ function App() {
           }
         >
           <Route path="dashboard" element={<Dashboard />} />
+          <Route path="users" element={<User_Management />} />
         </Route>
         <Route
           path="/accountant/page"
