@@ -1,7 +1,8 @@
 import "./App.css";
 import { Routes, Route } from "react-router-dom";
-import Login from "./pages/Login";
 // Public pages
+import Login from "./pages/Login";
+import Register from "./pages/Register";
 import ChangePassword from "./pages/ChangePassword";
 import Unauthorized from "./pages/Unauthorized";
 
@@ -9,6 +10,7 @@ import Unauthorized from "./pages/Unauthorized";
 import AdminLayout from "./layouts/AdminLayout";
 import Dashboard from "./pages/admin/Dashboard";
 import User_Management from "./pages/admin/User_Management";
+import Account_Management from "./pages/admin/Account_Management";
 
 // Employee pages
 import EmployeePage from "./pages/employee/EmployeePage";
@@ -19,13 +21,28 @@ import AccountantPage from "./pages/accountant/AccountantPage";
 // Protected route
 import ProtectedRoute from "./components/ProtectedRoute";
 import RoleBasedRoute from "./components/RoleBasedRoute";
+import PublicRoute from "./components/PublicRoute";
 
 function App() {
   return (
     <Routes>
-      {/* PUBLIC */}
-      <Route path="/login" element={<Login />} />
-      <Route path="/" element={<Login />} />
+      <Route
+        path="/login"
+        element={
+          <PublicRoute>
+            <Login />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="/"
+        element={
+          <PublicRoute>
+            <Login />
+          </PublicRoute>
+        }
+      />
+      <Route path="/register" element={<Register />} />
       <Route path="/unauthorized" element={<Unauthorized />} />
       <Route path="/change-password/:accountId" element={<ChangePassword />} />
 
@@ -41,6 +58,7 @@ function App() {
         >
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="users" element={<User_Management />} />
+          <Route path="accounts" element={<Account_Management />} />
         </Route>
         <Route
           path="/accountant/page"
