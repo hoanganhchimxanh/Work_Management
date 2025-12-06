@@ -13,8 +13,8 @@ function UserTable({ users, loading, onEdit, onRefresh }) {
 
   const getStatusBadge = (status) => {
     const variants = {
+      PENDING: "warning",
       ACTIVE: "success",
-      INACTIVE: "secondary",
       QUIT: "dark",
     };
     return <Badge bg={variants[status] || "secondary"}>{status}</Badge>;
@@ -42,8 +42,9 @@ function UserTable({ users, loading, onEdit, onRefresh }) {
             <th>Họ tên</th>
             <th>Vai trò</th>
             <th>Email cá nhân</th>
-            <th>Email công ty</th>
+            <th>Email đăng nhập</th>
             <th>Trạng thái</th>
+            <th>Nhóm</th>
             <th>Ngày tham gia</th>
             <th>Số kênh</th>
             <th>Hành động</th>
@@ -52,32 +53,42 @@ function UserTable({ users, loading, onEdit, onRefresh }) {
         <tbody>
           {users.length === 0 ? (
             <tr>
-              <td colSpan="8" className="text-center">
+              <td colSpan="9" className="text-center">
                 Chưa có người dùng nào
               </td>
             </tr>
           ) : (
-            users.map((user, index) => (
-              <tr key={index}>
+            users.map((user) => (
+              <tr key={user.userId}>
                 <td>{user.fullName}</td>
                 <td>{getRoleBadge(user.role)}</td>
                 <td>{user.personalEmail}</td>
                 <td>
-                  {user.companyEmails.length > 0 ? (
-                    <ul className="list-unstyled mb-0">
-                      {user.companyEmails.map((email, idx) => (
-                        <li key={idx} className="small">
-                          {email}
-                        </li>
-                      ))}
-                    </ul>
+                  {user.loginEmail ? (
+                    <div>
+                      <div className="small">{user.loginEmail}</div>
+                      {!user.hasAccount && (
+                        <Badge bg="warning" className="mt-1">
+                          Chưa có tài khoản
+                        </Badge>
+                      )}
+                    </div>
+                  ) : (
+                    <Badge bg="secondary">Chưa có</Badge>
+                  )}
+                </td>
+                <td>{getStatusBadge(user.status)}</td>
+                <td>
+                  {user.team ? (
+                    <Badge bg="primary">{user.team}</Badge>
                   ) : (
                     <span className="text-muted">Chưa có</span>
                   )}
                 </td>
-                <td>{getStatusBadge(user.status)}</td>
                 <td>{formatDate(user.joinedAt)}</td>
-                <td className="text-center">{user.channelCount}</td>
+                <td className="text-center">
+                  <Badge bg="info">{user.channelCount}</Badge>
+                </td>
                 <td>
                   <Button
                     variant="outline-primary"

@@ -84,7 +84,7 @@ function TeamTable({ teams, loading, onEdit, onRefresh, onDeleted }) {
                   )}
                 </td>
                 <td>
-                  {team.members.length > 0 ? (
+                  {team.members && team.members.length > 0 ? (
                     <ul className="list-unstyled mb-0">
                       {team.members.slice(0, 3).map((member) => (
                         <li key={member._id} className="small">
@@ -101,7 +101,11 @@ function TeamTable({ teams, loading, onEdit, onRefresh, onDeleted }) {
                     <span className="text-muted">Không có</span>
                   )}
                 </td>
-                <td className="text-center">{team.memberCount}</td>
+                <td className="text-center">
+                  <Badge bg="info">
+                    {team.memberCount || team.members?.length || 0}
+                  </Badge>
+                </td>
                 <td>{getStatusBadge(team.status)}</td>
                 <td>{formatDate(team.createdAt)}</td>
                 <td>

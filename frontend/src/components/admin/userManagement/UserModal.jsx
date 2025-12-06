@@ -2,12 +2,13 @@ import React, { useState, useEffect } from "react";
 import { Modal, Form, Button, Alert } from "react-bootstrap";
 import axios from "axios";
 
-function UserModal({ show, onHide, user, onSaved }) {
+function UserModal({ show, onHide, user, teams, onSaved }) {
   const [formData, setFormData] = useState({
     fullName: "",
     personalEmail: "",
     role: "EMPLOYEE",
     status: "ACTIVE",
+    team: "",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -19,6 +20,7 @@ function UserModal({ show, onHide, user, onSaved }) {
         personalEmail: user.personalEmail || "",
         role: user.role || "EMPLOYEE",
         status: user.status || "ACTIVE",
+        team: user.team || "",
       });
     } else {
       setFormData({
@@ -26,6 +28,7 @@ function UserModal({ show, onHide, user, onSaved }) {
         personalEmail: "",
         role: "EMPLOYEE",
         status: "ACTIVE",
+        team: "",
       });
     }
     setError(null);
@@ -48,13 +51,20 @@ function UserModal({ show, onHide, user, onSaved }) {
     try {
       setLoading(true);
 
+      const payload = {
+        ...formData,
+        team: formData.team || null,
+      };
+
       if (user) {
-        // Update existing user (you'll need to implement this endpoint)
-        // await axios.put(`http://localhost:9999/user/update/${user._id}`, formData);
-        alert("Chức năng cập nhật user chưa được implement trong backend");
+        // Update existing user
+        await axios.put(
+          `http://localhost:9999/user/update/${user.userId}`,
+          payload
+        );
       } else {
         // Create new user
-        await axios.post("http://localhost:9999/user/create-new", formData);
+        await axios.post("http://localhost:9999/user/create-new", payload);
       }
 
       onSaved();
@@ -97,7 +107,13 @@ function UserModal({ show, onHide, user, onSaved }) {
               onChange={handleChange}
               placeholder="example@gmail.com"
               required
+              disabled={!!user}
             />
+            {user && (
+              <Form.Text className="text-muted">
+                Email không thể thay đổi sau khi tạo
+              </Form.Text>
+            )}
           </Form.Group>
 
           <Form.Group className="mb-3">
@@ -114,17 +130,43 @@ function UserModal({ show, onHide, user, onSaved }) {
           </Form.Group>
 
           <Form.Group className="mb-3">
+            <Form.Label>Nhóm</Form.Label>
+            <Form.Select
+              name="team"
+              value={formData.team}
+              onChange={handleChange}
+            >
+              <option value="">-- Không thuộc nhóm nào --</option>
+              {teams &&
+                teams.map((team) => (
+                  <option key={team._id} value={team._id}>
+                    {team.name}
+                  </option>
+                ))}
+            </Form.Select>
+          </Form.Group>
+
+          <Form.Group className="mb-3">
             <Form.Label>Trạng thái</Form.Label>
             <Form.Select
               name="status"
               value={formData.status}
               onChange={handleChange}
             >
+              <option value="PENDING">PENDING</option>
               <option value="ACTIVE">ACTIVE</option>
-              <option value="INACTIVE">INACTIVE</option>
               <option value="QUIT">QUIT</option>
             </Form.Select>
           </Form.Group>
+
+          {!user && (
+            <Alert variant="info">
+              <small>
+                <strong>Lưu ý:</strong> Sau khi tạo user, Admin cần tạo tài
+                khoản đăng nhập riêng cho user này.
+              </small>
+            </Alert>
+          )}
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={onHide} disabled={loading}>

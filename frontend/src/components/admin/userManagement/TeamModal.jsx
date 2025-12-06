@@ -17,7 +17,7 @@ function TeamModal({ show, onHide, team, users, onSaved }) {
       setFormData({
         name: team.name || "",
         leader: team.leader?._id || "",
-        members: team.members.map((m) => m._id) || [],
+        members: team.members?.map((m) => m._id) || [],
         status: team.status || "AVAILABLE",
       });
     } else {
@@ -59,15 +59,20 @@ function TeamModal({ show, onHide, team, users, onSaved }) {
     try {
       setLoading(true);
 
+      const payload = {
+        ...formData,
+        leader: formData.leader || null,
+      };
+
       if (team) {
         // Update team
         await axios.put(
           `http://localhost:9999/team/edit-team-info/${team._id}`,
-          formData
+          payload
         );
       } else {
         // Create new team
-        await axios.post("http://localhost:9999/team/create-new", formData);
+        await axios.post("http://localhost:9999/team/create-new", payload);
       }
 
       onSaved();
@@ -78,7 +83,7 @@ function TeamModal({ show, onHide, team, users, onSaved }) {
     }
   };
 
-  const availableUsers = users.filter((u) => u.status === "ACTIVE");
+  const availableUsers = users?.filter((u) => u.status === "ACTIVE") || [];
   const selectedLeader = availableUsers.find((u) => u._id === formData.leader);
 
   return (
@@ -165,7 +170,7 @@ function TeamModal({ show, onHide, team, users, onSaved }) {
               <strong>Đã chọn {formData.members.length} thành viên:</strong>
               <div className="mt-2">
                 {formData.members.map((memberId) => {
-                  const member = users.find((u) => u._id === memberId);
+                  const member = users?.find((u) => u._id === memberId);
                   return member ? (
                     <Badge key={memberId} bg="info" className="me-2 mb-2">
                       {member.fullName}
