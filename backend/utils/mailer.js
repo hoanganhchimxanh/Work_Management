@@ -1,4 +1,3 @@
-// mailer.js
 const nodemailer = require("nodemailer");
 require("dotenv").config();
 
@@ -11,14 +10,21 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// Hàm gửi email
-const sendEmail = async (to, subject, text, attachments = []) => {
+// Hàm gửi email, nhận một đối tượng chứa tất cả các tùy chọn
+const sendEmail = async ({
+  to,
+  subject,
+  text = "",
+  html = "",
+  attachments = [],
+}) => {
   try {
     const mailOptions = {
       from: process.env.Email_User,
       to,
       subject,
       text,
+      html,
       attachments,
     };
 

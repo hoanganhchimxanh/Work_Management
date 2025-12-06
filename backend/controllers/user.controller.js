@@ -4,6 +4,8 @@ const Account = db.Account;
 const Channel = db.Channel;
 const bcrypt = require("bcrypt");
 const generator = require("generate-password");
+const sendEmail = require("../utils/mailer");
+const sendNewAccountTemplate = require("../utils/emailTemplates/sendNewAccount");
 
 // Tạo người dùng mới (bởi user tự đăng ký)
 const registerByUser = async (req, res, next) => {
@@ -105,8 +107,23 @@ const createByAdmin = async (req, res, next) => {
       isActive: false, // INACTIVE cho đến khi user đổi mật khẩu
     });
 
-    // TODO: Gửi email cho user với thông tin đăng nhập
-    // sendWelcomeEmail(newUser.personalEmail, loginEmail, tempPassword);
+    //Gửi mail về cho người dùng
+    try {
+      await sendEmail({
+        to: newUser.personalEmail,
+        subject: "Tài khoản đăng nhập hệ thống của bạn",
+        text: "",
+        html: sendNewAccountTemplate(
+          newUser.fullName,
+          loginEmail,
+          tempPassword
+        ),
+        attachments: [],
+      });
+      console.log("Email tạo tài khoản đã được gửi!");
+    } catch (mailErr) {
+      console.error("Gửi email thất bại:", mailErr);
+    }
 
     const populatedUser = await User.findById(newUser._id)
       .populate("team", "name")
@@ -119,7 +136,6 @@ const createByAdmin = async (req, res, next) => {
         user: populatedUser,
         account: {
           email: loginEmail,
-          tempPassword, // Chỉ để testing, thực tế gửi qua email
         },
       },
     });
