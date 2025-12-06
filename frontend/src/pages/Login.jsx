@@ -1,5 +1,6 @@
 import React, { useState, useContext } from "react";
 import { Button, Col, Container, Form, Row, Alert } from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../contexts/AuthContext";
 import "../styles/login.style.css";
 
@@ -10,6 +11,8 @@ function Login() {
   const [loading, setLoading] = useState(false);
 
   const { login } = useContext(AuthContext);
+
+  const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -80,6 +83,14 @@ function Login() {
                 disabled={loading}
               >
                 {loading ? "Đang đăng nhập..." : "Đăng nhập"}
+              </Button>
+              <p>Bạn chưa có tài khoản?</p>
+              <Button
+                variant="primary"
+                className="w-100 mb-3"
+                onClick={navigate("/register")}
+              >
+                Đăng ký
               </Button>
             </Form>
           </Col>
