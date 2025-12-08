@@ -25,11 +25,19 @@ function User_Management() {
   const [error, setError] = useState(null);
 
   // Fetch users
+  // Fetch users
   const fetchUsers = async () => {
     try {
       setLoadingUsers(true);
       const response = await axios.get("http://localhost:9999/user/get-all");
-      setUsers(response.data.data);
+
+      // Chuẩn hóa data: thêm _id từ userId
+      const normalizedUsers = response.data.data.map((user) => ({
+        ...user,
+        _id: user.userId, // Thêm _id để TeamModal dùng được
+      }));
+
+      setUsers(normalizedUsers);
       setError(null);
     } catch (err) {
       setError("Không thể tải danh sách người dùng");
