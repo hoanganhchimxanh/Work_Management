@@ -84,7 +84,9 @@ function TeamModal({ show, onHide, team, users, onSaved }) {
   };
 
   const availableUsers = users?.filter((u) => u.status === "ACTIVE") || [];
-  const selectedLeader = availableUsers.find((u) => u._id === formData.leader);
+  const selectedLeader = availableUsers.find(
+    (u) => (u._id || u.userId) === formData.leader
+  );
 
   return (
     <Modal show={show} onHide={onHide} size="lg">
@@ -118,7 +120,10 @@ function TeamModal({ show, onHide, team, users, onSaved }) {
             >
               <option value="">-- Chọn leader --</option>
               {availableUsers.map((user) => (
-                <option key={user._id} value={user._id}>
+                <option
+                  key={user._id || user.userId}
+                  value={user._id || user.userId}
+                >
                   {user.fullName} ({user.role})
                 </option>
               ))}
@@ -140,9 +145,12 @@ function TeamModal({ show, onHide, team, users, onSaved }) {
               style={{ minHeight: "150px" }}
             >
               {availableUsers
-                .filter((u) => u._id !== formData.leader)
+                .filter((u) => (u._id || u.userId) !== formData.leader)
                 .map((user) => (
-                  <option key={user._id} value={user._id}>
+                  <option
+                    key={user._id || user.userId}
+                    value={user._id || user.userId}
+                  >
                     {user.fullName} - {user.role}
                   </option>
                 ))}
@@ -170,7 +178,9 @@ function TeamModal({ show, onHide, team, users, onSaved }) {
               <strong>Đã chọn {formData.members.length} thành viên:</strong>
               <div className="mt-2">
                 {formData.members.map((memberId) => {
-                  const member = users?.find((u) => u._id === memberId);
+                  const member = users?.find(
+                    (u) => (u._id || u.userId) === memberId
+                  );
                   return member ? (
                     <Badge key={memberId} bg="info" className="me-2 mb-2">
                       {member.fullName}
