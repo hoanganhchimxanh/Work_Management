@@ -81,15 +81,15 @@ function TeamTable({ teams, loading, onEdit, onRefresh, onDeleted }) {
       } else if (filterSort === "NAME_DESC") {
         return b.name.localeCompare(a.name);
       } else if (filterSort === "MEMBERS_DESC") {
-        return (
-          (b.memberCount || b.members?.length || 0) -
-          (a.memberCount || a.members?.length || 0)
-        );
+        const getTotal = (team) =>
+          (team.memberCount || team.members?.length || 0) +
+          (team.leader ? 1 : 0);
+        return getTotal(b) - getTotal(a);
       } else if (filterSort === "MEMBERS_ASC") {
-        return (
-          (a.memberCount || a.members?.length || 0) -
-          (b.memberCount || b.members?.length || 0)
-        );
+        const getTotal = (team) =>
+          (team.memberCount || team.members?.length || 0) +
+          (team.leader ? 1 : 0);
+        return getTotal(a) - getTotal(b);
       }
       return 0;
     });
@@ -229,7 +229,8 @@ function TeamTable({ teams, loading, onEdit, onRefresh, onDeleted }) {
                   </td>
                   <td className="text-center">
                     <Badge bg="info">
-                      {team.memberCount || team.members?.length || 0}
+                      {(team.memberCount || team.members?.length || 0) +
+                        (team.leader ? 1 : 0)}
                     </Badge>
                   </td>
                   <td>{getStatusBadge(team.status)}</td>
