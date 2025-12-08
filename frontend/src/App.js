@@ -10,6 +10,9 @@ import Unauthorized from "./pages/Unauthorized";
 import AdminLayout from "./layouts/AdminLayout";
 import Dashboard from "./pages/admin/Dashboard";
 import User_Management from "./pages/admin/User_Management";
+import KPI_Job_Management from "./pages/admin/KPI_Job_Management";
+import Network_Management from "./pages/admin/Network_Management";
+import Channel_Management from "./pages/admin/Channel_Management";
 
 // Employee pages
 import EmployeePage from "./pages/employee/EmployeePage";
@@ -57,6 +60,9 @@ function App() {
         >
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="users" element={<User_Management />} />
+          <Route path="kpi_jobs" element={<KPI_Job_Management />} />
+          <Route path="networks" element={<Network_Management />} />
+          <Route path="channels" element={<Channel_Management />} />
         </Route>
         <Route
           path="/accountant/page"
