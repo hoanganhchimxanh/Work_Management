@@ -3,8 +3,8 @@ import { NavLink } from "react-router-dom";
 import {
   HouseDoorFill,
   PeopleFill,
-  PersonFill,
   FileEarmarkTextFill,
+  FileSlides,
   CashStack,
   GearFill,
   BoxArrowRight,
@@ -32,9 +32,10 @@ const Sidebar = () => {
   const menuItems = [
     { to: "/admin/dashboard", icon: <HouseDoorFill />, label: "Dashboard" },
     { to: "/admin/users", icon: <PeopleFill />, label: "Quản lý nhân viên" },
-    { to: "/admin/network", icon: <CashStack />, label: "Quản lý Network" },
+    { to: "/admin/channels", icon: <FileSlides />, label: "Quản lý kênh" },
+    { to: "/admin/networks", icon: <CashStack />, label: "Quản lý Network" },
     {
-      to: "/admin/kpi_job",
+      to: "/admin/kpi_jobs",
       icon: <FileEarmarkTextFill />,
       label: "Quản lý KPI & Công việc",
     },
