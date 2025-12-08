@@ -23,9 +23,13 @@ app.get("/", (req, res) => {
 const userRouter = require("./routes/user.route");
 const accountRouter = require("./routes/account.route");
 const teamRouter = require("./routes/team.route");
+const kpiRouter = require("./routes/kpi.route");
+const taskRouter = require("./routes/task.route");
 app.use("/user", userRouter);
 app.use("/account", accountRouter);
 app.use("/team", teamRouter);
+app.use("/kpi", kpiRouter);
+app.use("/task", taskRouter);
 
 // --- Xử lý lỗi ---
 
