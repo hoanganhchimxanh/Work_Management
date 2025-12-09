@@ -25,11 +25,22 @@ const accountRouter = require("./routes/account.route");
 const teamRouter = require("./routes/team.route");
 const kpiRouter = require("./routes/kpi.route");
 const taskRouter = require("./routes/task.route");
+const channelRouter = require("./routes/channel.route");
+const channelManagerRouter = require("./routes/channelManager.route");
+const networkRouter = require("./routes/network.route");
+const youtubeAuthRouter = require("./routes/youtubeAuth.route");
+const youtubeAnalyticsRouter = require("./routes/youtubeAnalytics.route");
+
 app.use("/user", userRouter);
 app.use("/account", accountRouter);
 app.use("/team", teamRouter);
 app.use("/kpi", kpiRouter);
 app.use("/task", taskRouter);
+app.use("/channel", channelRouter);
+app.use("/channel-manager", channelManagerRouter);
+app.use("/network", networkRouter);
+app.use("youtube-auth", youtubeAuthRouter);
+app.use("/youtube-analytics", youtubeAnalyticsRouter);
 
 // --- Xử lý lỗi ---
 
