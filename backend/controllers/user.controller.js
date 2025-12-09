@@ -195,14 +195,10 @@ const approveUser = async (req, res, next) => {
     // TODO: Gửi email cho user
     try {
       await sendEmail({
-        to: newUser.personalEmail,
+        to: user.personalEmail,
         subject: "Tài khoản đăng nhập hệ thống của bạn",
         text: "",
-        html: sendNewAccountTemplate(
-          newUser.fullName,
-          loginEmail,
-          tempPassword
-        ),
+        html: sendNewAccountTemplate(user.fullName, loginEmail, tempPassword),
         attachments: [],
       });
       console.log("Email tạo tài khoản đã được gửi!");
