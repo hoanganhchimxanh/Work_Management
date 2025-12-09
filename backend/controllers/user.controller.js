@@ -6,6 +6,7 @@ const bcrypt = require("bcrypt");
 const generator = require("generate-password");
 const sendEmail = require("../utils/mailer");
 const sendNewAccountTemplate = require("../utils/emailTemplates/sendNewAccount");
+const sendRejectTemplate = require("../utils/emailTemplates/sendReject");
 
 // Tạo người dùng mới (bởi user tự đăng ký)
 const registerByUser = async (req, res, next) => {
@@ -192,7 +193,22 @@ const approveUser = async (req, res, next) => {
     });
 
     // TODO: Gửi email cho user
-    // sendApprovalEmail(user.personalEmail, loginEmail, tempPassword);
+    try {
+      await sendEmail({
+        to: newUser.personalEmail,
+        subject: "Tài khoản đăng nhập hệ thống của bạn",
+        text: "",
+        html: sendNewAccountTemplate(
+          newUser.fullName,
+          loginEmail,
+          tempPassword
+        ),
+        attachments: [],
+      });
+      console.log("Email tạo tài khoản đã được gửi!");
+    } catch (mailErr) {
+      console.error("Gửi email thất bại:", mailErr);
+    }
 
     const populatedUser = await User.findById(user._id)
       .populate("team", "name")
@@ -235,8 +251,20 @@ const rejectUser = async (req, res, next) => {
       });
     }
 
-    // TODO: Gửi email thông báo từ chối
-    // sendRejectionEmail(user.personalEmail, reason);
+    // Gửi email thông báo từ chối
+    try {
+      await sendEmail({
+        to: user.personalEmail,
+        subject: "Thông báo về đơn đăng ký của bạn",
+        text: "",
+        html: sendRejectTemplate(user.fullName),
+        attachments: [],
+      });
+      console.log("Email từ chối đã được gửi!");
+    } catch (mailErr) {
+      console.error("Gửi email thất bại:", mailErr);
+      // Vẫn tiếp tục xóa user ngay cả khi gửi email thất bại
+    }
 
     // Xóa user
     await User.findByIdAndDelete(userId);
