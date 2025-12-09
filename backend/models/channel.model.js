@@ -11,16 +11,6 @@ const channelSchema = new mongoose.Schema(
       default: "ACTIVE",
     },
 
-    // Email/tài khoản YouTube được gắn vào kênh (do Admin gửi riêng)
-    channelEmail: {
-      type: String,
-      required: true,
-      unique: true,
-    },
-
-    // Password của tài khoản kênh (tùy chọn, có thể Admin giữ riêng)
-    channelPassword: { type: String },
-
     // Network mà kênh này thuộc về
     network: { type: mongoose.Schema.Types.ObjectId, ref: "Network" },
 
@@ -35,6 +25,8 @@ const channelSchema = new mongoose.Schema(
 
     bktEnabled: { type: Boolean, default: false },
     bktDay: { type: Date },
+    isMainChannel: { type: Boolean, default: false },
+    isBrandAccount: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
