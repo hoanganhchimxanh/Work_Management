@@ -11,19 +11,18 @@ const channelSchema = new mongoose.Schema(
       default: "ACTIVE",
     },
 
-    email: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Account",
-      required: true,
-      unique: true,
-    },
-
+    // Network mà kênh này thuộc về
     network: { type: mongoose.Schema.Types.ObjectId, ref: "Network" },
 
-    subscriber: { type: Number, default: 0 },
+    // User quản lý kênh này
+    owner: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
 
-    bktEnabled: { type: Boolean, default: false },
-    bktDay: { type: Date },
+    isMainChannel: { type: Boolean, default: false },
+    isBrandAccount: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

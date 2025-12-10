@@ -2,8 +2,9 @@ const express = require("express");
 const {
   login,
   changePassword,
-  createNew,
-  applyAccountForUser,
+  register,
+  autoResetPassword,
+  updateStatus,
 } = require("../controllers/account.controller");
 const {
   authenticateJWT,
@@ -19,6 +20,7 @@ const logRequestTime = (req, res, next) => {
 router.use(logRequestTime);
 router.use(express.json());
 
+router.post("/register", register);
 router.post("/login", login);
 router.put(
   "/change-password/:id",
@@ -26,12 +28,19 @@ router.put(
   authorizeRoles("EMPLOYEE"),
   changePassword
 );
-router.post("/create-new", authenticateJWT, authorizeRoles("ADMIN"), createNew);
-router.post(
-  "/apply",
+
+router.put(
+  "/auto-reset-password",
   authenticateJWT,
   authorizeRoles("ADMIN"),
-  applyAccountForUser
+  autoResetPassword
+);
+
+router.put(
+  "/update-status",
+  authenticateJWT,
+  authorizeRoles("ADMIN"),
+  updateStatus
 );
 
 module.exports = router;

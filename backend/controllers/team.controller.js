@@ -61,6 +61,112 @@ const createNew = async (req, res, next) => {
   }
 };
 
+// Xem thông tin của tất cả các đội
+const getAll = async (req, res, next) => {
+  try {
+    const teams = await Team.find()
+      .populate({
+        path: "leader",
+        select: "fullName role status",
+      })
+      .populate({
+        path: "members",
+        select: "fullName role status",
+      })
+      .sort({ createdAt: -1 });
+
+    const formatted = teams.map((team) => ({
+      _id: team._id,
+      name: team.name,
+      status: team.status,
+      createdAt: team.createdAt,
+      updatedAt: team.updatedAt,
+
+      leader: team.leader
+        ? {
+            _id: team.leader._id,
+            fullName: team.leader.fullName,
+            role: team.leader.role,
+            status: team.leader.status,
+          }
+        : null,
+
+      members: team.members.map((m) => ({
+        _id: m._id,
+        fullName: m.fullName,
+        role: m.role,
+        status: m.status,
+      })),
+
+      memberCount: team.members.length,
+    }));
+
+    res.json({
+      success: true,
+      count: formatted.length,
+      data: formatted,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+const getById = async (req, res, next) => {
+  try {
+    const teamId = req.params.id;
+
+    const team = await Team.findById(teamId)
+      .populate({
+        path: "leader",
+        select: "fullName role status",
+      })
+      .populate({
+        path: "members",
+        select: "fullName role status",
+      });
+
+    if (!team) {
+      return res.status(404).json({
+        success: false,
+        message: "Team không tồn tại!",
+      });
+    }
+
+    const formatted = {
+      _id: team._id,
+      name: team.name,
+      status: team.status,
+      createdAt: team.createdAt,
+      updatedAt: team.updatedAt,
+
+      leader: team.leader
+        ? {
+            _id: team.leader._id,
+            fullName: team.leader.fullName,
+            role: team.leader.role,
+            status: team.leader.status,
+          }
+        : null,
+
+      members: team.members.map((m) => ({
+        _id: m._id,
+        fullName: m.fullName,
+        role: m.role,
+        status: m.status,
+      })),
+
+      memberCount: team.members.length,
+    };
+
+    res.json({
+      success: true,
+      data: formatted,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // Sửa thông tin của đội
 const editInfo = async (req, res, next) => {
   try {
@@ -173,6 +279,8 @@ const deleteTeam = async (req, res, next) => {
 
 module.exports = {
   createNew,
+  getAll,
+  getById,
   editInfo,
   deleteTeam,
 };

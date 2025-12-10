@@ -1,34 +1,76 @@
 import "./App.css";
 import { Routes, Route } from "react-router-dom";
+// Public pages
 import Login from "./pages/Login";
+import Register from "./pages/Register";
 import ChangePassword from "./pages/ChangePassword";
 import Unauthorized from "./pages/Unauthorized";
+
+// Admin pages
+import AdminLayout from "./layouts/AdminLayout";
 import Dashboard from "./pages/admin/Dashboard";
-import EmployeePage from "./pages/employee/EmployeePage";
+import UserManagement from "./pages/admin/User_Management";
+import KPIJobManagement from "./pages/admin/KPI_Job_Management";
+import NetworkManagement from "./pages/admin/Network_Management";
+import ChannelManagement from "./pages/admin/Channel_Management";
+
+// Employee pages
+import EmployeeLayout from "./layouts/EmployeeLayout";
+import Profile from "./pages/employee/Profile";
+import EmployeeChannelManagement from "./pages/employee/Channel_Management";
+import EmployeeKPIJobManagement from "./pages/employee/KPI_Job_Management";
+
+// Accountant pages
 import AccountantPage from "./pages/accountant/AccountantPage";
 
+// Protected route
 import ProtectedRoute from "./components/ProtectedRoute";
 import RoleBasedRoute from "./components/RoleBasedRoute";
+import PublicRoute from "./components/PublicRoute";
 
 function App() {
   return (
     <Routes>
-      {/* PUBLIC */}
-      <Route path="/login" element={<Login />} />
-      <Route path="/" element={<Login />} />
+      <Route
+        path="/login"
+        element={
+          <PublicRoute>
+            <Login />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="/"
+        element={
+          <PublicRoute>
+            <Login />
+          </PublicRoute>
+        }
+      />
+      <Route path="/register" element={<Register />} />
       <Route path="/unauthorized" element={<Unauthorized />} />
       <Route path="/change-password/:accountId" element={<ChangePassword />} />
 
       {/* PROTECTED */}
+
+      {/* Admin pages */}
       <Route element={<ProtectedRoute />}>
         <Route
-          path="/admin/dashboard"
+          path="/admin/*"
           element={
             <RoleBasedRoute allowedRoles={["ADMIN"]}>
-              <Dashboard />
+              <AdminLayout />
             </RoleBasedRoute>
           }
-        />
+        >
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="users" element={<UserManagement />} />
+          <Route path="kpi_jobs" element={<KPIJobManagement />} />
+          <Route path="networks" element={<NetworkManagement />} />
+          <Route path="channels" element={<ChannelManagement />} />
+        </Route>
+
+        {/* Accountant pages */}
         <Route
           path="/accountant/page"
           element={
@@ -37,14 +79,20 @@ function App() {
             </RoleBasedRoute>
           }
         />
+
+        {/* Employee pages */}
         <Route
-          path="/employee/page"
+          path="/employee/*"
           element={
             <RoleBasedRoute allowedRoles={["EMPLOYEE"]}>
-              <EmployeePage />
+              <EmployeeLayout />
             </RoleBasedRoute>
           }
-        />
+        >
+          <Route path="profile" element={<Profile />} />
+          <Route path="channels" element={<EmployeeChannelManagement />} />
+          <Route path="kpi_jobs" element={<EmployeeKPIJobManagement />} />
+        </Route>
       </Route>
     </Routes>
   );

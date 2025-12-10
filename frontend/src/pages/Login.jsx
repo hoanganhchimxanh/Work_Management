@@ -1,24 +1,30 @@
 import React, { useState, useContext } from "react";
 import { Button, Col, Container, Form, Row, Alert } from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../contexts/AuthContext";
 import "../styles/login.style.css";
 
 function Login() {
-  const [companyEmail, setCompanyEmail] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
 
   const { login } = useContext(AuthContext);
 
+  const navigate = useNavigate();
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setErrorMsg("");
+    setLoading(true);
 
     try {
-      await login(companyEmail, password);
+      await login(email, password);
     } catch (err) {
       setErrorMsg(err || "Đăng nhập thất bại. Vui lòng thử lại.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -49,12 +55,12 @@ function Login() {
 
             <Form onSubmit={handleLogin}>
               <Form.Group className="mb-3">
-                <Form.Label>Email công ty</Form.Label>
+                <Form.Label>Email đăng nhập</Form.Label>
                 <Form.Control
-                  type="text"
-                  placeholder="Nhập email công ty"
-                  value={companyEmail}
-                  onChange={(e) => setCompanyEmail(e.target.value)}
+                  type="email"
+                  placeholder="Nhập email đăng nhập"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
                 />
               </Form.Group>
@@ -79,6 +85,14 @@ function Login() {
                 {loading ? "Đang đăng nhập..." : "Đăng nhập"}
               </Button>
             </Form>
+            <p>Bạn chưa có tài khoản?</p>
+            <Button
+              variant="primary"
+              className="w-100 mb-3"
+              onClick={() => navigate("/register")}
+            >
+              Đăng ký
+            </Button>
           </Col>
         </Row>
       </Container>

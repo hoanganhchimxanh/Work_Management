@@ -2,24 +2,18 @@ const mongoose = require("mongoose");
 
 const accountSchema = new mongoose.Schema(
   {
-    // Đây là email công ty cấp – dùng để LOGIN + QUẢN LÝ KÊNH
-    companyEmail: { type: String, required: true, unique: true },
+    // Email dùng để đăng nhập vào hệ thống quản lý
+    email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
 
-    owner: {
+    // Liên kết đến User sở hữu tài khoản này
+    user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      default: null,
+      required: true,
     },
 
-    channel: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Channel",
-      sparse: true,
-      default: null,
-    },
-
-    isActive: { type: Boolean, default: false },
+    isActive: { type: Boolean, default: true },
   },
   { timestamps: true }
 );

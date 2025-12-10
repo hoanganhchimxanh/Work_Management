@@ -9,23 +9,29 @@ const generator = require("generate-password");
 // Đăng nhập
 const login = async (req, res, next) => {
   try {
-    const { companyEmail, password } = req.body;
+    const { email, password } = req.body;
 
-    if (!companyEmail || !password) {
+    if (!email || !password) {
       return res.status(400).json({
         success: false,
-        message: "Thiếu companyEmail hoặc password!",
+        message: "Thiếu email hoặc password!",
       });
     }
 
-    // Tìm account theo companyEmail
-    const account = await Account.findOne({ companyEmail })
-      .populate("owner")
-      .lean();
+    // Tìm account theo email
+    const account = await Account.findOne({ email }).populate("user").lean();
     if (!account) {
       return res.status(404).json({
         success: false,
-        message: "Không tìm thấy account với email này!",
+        message: "Không tìm thấy tài khoản với email này!",
+      });
+    }
+
+    // Kiểm tra tài khoản có active không
+    if (!account.isActive) {
+      return res.status(403).json({
+        success: false,
+        message: "Tài khoản đã bị vô hiệu hóa!",
       });
     }
 
@@ -40,9 +46,10 @@ const login = async (req, res, next) => {
 
     const token = jwt.sign(
       {
-        userId: account.owner._id,
-        role: account.owner.role,
-        companyEmail: account.companyEmail,
+        accountId: account._id,
+        userId: account.user._id,
+        role: account.user.role,
+        email: account.email,
       },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
@@ -54,16 +61,16 @@ const login = async (req, res, next) => {
       token: token,
       data: {
         accountId: account._id,
-        companyEmail: account.companyEmail,
+        email: account.email,
         isActive: account.isActive,
-        user: account.owner
+        user: account.user
           ? {
-              userId: account.owner._id,
-              fullName: account.owner.fullName,
-              role: account.owner.role,
-              personalEmail: account.owner.personalEmail,
-              isFirstLogin: account.owner.isFirstLogin,
-              status: account.owner.status,
+              userId: account.user._id,
+              fullName: account.user.fullName,
+              role: account.user.role,
+              personalEmail: account.user.personalEmail,
+              isFirstLogin: account.user.isFirstLogin,
+              status: account.user.status,
             }
           : null,
       },
@@ -75,8 +82,13 @@ const login = async (req, res, next) => {
 
 const changePassword = async (req, res, next) => {
   try {
-    const account = await Account.findById(req.params.id).populate("owner");
-    const userIdParam = account.owner._id.toString();
+    const account = await Account.findById(req.params.id).populate("user");
+
+    if (!account) {
+      return res.status(404).json({ message: "Không tìm thấy tài khoản!" });
+    }
+
+    const userIdParam = account.user._id.toString();
     const userIdFromToken = req.user.userId;
     const { newPassword } = req.body;
 
@@ -101,7 +113,9 @@ const changePassword = async (req, res, next) => {
     const hashedPw = await bcrypt.hash(newPassword, 10);
 
     account.password = hashedPw;
+    account.isActive = true; // Kích hoạt tài khoản sau khi đổi mật khẩu
     await account.save();
+
     user.isFirstLogin = false;
     await user.save();
 
@@ -112,75 +126,50 @@ const changePassword = async (req, res, next) => {
   }
 };
 
-// Thêm tài khoản mới
-const createNew = async (req, res, next) => {
+// Đăng ký tài khoản (tạo mới bởi Admin hoặc hệ thống)
+const register = async (req, res, next) => {
   try {
-    const { companyEmail, password, owner, channel, isActive } = req.body;
+    const { email, password, userId, isActive } = req.body;
 
-    if (!companyEmail || !password) {
+    if (!email || !password || !userId) {
       return res
         .status(400)
         .json({ success: false, message: "Thiếu dữ liệu đầu vào!" });
     }
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const newAccount = await Account.create({
-      companyEmail,
-      password: hashedPassword,
-      owner,
-      channel,
-      isActive,
-    });
 
-    res.status(201).json({ success: true, data: newAccount });
-  } catch (err) {
-    next(err);
-  }
-};
-
-// Gắn email (account) cho nhân viên hiện có
-const applyAccountForUser = async (req, res, next) => {
-  try {
-    const { userId, accountId } = req.body;
-
-    if (!userId || !accountId) {
-      return res.status(400).json({
-        success: false,
-        message: "Thiếu userId hoặc accountId!",
-      });
-    }
-
-    const [user, account] = await Promise.all([
-      User.findById(userId),
-      Account.findById(accountId),
-    ]);
-
-    if (!user || !account) {
+    // Kiểm tra user có tồn tại không
+    const user = await User.findById(userId);
+    if (!user) {
       return res.status(404).json({
         success: false,
-        message: "Không tìm thấy user hoặc account!",
+        message: "User không tồn tại!",
       });
     }
 
-    if (account.owner) {
+    // Kiểm tra email đã tồn tại chưa
+    const existingAccount = await Account.findOne({ email });
+    if (existingAccount) {
       return res.status(400).json({
         success: false,
-        message: "Account này đã được gán cho nhân viên khác!",
+        message: "Email này đã được sử dụng!",
       });
     }
 
-    account.owner = userId;
-    await account.save();
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Optional: populate để trả về thông tin đầy đủ
-    const updatedAccount = await Account.findById(accountId)
-      .populate("owner", "fullName personalEmail role")
+    const newAccount = await Account.create({
+      email,
+      password: hashedPassword,
+      user: userId,
+      isActive: isActive !== undefined ? isActive : false, // Mặc định INACTIVE
+    });
+
+    const populatedAccount = await Account.findById(newAccount._id)
+      .populate("user", "fullName personalEmail role")
       .lean();
 
-    return res.json({
-      success: true,
-      message: "Gắn tài khoản thành công!",
-      data: updatedAccount,
-    });
+    res.status(201).json({ success: true, data: populatedAccount });
   } catch (err) {
     next(err);
   }
@@ -189,21 +178,21 @@ const applyAccountForUser = async (req, res, next) => {
 // Reset mật khẩu tự động, khi người dùng quên
 const autoResetPassword = async (req, res, next) => {
   try {
-    const { companyEmail } = req.body;
+    const { email } = req.body;
 
-    if (!companyEmail) {
+    if (!email) {
       return res.status(400).json({
         success: false,
-        message: "Thiếu email công ty!",
+        message: "Thiếu email!",
       });
     }
 
-    // Tìm account và populate owner
-    const account = await Account.findOne(companyEmail).populate("owner");
+    // Tìm account và populate user
+    const account = await Account.findOne({ email }).populate("user");
     if (!account) {
       return res.status(404).json({
         success: false,
-        message: "Không tìm thấy account!",
+        message: "Không tìm thấy tài khoản!",
       });
     }
 
@@ -220,12 +209,12 @@ const autoResetPassword = async (req, res, next) => {
     // Mã hóa mật khẩu
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    // Cập nhật password của account (hoặc user nếu bạn lưu ở user)
+    // Cập nhật password của account
     account.password = hashedPassword;
     await account.save();
 
     // TODO: Gửi password mới cho nhân viên qua email
-    // Ví dụ: sendEmail(account.owner.personalEmail, newPassword)
+    // Ví dụ: sendEmail(account.user.personalEmail, newPassword)
 
     res.json({
       success: true,
@@ -237,10 +226,48 @@ const autoResetPassword = async (req, res, next) => {
   }
 };
 
+// Cập nhật trạng thái tài khoản (active/inactive)
+const updateStatus = async (req, res, next) => {
+  try {
+    const { accountId } = req.params;
+    const { isActive } = req.body;
+
+    if (typeof isActive !== "boolean") {
+      return res.status(400).json({
+        success: false,
+        message: "isActive phải là boolean!",
+      });
+    }
+
+    const account = await Account.findById(accountId);
+    if (!account) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy tài khoản!",
+      });
+    }
+
+    account.isActive = isActive;
+    await account.save();
+
+    const updatedAccount = await Account.findById(accountId)
+      .populate("user", "fullName personalEmail role")
+      .lean();
+
+    res.json({
+      success: true,
+      message: "Cập nhật trạng thái thành công!",
+      data: updatedAccount,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   login,
   changePassword,
-  createNew,
-  applyAccountForUser,
+  register,
   autoResetPassword,
+  updateStatus,
 };

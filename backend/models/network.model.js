@@ -10,8 +10,18 @@ const networkSchema = new mongoose.Schema(
       default: "ACTIVE",
     },
 
-    linkedAccount: { type: mongoose.Schema.Types.ObjectId, ref: "Account" },
-    mainChannel: { type: mongoose.Schema.Types.ObjectId, ref: "Channel" },
+    // Kênh chính của Network (brand account chính)
+    mainChannel: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Channel",
+      required: true,
+    },
+
+    // Tài khoản YouTube chính của network (primary owner)
+    primaryAccountEmail: {
+      type: String,
+      required: true,
+    },
 
     note: { type: String },
   },

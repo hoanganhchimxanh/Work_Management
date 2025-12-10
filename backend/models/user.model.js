@@ -4,7 +4,7 @@ const userSchema = new mongoose.Schema(
   {
     fullName: { type: String, required: true },
 
-    // 👇 email cá nhân để nhận thông tin, không dùng login
+    // Email cá nhân để nhận thông tin (không dùng để đăng nhập)
     personalEmail: { type: String, required: true },
 
     role: {
@@ -15,7 +15,7 @@ const userSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ["ACTIVE", "INACTIVE", "QUIT"],
+      enum: ["PENDING", "ACTIVE", "QUIT"],
       default: "ACTIVE",
     },
 

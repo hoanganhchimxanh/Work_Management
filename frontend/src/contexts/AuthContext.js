@@ -16,21 +16,23 @@ export const AuthProvider = ({ children }) => {
       try {
         const payload = JSON.parse(atob(token.split(".")[1]));
         setUser({
+          accountId: payload.accountId,
           userId: payload.userId,
           role: payload.role,
-          companyEmail: payload.companyEmail,
+          email: payload.email,
         });
       } catch (err) {
+        console.error("Invalid token:", err);
         localStorage.removeItem("token");
       }
     }
     setLoading(false);
   }, []);
 
-  const login = async (companyEmail, password) => {
+  const login = async (email, password) => {
     try {
       const res = await axios.post("http://localhost:9999/account/login", {
-        companyEmail,
+        email,
         password,
       });
 
@@ -40,9 +42,10 @@ export const AuthProvider = ({ children }) => {
       axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
       setUser({
+        accountId: data.accountId,
         userId: data.user?.userId,
         role: data.user?.role,
-        companyEmail: data.companyEmail,
+        email: data.email,
         fullName: data.user?.fullName,
         isFirstLogin: data.user?.isFirstLogin,
       });
@@ -50,7 +53,7 @@ export const AuthProvider = ({ children }) => {
       if (data.user?.isFirstLogin) {
         navigate(`/change-password/${data.accountId}`);
       } else {
-        redirectByRole(data.user?.role?.toUpperCase());
+        redirectByRole(data.user?.role);
       }
     } catch (err) {
       throw err.response?.data?.message || "Đăng nhập thất bại";
@@ -58,10 +61,17 @@ export const AuthProvider = ({ children }) => {
   };
 
   const redirectByRole = (role) => {
-    if (role === "ADMIN") navigate("/admin/dashboard");
-    else if (role === "ACCOUNTANT") navigate("/accountant/page");
-    else if (role === "EMPLOYEE") navigate("/employee/page");
-    else navigate("/unauthorized");
+    const roleUpper = role?.toUpperCase();
+
+    if (roleUpper === "ADMIN") {
+      navigate("/admin/dashboard");
+    } else if (roleUpper === "ACCOUNTANT") {
+      navigate("/accountant/page");
+    } else if (roleUpper === "EMPLOYEE") {
+      navigate("/employee/page");
+    } else {
+      navigate("/unauthorized");
+    }
   };
 
   const logout = () => {

@@ -1,8 +1,13 @@
 const express = require("express");
 const {
+  registerByUser,
+  createByAdmin,
+  approveUser,
+  rejectUser,
   getAll,
   getPersonal,
-  createNew,
+  updateUser,
+  deleteUser,
 } = require("../controllers/user.controller");
 const {
   authenticateJWT,
@@ -18,13 +23,43 @@ const logRequestTime = (req, res, next) => {
 router.use(logRequestTime);
 router.use(express.json());
 
+router.post("/register", registerByUser);
+router.post(
+  "/create-by-admin",
+  authenticateJWT,
+  authorizeRoles("ADMIN"),
+  createByAdmin
+);
+router.post(
+  "/approve/:userId",
+  authenticateJWT,
+  authorizeRoles("ADMIN"),
+  approveUser
+);
+router.delete(
+  "/reject/:userId",
+  authenticateJWT,
+  authorizeRoles("ADMIN"),
+  rejectUser
+);
 router.get("/get-all", authenticateJWT, authorizeRoles("ADMIN"), getAll);
 router.get(
   "/get-one/:id",
   authenticateJWT,
-  authorizeRoles("ADMIN"),
+  authorizeRoles(["ADMIN", "EMPLOYEE", "ACCOUNTANT"]),
   getPersonal
 );
-router.post("/create-new", authenticateJWT, authorizeRoles("ADMIN"), createNew);
+router.put(
+  "/update/:id",
+  authenticateJWT,
+  authorizeRoles(["ADMIN", "EMPLOYEE", "ACCOUNTANT"]),
+  updateUser
+);
+router.delete(
+  "/delete/:id",
+  authenticateJWT,
+  authorizeRoles("ADMIN"),
+  deleteUser
+);
 
 module.exports = router;
