@@ -33,7 +33,7 @@ const Sidebar = () => {
     {
       to: "/employee/profile",
       icon: <PeopleFill />,
-      label: "Quản lý nhân viên",
+      label: "Thông tin nhân viên",
     },
     { to: "/employee/channels", icon: <FileSlides />, label: "Quản lý kênh" },
     {
