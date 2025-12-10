@@ -6,7 +6,7 @@ const Channel = db.Channel;
 const addManager = async (req, res, next) => {
   try {
     const { channelId } = req.params;
-    const { managerEmail, role, managerPassword, note } = req.body;
+    const { managerEmail, role, note } = req.body;
 
     if (!managerEmail || !role) {
       return res.status(400).json({
@@ -41,7 +41,6 @@ const addManager = async (req, res, next) => {
       channel: channelId,
       managerEmail,
       role,
-      managerPassword: managerPassword || null,
       note: note || "",
     });
 

@@ -6,32 +6,21 @@ const Network = db.Network;
 // Thêm kênh mới
 const addNew = async (req, res, next) => {
   try {
-    const {
-      name,
-      link,
-      channelEmail,
-      channelPassword,
-      owner,
-      network,
-      status,
-      subscriber,
-      bktEnabled,
-      bktDay,
-    } = req.body;
+    const { name, link, owner, network, status, bktEnabled, bktDay } = req.body;
 
-    if (!name || !channelEmail) {
+    if (!name || !link || !owner) {
       return res.status(400).json({
         success: false,
-        message: "Thiếu thông tin bắt buộc (name, channelEmail)!",
+        message: "Thiếu thông tin bắt buộc (name, link hoặc owner)!",
       });
     }
 
     // Kiểm tra channelEmail đã tồn tại chưa
-    const existingChannel = await Channel.findOne({ channelEmail });
+    const existingChannel = await Channel.findOne({ link });
     if (existingChannel) {
       return res.status(400).json({
         success: false,
-        message: "Email kênh này đã được sử dụng!",
+        message: "Kênh này đã tồn tại!",
       });
     }
 
@@ -46,26 +35,12 @@ const addNew = async (req, res, next) => {
       }
     }
 
-    // Kiểm tra network có tồn tại không (nếu có)
-    if (network) {
-      const networkDoc = await Network.findById(network);
-      if (!networkDoc) {
-        return res.status(404).json({
-          success: false,
-          message: "Không tìm thấy network!",
-        });
-      }
-    }
-
     const newChannel = await Channel.create({
       name,
       link,
-      channelEmail,
-      channelPassword,
       owner: owner || null,
       network: network || null,
       status: status || "ACTIVE",
-      subscriber: subscriber || 0,
       bktEnabled: bktEnabled || false,
       bktDay: bktDay || null,
     });
@@ -132,18 +107,7 @@ const getById = async (req, res, next) => {
 const editChannelInfo = async (req, res, next) => {
   try {
     const channelId = req.params.id;
-    const {
-      name,
-      link,
-      channelEmail,
-      channelPassword,
-      owner,
-      network,
-      status,
-      subscriber,
-      bktEnabled,
-      bktDay,
-    } = req.body;
+    const { name, link, owner, network, status, bktEnabled, bktDay } = req.body;
 
     const channel = await Channel.findById(channelId);
     if (!channel) {
@@ -153,27 +117,12 @@ const editChannelInfo = async (req, res, next) => {
       });
     }
 
-    // Kiểm tra channelEmail nếu thay đổi
-    if (channelEmail && channelEmail !== channel.channelEmail) {
-      const existingChannel = await Channel.findOne({ channelEmail });
-      if (existingChannel) {
-        return res.status(400).json({
-          success: false,
-          message: "Email kênh này đã được sử dụng!",
-        });
-      }
-    }
-
     // Cập nhật các field
     if (name) channel.name = name;
     if (link !== undefined) channel.link = link;
-    if (channelEmail) channel.channelEmail = channelEmail;
-    if (channelPassword !== undefined)
-      channel.channelPassword = channelPassword;
     if (owner !== undefined) channel.owner = owner;
     if (network !== undefined) channel.network = network;
     if (status) channel.status = status;
-    if (subscriber !== undefined) channel.subscriber = subscriber;
     if (bktEnabled !== undefined) channel.bktEnabled = bktEnabled;
     if (bktDay !== undefined) channel.bktDay = bktDay;
 

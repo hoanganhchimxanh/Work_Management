@@ -15,8 +15,8 @@ const channelAnalyticsSchema = new mongoose.Schema(
     // Metrics
     views: { type: Number, default: 0 },
     estimatedRevenue: { type: Number, default: 0 },
-    watchTime: { type: Number, default: 0 }, // phút
-    subscribers: { type: Number, default: 0 },
+    subscribersGained: { type: Number, default: 0 },
+    subscribersLost: { type: Number, default: 0 },
 
     // Chi tiết hơn nếu cần
     metrics: {

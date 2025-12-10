@@ -21,10 +21,6 @@ const channelSchema = new mongoose.Schema(
       default: null,
     },
 
-    subscriber: { type: Number, default: 0 },
-
-    bktEnabled: { type: Boolean, default: false },
-    bktDay: { type: Date },
     isMainChannel: { type: Boolean, default: false },
     isBrandAccount: { type: Boolean, default: false },
   },

@@ -18,7 +18,7 @@ router.use(express.json());
 router.post(
   "/add-manager/:channelId",
   authenticateJWT,
-  authorizeRoles("ADMIN"),
+  authorizeRoles("EMPLOYEE"),
   channelManagerController.addManager
 );
 

@@ -22,9 +22,6 @@ const channelManagerSchema = new mongoose.Schema(
       required: true,
     },
 
-    // Password (nếu cần lưu)
-    managerPassword: { type: String },
-
     status: {
       type: String,
       enum: ["ACTIVE", "REVOKED"],
