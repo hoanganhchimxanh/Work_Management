@@ -15,7 +15,10 @@ import Network_Management from "./pages/admin/Network_Management";
 import Channel_Management from "./pages/admin/Channel_Management";
 
 // Employee pages
-import EmployeePage from "./pages/employee/EmployeePage";
+import EmployeeLayout from "./layouts/EmployeeLayout";
+import Profile from "./pages/employee/Profile";
+import Employee_Channel_Management from "./pages/employee/Channel_Management";
+import Employee_KPI_Job_Management from "./pages/employee/KPI_Job_Management";
 
 // Accountant pages
 import AccountantPage from "./pages/accountant/AccountantPage";
@@ -49,6 +52,8 @@ function App() {
       <Route path="/change-password/:accountId" element={<ChangePassword />} />
 
       {/* PROTECTED */}
+
+      {/* Admin pages */}
       <Route element={<ProtectedRoute />}>
         <Route
           path="/admin/*"
@@ -64,6 +69,8 @@ function App() {
           <Route path="networks" element={<Network_Management />} />
           <Route path="channels" element={<Channel_Management />} />
         </Route>
+
+        {/* Accountant pages */}
         <Route
           path="/accountant/page"
           element={
@@ -72,14 +79,20 @@ function App() {
             </RoleBasedRoute>
           }
         />
+
+        {/* Employee pages */}
         <Route
-          path="/employee/page"
+          path="/employee/*"
           element={
             <RoleBasedRoute allowedRoles={["EMPLOYEE"]}>
-              <EmployeePage />
+              <EmployeeLayout />
             </RoleBasedRoute>
           }
-        />
+        >
+          <Route path="profile" element={<User_Management />} />
+          <Route path="channels" element={<Employee_Channel_Management />} />
+          <Route path="kpi_jobs" element={<Employee_KPI_Job_Management />} />
+        </Route>
       </Route>
     </Routes>
   );
