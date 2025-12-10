@@ -39,7 +39,7 @@ app.use("/task", taskRouter);
 app.use("/channel", channelRouter);
 app.use("/channel-manager", channelManagerRouter);
 app.use("/network", networkRouter);
-app.use("youtube-auth", youtubeAuthRouter);
+app.use("/youtube-auth", youtubeAuthRouter);
 app.use("/youtube-analytics", youtubeAnalyticsRouter);
 
 // --- Xử lý lỗi ---

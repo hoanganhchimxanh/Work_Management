@@ -146,10 +146,10 @@ const handleCallback = async (req, res, next) => {
     }
 
     // Redirect về frontend với success message
-    res.redirect(`${process.env.FRONTEND_URL}/dashboard/channels?auth=success`);
+    // res.redirect(`${process.env.FRONTEND_URL}/dashboard/channels?auth=success`);
   } catch (err) {
     console.error("OAuth callback error:", err);
-    res.redirect(`${process.env.FRONTEND_URL}/dashboard/channels?auth=error`);
+    // res.redirect(`${process.env.FRONTEND_URL}/dashboard/channels?auth=error`);
   }
 };
 
