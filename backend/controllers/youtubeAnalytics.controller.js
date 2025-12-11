@@ -89,7 +89,6 @@ const syncChannelAnalytics = async (req, res, next) => {
 
       if (existingRecord) {
         existingRecord.estimatedRevenue = revenue;
-        existingRecord.watchTime = watchTime;
         existingRecord.subscribersGained = subGained;
         existingRecord.subscribersLost = subLost;
         existingRecord.syncedAt = new Date();
