@@ -1,12 +1,9 @@
 import React, { useState } from "react";
 import { NavLink } from "react-router-dom";
 import {
-  HouseDoorFill,
   PeopleFill,
   FileEarmarkTextFill,
   FileSlides,
-  CashStack,
-  GearFill,
   BoxArrowRight,
   List,
 } from "react-bootstrap-icons";
@@ -41,7 +38,6 @@ const Sidebar = () => {
       icon: <FileEarmarkTextFill />,
       label: "Quản lý KPI & Công việc",
     },
-    { to: "/employee/settings", icon: <GearFill />, label: "Cài đặt" },
   ];
 
   const renderMenuItem = (item) => {
