@@ -4,7 +4,10 @@ import { Button, Container, Table } from "react-bootstrap";
 function Channel_Management() {
   return (
     <Container fluid>
+      {/* Add new channel modal */}
       <Button>Thêm kênh mới</Button>
+
+      {/* Channel table */}
       <Table striped bordered hover>
         <thead>
           <tr>
