@@ -288,7 +288,7 @@ const getAll = async (req, res, next) => {
         const account = await Account.findOne({ user: user._id }).lean();
 
         // Lấy các kênh mà user đang quản lý
-        const channels = await Channel.find({ owner: user._id }).lean();
+        const channels = await Channel.find({ assignedUser: user._id }).lean();
 
         return {
           userId: user._id,
@@ -329,7 +329,7 @@ const getPersonal = async (req, res, next) => {
     const account = await Account.findOne({ user: user._id }).lean();
 
     // Lấy các kênh mà user đang quản lý
-    const channels = await Channel.find({ owner: user._id })
+    const channels = await Channel.find({ assignedUser: user._id })
       .populate("network", "name")
       .lean();
 
