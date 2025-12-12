@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Modal, Form, Button, Table, Alert } from "react-bootstrap";
 import * as XLSX from "xlsx";
 
-function UserImportModal({ show, onHide, onSubmit }) {
+function TeamImportModal({ show, onHide, onSubmit }) {
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState([]);
   const [error, setError] = useState("");
@@ -56,7 +56,7 @@ function UserImportModal({ show, onHide, onSubmit }) {
   return (
     <Modal show={show} onHide={handleClose} centered size="lg">
       <Modal.Header closeButton>
-        <Modal.Title>Import User từ Excel</Modal.Title>
+        <Modal.Title>Import Team từ Excel</Modal.Title>
       </Modal.Header>
 
       <Modal.Body>
@@ -117,4 +117,4 @@ function UserImportModal({ show, onHide, onSubmit }) {
   );
 }
 
-export default UserImportModal;
+export default TeamImportModal;

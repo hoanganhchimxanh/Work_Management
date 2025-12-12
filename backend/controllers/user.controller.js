@@ -2,9 +2,11 @@ const db = require("../models");
 const User = db.User;
 const Account = db.Account;
 const Channel = db.Channel;
+const Team = db.Team;
 const bcrypt = require("bcrypt");
 const generator = require("generate-password");
 const sendEmail = require("../utils/mailer");
+const XLSX = require("xlsx");
 const sendNewAccountTemplate = require("../utils/emailTemplates/sendNewAccount");
 const sendRejectTemplate = require("../utils/emailTemplates/sendReject");
 
@@ -433,40 +435,41 @@ const deleteUser = async (req, res, next) => {
 const importUserExcel = async (req, res, next) => {
   try {
     if (!req.file) {
-      return res.status(400).json({
-        success: false,
-        message: "Vui lòng upload file Excel!",
-      });
+      return res
+        .status(400)
+        .json({ success: false, message: "Vui lòng upload file Excel!" });
     }
 
-    // Đọc file Excel
     const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
-
-    // Chuyển đổi sang JSON
     const data = XLSX.utils.sheet_to_json(worksheet);
 
     if (data.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "File Excel không có dữ liệu!",
-      });
+      return res
+        .status(400)
+        .json({ success: false, message: "File Excel không có dữ liệu!" });
     }
 
-    const results = {
-      success: [],
-      errors: [],
-      total: data.length,
-    };
+    const session = await User.startSession();
+    session.startTransaction();
 
-    // Xử lý từng row
+    const results = { success: [], errors: [], total: data.length };
+
+    // Load teams 1 lần
+    const teams = await Team.find().lean();
+    const teamMap = Object.fromEntries(
+      teams.map((t) => [t.name.trim(), t._id])
+    );
+
+    const allowedRoles = ["ADMIN", "ACCOUNTANT", "EMPLOYEE"];
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
     for (let i = 0; i < data.length; i++) {
       const row = data[i];
-      const rowNumber = i + 2; // +2 vì row 1 là header
+      const rowNumber = i + 2;
 
       try {
-        // Validate dữ liệu bắt buộc
         if (!row.fullName || !row.personalEmail) {
           results.errors.push({
             row: rowNumber,
@@ -476,12 +479,19 @@ const importUserExcel = async (req, res, next) => {
           continue;
         }
 
-        // Kiểm tra email đã tồn tại chưa
-        const existingUser = await User.findOne({
-          personalEmail: row.personalEmail,
-        });
+        if (!emailRegex.test(row.personalEmail)) {
+          results.errors.push({
+            row: rowNumber,
+            error: "Email không hợp lệ",
+            data: row,
+          });
+          continue;
+        }
 
-        if (existingUser) {
+        const exist = await User.findOne({
+          personalEmail: row.personalEmail,
+        }).session(session);
+        if (exist) {
           results.errors.push({
             row: rowNumber,
             error: `Email ${row.personalEmail} đã tồn tại`,
@@ -490,13 +500,9 @@ const importUserExcel = async (req, res, next) => {
           continue;
         }
 
-        // Xử lý team (nếu có)
         let teamId = null;
         if (row.teamName) {
-          const team = await Team.findOne({ name: row.teamName.trim() });
-          if (team) {
-            teamId = team._id;
-          } else {
+          if (!teamMap[row.teamName.trim()]) {
             results.errors.push({
               row: rowNumber,
               error: `Team "${row.teamName}" không tồn tại`,
@@ -504,20 +510,37 @@ const importUserExcel = async (req, res, next) => {
             });
             continue;
           }
+          teamId = teamMap[row.teamName.trim()];
         }
 
-        // Tạo user
-        const newUser = await User.create({
-          fullName: row.fullName.trim(),
-          personalEmail: row.personalEmail.trim().toLowerCase(),
-          role: row.role?.toUpperCase() || "EMPLOYEE",
-          status: "ACTIVE",
-          team: teamId,
-          isFirstLogin: true,
-        });
+        const role = allowedRoles.includes(row.role?.toUpperCase())
+          ? row.role.toUpperCase()
+          : "EMPLOYEE";
 
-        // Tạo tài khoản đăng nhập
-        const loginEmail = `${row.personalEmail.split("@")[0]}@company.com`;
+        const newUser = await User.create(
+          [
+            {
+              fullName: row.fullName.trim(),
+              personalEmail: row.personalEmail.trim().toLowerCase(),
+              role,
+              status: "ACTIVE",
+              team: teamId,
+              isFirstLogin: true,
+            },
+          ],
+          { session }
+        );
+
+        let loginEmailBase = row.personalEmail.split("@")[0];
+        let loginEmail = `${loginEmailBase}@company.com`;
+        let counter = 2;
+
+        // tránh trùng login email
+        while (await Account.findOne({ email: loginEmail }).session(session)) {
+          loginEmail = `${loginEmailBase}.${counter}@company.com`;
+          counter++;
+        }
+
         const tempPassword = generator.generate({
           length: 10,
           numbers: true,
@@ -529,37 +552,41 @@ const importUserExcel = async (req, res, next) => {
 
         const hashedPassword = await bcrypt.hash(tempPassword, 10);
 
-        await Account.create({
-          email: loginEmail,
-          password: hashedPassword,
-          user: newUser._id,
-          isActive: false,
-        });
+        await Account.create(
+          [
+            {
+              email: loginEmail,
+              password: hashedPassword,
+              user: newUser[0]._id,
+              isActive: false,
+            },
+          ],
+          { session }
+        );
 
         results.success.push({
           row: rowNumber,
-          userId: newUser._id,
-          fullName: newUser.fullName,
-          personalEmail: newUser.personalEmail,
+          userId: newUser[0]._id,
+          fullName: newUser[0].fullName,
+          personalEmail: newUser[0].personalEmail,
           loginEmail,
-          tempPassword, // Trong thực tế nên gửi qua email
+          tempPassword,
         });
       } catch (err) {
-        results.errors.push({
-          row: rowNumber,
-          error: err.message,
-          data: row,
-        });
+        results.errors.push({ row: rowNumber, error: err.message, data: row });
       }
     }
 
-    res.json({
+    await session.commitTransaction();
+    session.endSession();
+
+    return res.json({
       success: true,
       message: `Import hoàn tất: ${results.success.length}/${results.total} thành công`,
       data: results,
     });
   } catch (err) {
-    next(err);
+    return next(err);
   }
 };
 
