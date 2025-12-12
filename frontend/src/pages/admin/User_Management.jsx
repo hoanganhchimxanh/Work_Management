@@ -5,6 +5,8 @@ import UserTable from "../../components/admin/userManagement/UserTable";
 import TeamTable from "../../components/admin/userManagement/TeamTable";
 import UserModal from "../../components/admin/userManagement/UserModal";
 import TeamModal from "../../components/admin/userManagement/TeamModal";
+import UserImportModal from "../../components/admin/userManagement/UserImportModal";
+import TeamImportModal from "../../components/admin/userManagement/TeamImportModal";
 
 function User_Management() {
   // Users state
@@ -18,6 +20,9 @@ function User_Management() {
   // Modal state
   const [showUserModal, setShowUserModal] = useState(false);
   const [showTeamModal, setShowTeamModal] = useState(false);
+  const [showUserImportModal, setShowUserImportModal] = useState(false);
+  const [showTeamImportModal, setShowTeamImportModal] = useState(false);
+
   const [selectedUser, setSelectedUser] = useState(null);
   const [selectedTeam, setSelectedTeam] = useState(null);
 
@@ -25,16 +30,14 @@ function User_Management() {
   const [error, setError] = useState(null);
 
   // Fetch users
-  // Fetch users
   const fetchUsers = async () => {
     try {
       setLoadingUsers(true);
       const response = await axios.get("http://localhost:9999/user/get-all");
 
-      // Chuẩn hóa data: thêm _id từ userId
       const normalizedUsers = response.data.data.map((user) => ({
         ...user,
-        _id: user.userId, // Thêm _id để TeamModal dùng được
+        _id: user.userId,
       }));
 
       setUsers(normalizedUsers);
@@ -117,6 +120,85 @@ function User_Management() {
     fetchUsers();
   };
 
+  // User Import/Export
+  const handleUserImportSubmit = async (file) => {
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      await axios.post("http://localhost:9999/user/import-excel", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      alert("Import người dùng thành công!");
+      setShowUserImportModal(false);
+      fetchUsers();
+    } catch (err) {
+      alert("Import thất bại: " + (err.response?.data?.message || err.message));
+    }
+  };
+
+  const handleUserExport = async () => {
+    try {
+      const response = await axios.get(
+        "http://localhost:9999/user/export-excel",
+        {
+          responseType: "blob",
+        }
+      );
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", "users.xlsx");
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      alert("Export thất bại: " + (err.response?.data?.message || err.message));
+    }
+  };
+
+  // Team Import/Export
+  const handleTeamImportSubmit = async (file) => {
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      await axios.post("http://localhost:9999/team/import-excel", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      alert("Import team thành công!");
+      setShowTeamImportModal(false);
+      fetchTeams();
+      fetchUsers();
+    } catch (err) {
+      alert("Import thất bại: " + (err.response?.data?.message || err.message));
+    }
+  };
+
+  const handleTeamExport = async () => {
+    try {
+      const response = await axios.get(
+        "http://localhost:9999/team/export-excel",
+        {
+          responseType: "blob",
+        }
+      );
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", "teams.xlsx");
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      alert("Export thất bại: " + (err.response?.data?.message || err.message));
+    }
+  };
+
   return (
     <Container fluid>
       <Row className="mb-4">
@@ -136,10 +218,26 @@ function User_Management() {
         <Col>
           <div className="d-flex justify-content-between align-items-center">
             <h5>Quản lý người dùng</h5>
-            <Button variant="primary" onClick={handleCreateUser}>
-              <i className="bi bi-plus-circle me-2"></i>
-              Thêm người dùng
-            </Button>
+
+            <div className="d-flex gap-2">
+              <Button variant="success" onClick={handleUserExport}>
+                <i className="bi bi-download me-2"></i>
+                Export Excel
+              </Button>
+
+              <Button
+                variant="success"
+                onClick={() => setShowUserImportModal(true)}
+              >
+                <i className="bi bi-upload me-2"></i>
+                Import Excel
+              </Button>
+
+              <Button variant="primary" onClick={handleCreateUser}>
+                <i className="bi bi-plus-circle me-2"></i>
+                Thêm người dùng
+              </Button>
+            </div>
           </div>
         </Col>
       </Row>
@@ -151,6 +249,7 @@ function User_Management() {
             loading={loadingUsers}
             onEdit={handleEditUser}
             onRefresh={fetchUsers}
+            teams={teams}
           />
         </Col>
       </Row>
@@ -162,10 +261,26 @@ function User_Management() {
         <Col>
           <div className="d-flex justify-content-between align-items-center">
             <h5>Quản lý đội nhóm</h5>
-            <Button variant="success" onClick={handleCreateTeam}>
-              <i className="bi bi-plus-circle me-2"></i>
-              Tạo đội nhóm
-            </Button>
+
+            <div className="d-flex gap-2">
+              <Button variant="success" onClick={handleTeamExport}>
+                <i className="bi bi-download me-2"></i>
+                Export Excel
+              </Button>
+
+              <Button
+                variant="success"
+                onClick={() => setShowTeamImportModal(true)}
+              >
+                <i className="bi bi-upload me-2"></i>
+                Import Excel
+              </Button>
+
+              <Button variant="primary" onClick={handleCreateTeam}>
+                <i className="bi bi-plus-circle me-2"></i>
+                Tạo đội nhóm
+              </Button>
+            </div>
           </div>
         </Col>
       </Row>
@@ -196,6 +311,19 @@ function User_Management() {
         team={selectedTeam}
         users={users}
         onSaved={handleTeamSaved}
+      />
+
+      {/* Import Excel Modals */}
+      <UserImportModal
+        show={showUserImportModal}
+        onHide={() => setShowUserImportModal(false)}
+        onSubmit={handleUserImportSubmit}
+      />
+
+      <TeamImportModal
+        show={showTeamImportModal}
+        onHide={() => setShowTeamImportModal(false)}
+        onSubmit={handleTeamImportSubmit}
       />
     </Container>
   );

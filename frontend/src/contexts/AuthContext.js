@@ -68,7 +68,7 @@ export const AuthProvider = ({ children }) => {
     } else if (roleUpper === "ACCOUNTANT") {
       navigate("/accountant/page");
     } else if (roleUpper === "EMPLOYEE") {
-      navigate("/employee/page");
+      navigate("/employee/profile");
     } else {
       navigate("/unauthorized");
     }

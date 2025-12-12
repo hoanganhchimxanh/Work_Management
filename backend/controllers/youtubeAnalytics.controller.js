@@ -70,8 +70,7 @@ const syncChannelAnalytics = async (req, res, next) => {
       ids: `channel==${youtubeChannelId}`,
       startDate,
       endDate,
-      metrics:
-        "views,estimatedRevenue,estimatedMinutesWatched,subscribersGained,subscribersLost,likes,comments,shares",
+      metrics: "estimatedRevenue,subscribersGained,subscribersLost",
       dimensions: "day",
       sort: "day",
     });
@@ -81,17 +80,7 @@ const syncChannelAnalytics = async (req, res, next) => {
     // Lưu hoặc cập nhật analytics data
     const savedRecords = [];
     for (const row of rows) {
-      const [
-        date,
-        views,
-        revenue,
-        watchTime,
-        subGained,
-        subLost,
-        likes,
-        comments,
-        shares,
-      ] = row;
+      const [date, revenue, subGained, subLost] = row;
 
       const existingRecord = await ChannelAnalytics.findOne({
         channel: channelId,
@@ -99,14 +88,9 @@ const syncChannelAnalytics = async (req, res, next) => {
       });
 
       if (existingRecord) {
-        existingRecord.views = views;
         existingRecord.estimatedRevenue = revenue;
-        existingRecord.watchTime = watchTime;
         existingRecord.subscribersGained = subGained;
         existingRecord.subscribersLost = subLost;
-        existingRecord.likes = likes;
-        existingRecord.comments = comments;
-        existingRecord.shares = shares;
         existingRecord.syncedAt = new Date();
         await existingRecord.save();
         savedRecords.push(existingRecord);
@@ -114,14 +98,9 @@ const syncChannelAnalytics = async (req, res, next) => {
         const newRecord = await ChannelAnalytics.create({
           channel: channelId,
           date: new Date(date),
-          views,
           estimatedRevenue: revenue,
-          watchTime,
           subscribersGained: subGained,
           subscribersLost: subLost,
-          likes,
-          comments,
-          shares,
         });
         savedRecords.push(newRecord);
       }
@@ -161,8 +140,11 @@ const getChannelAnalytics = async (req, res, next) => {
       });
     }
 
-    // Chỉ owner hoặc admin mới xem được
-    if (req.user.role !== "ADMIN" && channel.owner.toString() !== userId) {
+    // Chỉ người quản lý hoặc admin mới xem được
+    if (
+      req.user.role !== "ADMIN" &&
+      channel.assignedUser.toString() !== userId
+    ) {
       return res.status(403).json({
         success: false,
         message: "Bạn không có quyền xem analytics của kênh này!",
@@ -185,24 +167,14 @@ const getChannelAnalytics = async (req, res, next) => {
     // Tính tổng
     const totals = analytics.reduce(
       (acc, record) => ({
-        totalViews: acc.totalViews + record.views,
         totalRevenue: acc.totalRevenue + record.estimatedRevenue,
-        totalWatchTime: acc.totalWatchTime + record.watchTime,
         totalSubsGained: acc.totalSubsGained + record.subscribersGained,
         totalSubsLost: acc.totalSubsLost + record.subscribersLost,
-        totalLikes: acc.totalLikes + record.likes,
-        totalComments: acc.totalComments + record.comments,
-        totalShares: acc.totalShares + record.shares,
       }),
       {
-        totalViews: 0,
         totalRevenue: 0,
-        totalWatchTime: 0,
         totalSubsGained: 0,
         totalSubsLost: 0,
-        totalLikes: 0,
-        totalComments: 0,
-        totalShares: 0,
       }
     );
 
@@ -243,23 +215,18 @@ const getAllChannelsAnalytics = async (req, res, next) => {
       {
         $group: {
           _id: "$channel",
-          totalViews: { $sum: "$views" },
           totalRevenue: { $sum: "$estimatedRevenue" },
-          totalWatchTime: { $sum: "$watchTime" },
           totalSubsGained: { $sum: "$subscribersGained" },
           totalSubsLost: { $sum: "$subscribersLost" },
-          totalLikes: { $sum: "$likes" },
-          totalComments: { $sum: "$comments" },
-          totalShares: { $sum: "$shares" },
           recordCount: { $sum: 1 },
         },
       },
     ]);
 
-    // Populate channel info
+    // Populate channel info với assignedUser
     const channelIds = analytics.map((a) => a._id);
     const channels = await Channel.find({ _id: { $in: channelIds } })
-      .populate("owner", "fullName personalEmail")
+      .populate("assignedUser", "fullName personalEmail role")
       .populate("network", "name")
       .lean();
 
@@ -272,34 +239,37 @@ const getAllChannelsAnalytics = async (req, res, next) => {
       const channel = channelMap[a._id.toString()];
       return {
         channelId: a._id,
-        channelName: channel?.name,
-        channelOwner: channel?.owner?.fullName,
-        network: channel?.network?.name,
-        ...a,
+        channelName: channel?.name || "N/A",
+        channelLink: channel?.link || "",
+        channelStatus: channel?.status || "N/A",
+        assignedUser: channel?.assignedUser
+          ? {
+              userId: channel.assignedUser._id,
+              fullName: channel.assignedUser.fullName,
+              personalEmail: channel.assignedUser.personalEmail,
+              role: channel.assignedUser.role,
+            }
+          : null,
+        assignedUserName: channel?.assignedUser?.fullName || "Chưa gán",
+        network: channel?.network?.name || "N/A",
+        totalRevenue: a.totalRevenue,
+        totalSubsGained: a.totalSubsGained,
+        totalSubsLost: a.totalSubsLost,
+        recordCount: a.recordCount,
       };
     });
 
     // Tính grand totals
     const grandTotals = result.reduce(
       (acc, item) => ({
-        totalViews: acc.totalViews + item.totalViews,
         totalRevenue: acc.totalRevenue + item.totalRevenue,
-        totalWatchTime: acc.totalWatchTime + item.totalWatchTime,
         totalSubsGained: acc.totalSubsGained + item.totalSubsGained,
         totalSubsLost: acc.totalSubsLost + item.totalSubsLost,
-        totalLikes: acc.totalLikes + item.totalLikes,
-        totalComments: acc.totalComments + item.totalComments,
-        totalShares: acc.totalShares + item.totalShares,
       }),
       {
-        totalViews: 0,
         totalRevenue: 0,
-        totalWatchTime: 0,
         totalSubsGained: 0,
         totalSubsLost: 0,
-        totalLikes: 0,
-        totalComments: 0,
-        totalShares: 0,
       }
     );
 
@@ -309,6 +279,10 @@ const getAllChannelsAnalytics = async (req, res, next) => {
         channels: result,
         grandTotals,
         channelCount: result.length,
+        dateRange: {
+          startDate,
+          endDate,
+        },
       },
     });
   } catch (err) {
@@ -353,8 +327,7 @@ const syncAllChannels = async (req, res, next) => {
           ids: `channel==${youtubeChannelId}`,
           startDate,
           endDate,
-          metrics:
-            "views,estimatedRevenue,estimatedMinutesWatched,subscribersGained,subscribersLost,likes,comments,shares",
+          metrics: "estimatedRevenue,subscribersGained,subscribersLost",
           dimensions: "day",
           sort: "day",
         });
@@ -362,17 +335,7 @@ const syncAllChannels = async (req, res, next) => {
         const rows = response.data.rows || [];
 
         for (const row of rows) {
-          const [
-            date,
-            views,
-            revenue,
-            watchTime,
-            subGained,
-            subLost,
-            likes,
-            comments,
-            shares,
-          ] = row;
+          const [date, revenue, subGained, subLost] = row;
 
           await ChannelAnalytics.findOneAndUpdate(
             {
@@ -380,14 +343,9 @@ const syncAllChannels = async (req, res, next) => {
               date: new Date(date),
             },
             {
-              views,
               estimatedRevenue: revenue,
-              watchTime,
               subscribersGained: subGained,
               subscribersLost: subLost,
-              likes,
-              comments,
-              shares,
               syncedAt: new Date(),
             },
             { upsert: true }

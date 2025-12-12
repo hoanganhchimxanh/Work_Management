@@ -13,8 +13,8 @@ const channelAnalyticsSchema = new mongoose.Schema(
     date: { type: Date, required: true },
 
     // Metrics
-    views: { type: Number, default: 0 },
     estimatedRevenue: { type: Number, default: 0 },
+    totalSubscribers: { type: Number, default: 0 },
     subscribersGained: { type: Number, default: 0 },
     subscribersLost: { type: Number, default: 0 },
 

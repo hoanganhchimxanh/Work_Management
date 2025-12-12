@@ -6,9 +6,10 @@ const Network = db.Network;
 // Thêm kênh mới
 const addNew = async (req, res, next) => {
   try {
-    const { name, link, owner, network, status, bktEnabled, bktDay } = req.body;
+    const { name, link, assignedUser, network, status, bktEnabled, bktDay } =
+      req.body;
 
-    if (!name || !link || !owner) {
+    if (!name || !link || !assignedUser) {
       return res.status(400).json({
         success: false,
         message: "Thiếu thông tin bắt buộc (name, link hoặc owner)!",
@@ -24,9 +25,9 @@ const addNew = async (req, res, next) => {
       });
     }
 
-    // Kiểm tra owner có tồn tại không (nếu có)
-    if (owner) {
-      const user = await User.findById(owner);
+    // Kiểm tra người quản lý có tồn tại không (nếu có)
+    if (assignedUser) {
+      const user = await User.findById(assignedUser);
       if (!user) {
         return res.status(404).json({
           success: false,
@@ -38,7 +39,7 @@ const addNew = async (req, res, next) => {
     const newChannel = await Channel.create({
       name,
       link,
-      owner: owner || null,
+      assignedUser: assignedUser || null,
       network: network || null,
       status: status || "ACTIVE",
       bktEnabled: bktEnabled || false,
@@ -46,7 +47,7 @@ const addNew = async (req, res, next) => {
     });
 
     const populatedChannel = await Channel.findById(newChannel._id)
-      .populate("owner", "fullName personalEmail")
+      .populate("assignedUser", "fullName personalEmail")
       .populate("network", "name")
       .lean();
 
@@ -64,7 +65,7 @@ const addNew = async (req, res, next) => {
 const getAll = async (req, res, next) => {
   try {
     const channels = await Channel.find()
-      .populate("owner", "fullName personalEmail")
+      .populate("assignedUser", "fullName personalEmail")
       .populate("network", "name status")
       .lean();
 
@@ -83,7 +84,7 @@ const getById = async (req, res, next) => {
     const channelId = req.params.id;
 
     const channel = await Channel.findById(channelId)
-      .populate("owner", "fullName personalEmail role")
+      .populate("assignedUser", "fullName personalEmail role")
       .populate("network", "name status")
       .lean();
 
@@ -107,7 +108,8 @@ const getById = async (req, res, next) => {
 const editChannelInfo = async (req, res, next) => {
   try {
     const channelId = req.params.id;
-    const { name, link, owner, network, status, bktEnabled, bktDay } = req.body;
+    const { name, link, assignedUser, network, status, bktEnabled, bktDay } =
+      req.body;
 
     const channel = await Channel.findById(channelId);
     if (!channel) {
@@ -120,7 +122,7 @@ const editChannelInfo = async (req, res, next) => {
     // Cập nhật các field
     if (name) channel.name = name;
     if (link !== undefined) channel.link = link;
-    if (owner !== undefined) channel.owner = owner;
+    if (assignedUser !== undefined) channel.assignedUser = assignedUser;
     if (network !== undefined) channel.network = network;
     if (status) channel.status = status;
     if (bktEnabled !== undefined) channel.bktEnabled = bktEnabled;
@@ -129,7 +131,7 @@ const editChannelInfo = async (req, res, next) => {
     await channel.save();
 
     const updatedChannel = await Channel.findById(channelId)
-      .populate("owner", "fullName personalEmail")
+      .populate("assignedUser", "fullName personalEmail")
       .populate("network", "name")
       .lean();
 
@@ -171,18 +173,18 @@ const deleteChannel = async (req, res, next) => {
 const assignOwner = async (req, res, next) => {
   try {
     const channelId = req.params.id;
-    const { ownerId } = req.body;
+    const { userId } = req.body;
 
-    if (!ownerId) {
+    if (!userId) {
       return res.status(400).json({
         success: false,
-        message: "Thiếu ownerId!",
+        message: "Thiếu userId!",
       });
     }
 
     const [channel, user] = await Promise.all([
       Channel.findById(channelId),
-      User.findById(ownerId),
+      User.findById(userId),
     ]);
 
     if (!channel) {
@@ -199,17 +201,17 @@ const assignOwner = async (req, res, next) => {
       });
     }
 
-    channel.owner = ownerId;
+    channel.assignedUser = userId;
     await channel.save();
 
     const updatedChannel = await Channel.findById(channelId)
-      .populate("owner", "fullName personalEmail")
+      .populate("assignedUser", "fullName personalEmail")
       .populate("network", "name")
       .lean();
 
     res.json({
       success: true,
-      message: "Gán owner thành công!",
+      message: "Gán assignedUser thành công!",
       data: updatedChannel,
     });
   } catch (err) {
@@ -220,9 +222,9 @@ const assignOwner = async (req, res, next) => {
 // Lấy các kênh theo owner
 const getByOwner = async (req, res, next) => {
   try {
-    const ownerId = req.params.ownerId;
+    const userId = req.params.userId;
 
-    const channels = await Channel.find({ owner: ownerId })
+    const channels = await Channel.find({ assignedUser: userId })
       .populate("network", "name status")
       .lean();
 
@@ -241,7 +243,7 @@ const getByNetwork = async (req, res, next) => {
     const networkId = req.params.networkId;
 
     const channels = await Channel.find({ network: networkId })
-      .populate("owner", "fullName personalEmail")
+      .populate("assignedUser", "fullName personalEmail")
       .lean();
 
     res.json({

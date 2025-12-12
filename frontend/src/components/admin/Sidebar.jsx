@@ -6,7 +6,6 @@ import {
   FileEarmarkTextFill,
   FileSlides,
   CashStack,
-  GearFill,
   BoxArrowRight,
   List,
 } from "react-bootstrap-icons";
@@ -39,7 +38,6 @@ const Sidebar = () => {
       icon: <FileEarmarkTextFill />,
       label: "Quản lý KPI & Công việc",
     },
-    { to: "/admin/settings", icon: <GearFill />, label: "Cài đặt" },
   ];
 
   const renderMenuItem = (item) => {

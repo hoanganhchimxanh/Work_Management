@@ -5,6 +5,8 @@ const Account = db.Account;
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const generator = require("generate-password");
+const sendEmail = require("../utils/mailer");
+const sendResetPassword = require("../utils/emailTemplates/resetPassword");
 
 // Đăng nhập
 const login = async (req, res, next) => {
@@ -213,13 +215,24 @@ const autoResetPassword = async (req, res, next) => {
     account.password = hashedPassword;
     await account.save();
 
-    // TODO: Gửi password mới cho nhân viên qua email
-    // Ví dụ: sendEmail(account.user.personalEmail, newPassword)
+    // Gửi password mới cho nhân viên qua email
+    try {
+      await sendEmail({
+        to: account.user.personalEmail,
+        subject: "Đặt lại mật khẩu - Hệ thống quản lý công việc",
+        text: "",
+        html: sendResetPassword(account.user.personalEmail, newPassword),
+        attachments: [],
+      });
+      console.log("Mật khẩu mới đã được gửi!");
+    } catch (mailErr) {
+      console.error("Gửi email thất bại:", mailErr);
+    }
 
     res.json({
       success: true,
       message: "Reset mật khẩu thành công!",
-      newPassword, // Chỉ nên gửi ra API nếu dùng cho testing. Thực tế nên gửi qua email.
+      newPassword,
     });
   } catch (err) {
     next(err);

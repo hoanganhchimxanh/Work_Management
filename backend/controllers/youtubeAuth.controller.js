@@ -36,7 +36,7 @@ const getAuthUrl = async (req, res, next) => {
       });
     }
 
-    if (channel.owner.toString() !== userId) {
+    if (channel.assignedUser.toString() !== userId) {
       return res.status(403).json({
         success: false,
         message: "Bạn không có quyền kết nối kênh này!",

@@ -1,12 +1,9 @@
 import React, { useState } from "react";
 import { NavLink } from "react-router-dom";
 import {
-  HouseDoorFill,
   PeopleFill,
   FileEarmarkTextFill,
   FileSlides,
-  CashStack,
-  GearFill,
   BoxArrowRight,
   List,
 } from "react-bootstrap-icons";
@@ -41,7 +38,6 @@ const Sidebar = () => {
       icon: <FileEarmarkTextFill />,
       label: "Quản lý KPI & Công việc",
     },
-    { to: "/employee/settings", icon: <GearFill />, label: "Cài đặt" },
   ];
 
   const renderMenuItem = (item) => {
@@ -124,7 +120,7 @@ const Sidebar = () => {
             flexShrink: 0, // Thêm để đảm bảo header không bị co lại
           }}
         >
-          {isOpen && <h4 className="mb-0 fw-bold">Admin Panel</h4>}
+          {isOpen && <h4 className="mb-0 fw-bold">Employee Panel</h4>}
           <Button
             variant="link"
             className="text-white p-0"

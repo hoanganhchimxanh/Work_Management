@@ -14,8 +14,9 @@ const channelSchema = new mongoose.Schema(
     // Network mà kênh này thuộc về
     network: { type: mongoose.Schema.Types.ObjectId, ref: "Network" },
 
-    // User quản lý kênh này
-    owner: {
+    // User được gán quản lý kênh này trong hệ thống nội bộ
+    // (Không phải chủ sở hữu thực tế trên YouTube)
+    assignedUser: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       default: null,
