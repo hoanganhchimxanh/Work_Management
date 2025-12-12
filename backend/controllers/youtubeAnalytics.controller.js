@@ -223,10 +223,10 @@ const getAllChannelsAnalytics = async (req, res, next) => {
       },
     ]);
 
-    // Populate channel info
+    // Populate channel info với assignedUser
     const channelIds = analytics.map((a) => a._id);
     const channels = await Channel.find({ _id: { $in: channelIds } })
-      .populate("assignedUser", "fullName personalEmail")
+      .populate("assignedUser", "fullName personalEmail role")
       .populate("network", "name")
       .lean();
 
@@ -239,10 +239,23 @@ const getAllChannelsAnalytics = async (req, res, next) => {
       const channel = channelMap[a._id.toString()];
       return {
         channelId: a._id,
-        channelName: channel?.name,
-        assignedUser: channel?.assignedUser?.fullName,
-        network: channel?.network?.name,
-        ...a,
+        channelName: channel?.name || "N/A",
+        channelLink: channel?.link || "",
+        channelStatus: channel?.status || "N/A",
+        assignedUser: channel?.assignedUser
+          ? {
+              userId: channel.assignedUser._id,
+              fullName: channel.assignedUser.fullName,
+              personalEmail: channel.assignedUser.personalEmail,
+              role: channel.assignedUser.role,
+            }
+          : null,
+        assignedUserName: channel?.assignedUser?.fullName || "Chưa gán",
+        network: channel?.network?.name || "N/A",
+        totalRevenue: a.totalRevenue,
+        totalSubsGained: a.totalSubsGained,
+        totalSubsLost: a.totalSubsLost,
+        recordCount: a.recordCount,
       };
     });
 
@@ -266,6 +279,10 @@ const getAllChannelsAnalytics = async (req, res, next) => {
         channels: result,
         grandTotals,
         channelCount: result.length,
+        dateRange: {
+          startDate,
+          endDate,
+        },
       },
     });
   } catch (err) {
