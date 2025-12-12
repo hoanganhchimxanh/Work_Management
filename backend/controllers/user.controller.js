@@ -9,6 +9,7 @@ const sendEmail = require("../utils/mailer");
 const XLSX = require("xlsx");
 const sendNewAccountTemplate = require("../utils/emailTemplates/sendNewAccount");
 const sendRejectTemplate = require("../utils/emailTemplates/sendReject");
+const { getIO } = require("../config/socket");
 
 // Tạo người dùng mới (bởi user tự đăng ký)
 const registerByUser = async (req, res, next) => {
@@ -41,8 +42,22 @@ const registerByUser = async (req, res, next) => {
       isFirstLogin: true,
     });
 
-    // TODO: Gửi thông báo cho admin về user mới cần duyệt
-    // sendNotificationToAdmin(newUser);
+    // Gửi thông báo cho admin về user mới cần duyệt qua Socket.IO
+    try {
+      const io = getIO();
+      io.to("admin-room").emit("new-user-registration", {
+        userId: newUser._id,
+        fullName: newUser.fullName,
+        personalEmail: newUser.personalEmail,
+        status: newUser.status,
+        createdAt: newUser.createdAt,
+        message: `Người dùng ${newUser.fullName} đã đăng ký và đang chờ phê duyệt`,
+      });
+      console.log("Socket notification sent to admin");
+    } catch (socketErr) {
+      console.error("Failed to send socket notification:", socketErr);
+      // Không cần throw error, chỉ log
+    }
 
     res.status(201).json({
       success: true,
