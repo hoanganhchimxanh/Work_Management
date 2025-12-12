@@ -1,3 +1,4 @@
+// AuthContext.js
 import React, { createContext, useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -41,14 +42,19 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem("token", token);
       axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
-      setUser({
+      const userData = {
         accountId: data.accountId,
         userId: data.user?.userId,
         role: data.user?.role,
         email: data.email,
         fullName: data.user?.fullName,
         isFirstLogin: data.user?.isFirstLogin,
-      });
+      };
+
+      setUser(userData);
+
+      // Lưu user vào localStorage để dùng cho notification và các chỗ khác
+      localStorage.setItem("user", JSON.stringify(userData));
 
       if (data.user?.isFirstLogin) {
         navigate(`/change-password/${data.accountId}`);
@@ -76,6 +82,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("user");
     delete axios.defaults.headers.common["Authorization"];
     setUser(null);
     navigate("/login");

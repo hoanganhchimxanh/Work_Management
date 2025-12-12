@@ -29,7 +29,7 @@ const PublicRoute = ({ children }) => {
     } else if (roleUpper === "ACCOUNTANT") {
       return <Navigate to="/accountant/page" replace />;
     } else if (roleUpper === "EMPLOYEE") {
-      return <Navigate to="/employee/page" replace />;
+      return <Navigate to="/employee/profile" replace />;
     }
   }
 
