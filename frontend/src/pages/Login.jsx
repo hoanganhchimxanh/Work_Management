@@ -76,6 +76,17 @@ function Login() {
                 />
               </Form.Group>
 
+              <div className="text-end mb-3">
+                <Button
+                  variant="link"
+                  onClick={() => navigate("/forgot-password")}
+                  className="p-0"
+                  style={{ textDecoration: "none" }}
+                >
+                  Quên mật khẩu?
+                </Button>
+              </div>
+
               <Button
                 variant="primary"
                 className="w-100 mb-3"

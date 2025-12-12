@@ -3,6 +3,7 @@ import { Routes, Route } from "react-router-dom";
 // Public pages
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
 import ChangePassword from "./pages/ChangePassword";
 import Unauthorized from "./pages/Unauthorized";
 
@@ -48,6 +49,7 @@ function App() {
         }
       />
       <Route path="/register" element={<Register />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/unauthorized" element={<Unauthorized />} />
       <Route path="/change-password/:accountId" element={<ChangePassword />} />
 

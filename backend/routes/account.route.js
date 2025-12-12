@@ -22,18 +22,12 @@ router.use(express.json());
 
 router.post("/register", register);
 router.post("/login", login);
-router.put(
+router.post("/auto-reset-password", autoResetPassword);
+router.post(
   "/change-password/:id",
   authenticateJWT,
   authorizeRoles("EMPLOYEE"),
   changePassword
-);
-
-router.put(
-  "/auto-reset-password",
-  authenticateJWT,
-  authorizeRoles("ADMIN"),
-  autoResetPassword
 );
 
 router.put(

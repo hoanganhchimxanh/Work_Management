@@ -218,8 +218,8 @@ const autoResetPassword = async (req, res, next) => {
     // Gửi password mới cho nhân viên qua email
     try {
       await sendEmail({
-        to: newUser.personalEmail,
-        subject: "Tài khoản đăng nhập hệ thống của bạn",
+        to: account.user.personalEmail,
+        subject: "Đặt lại mật khẩu - Hệ thống quản lý công việc",
         text: "",
         html: sendResetPassword(account.user.personalEmail, newPassword),
         attachments: [],
