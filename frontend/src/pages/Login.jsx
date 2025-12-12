@@ -96,7 +96,7 @@ function Login() {
                 {loading ? "Đang đăng nhập..." : "Đăng nhập"}
               </Button>
             </Form>
-            <p>Bạn chưa có tài khoản?</p>
+            <p className="text-center">Bạn chưa có tài khoản?</p>
             <Button
               variant="primary"
               className="w-100 mb-3"
