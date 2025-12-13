@@ -8,6 +8,57 @@ const generator = require("generate-password");
 const sendEmail = require("../utils/mailer");
 const sendResetPassword = require("../utils/emailTemplates/resetPassword");
 
+// Tạo tài khoản mới thủ công
+const createNewAccount = async (req, res, next) => {
+  try {
+    const { email, password, userId } = req.body;
+
+    // Validate tối thiểu
+    if (!email || !password || !userId) {
+      return res.status(400).json({
+        success: false,
+        message: "email, password và userId là bắt buộc",
+      });
+    }
+
+    // Check user tồn tại
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User không tồn tại",
+      });
+    }
+
+    // Check trùng email
+    const existed = await Account.findOne({ email });
+    if (existed) {
+      return res.status(400).json({
+        success: false,
+        message: "Email đã tồn tại",
+      });
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create account
+    const account = await Account.create({
+      email,
+      password: hashedPassword,
+      user: userId,
+      isActive: true,
+    });
+
+    res.status(201).json({
+      success: true,
+      data: account,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // Đăng nhập
 const login = async (req, res, next) => {
   try {
@@ -51,37 +102,24 @@ const login = async (req, res, next) => {
         accountId: account._id,
         userId: account.user._id,
         role: account.user.role,
-        email: account.email,
+        isActive: account.isActive,
+        isFirstLogin: account.user.isFirstLogin,
       },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
 
-    // Trả về thông tin account + user
+    // Trả về token
     res.json({
       success: true,
       token: token,
-      data: {
-        accountId: account._id,
-        email: account.email,
-        isActive: account.isActive,
-        user: account.user
-          ? {
-              userId: account.user._id,
-              fullName: account.user.fullName,
-              role: account.user.role,
-              personalEmail: account.user.personalEmail,
-              isFirstLogin: account.user.isFirstLogin,
-              status: account.user.status,
-            }
-          : null,
-      },
     });
   } catch (err) {
     next(err);
   }
 };
 
+// Đổi mật khẩu
 const changePassword = async (req, res, next) => {
   try {
     const account = await Account.findById(req.params.id).populate("user");
@@ -91,7 +129,7 @@ const changePassword = async (req, res, next) => {
     }
 
     const userIdParam = account.user._id.toString();
-    const userIdFromToken = req.user.userId;
+    const userIdFromToken = req.user.userId?.toString() || req.user.userId;
     const { newPassword } = req.body;
 
     if (!newPassword) {
@@ -128,7 +166,7 @@ const changePassword = async (req, res, next) => {
   }
 };
 
-// Đăng ký tài khoản (tạo mới bởi Admin hoặc hệ thống)
+// Đăng ký tài khoản cho người dùng (tạo mới bởi Admin hoặc hệ thống)
 const register = async (req, res, next) => {
   try {
     const { email, password, userId, isActive } = req.body;
@@ -278,6 +316,7 @@ const updateStatus = async (req, res, next) => {
 };
 
 module.exports = {
+  createNewAccount,
   login,
   changePassword,
   register,

@@ -1,9 +1,9 @@
 import React, { useContext } from "react";
+import { Navigate, Outlet } from "react-router-dom";
 import { AuthContext } from "../contexts/AuthContext";
-import { Navigate } from "react-router-dom";
 
 const PublicRoute = ({ children }) => {
-  const { user, loading } = useContext(AuthContext);
+  const { user, loading, redirectByRole } = useContext(AuthContext);
 
   if (loading) {
     return (
@@ -20,20 +20,18 @@ const PublicRoute = ({ children }) => {
     );
   }
 
-  // Nếu đã login, redirect về trang phù hợp với role
-  if (user && user.role) {
-    const roleUpper = user.role.toUpperCase();
-
-    if (roleUpper === "ADMIN") {
-      return <Navigate to="/admin/dashboard" replace />;
-    } else if (roleUpper === "ACCOUNTANT") {
-      return <Navigate to="/accountant/page" replace />;
-    } else if (roleUpper === "EMPLOYEE") {
-      return <Navigate to="/employee/page" replace />;
+  if (user) {
+    // Nếu là lần đầu đăng nhập
+    if (user.isFirstLogin) {
+      return <Navigate to={`/change-password/${user.accountId}`} replace />;
     }
+
+    // Chuyển hướng tới trang tùy thuộc vào quyền người dùng
+    redirectByRole(user.role);
+    return null;
   }
 
-  return children;
+  return children || <Outlet />;
 };
 
 export default PublicRoute;

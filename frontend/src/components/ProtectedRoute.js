@@ -20,11 +20,22 @@ const ProtectedRoute = () => {
     );
   }
 
+  // Nếu chưa đăng nhập -> redirect về login
   if (!user) {
     return <Navigate to="/login" replace />;
   }
 
-  return <Outlet />;
+  // Nếu đã đăng nhập
+  if (user && user.role) {
+    // Kiểm tra nếu là lần đăng nhập đầu tiên -> bắt buộc đổi mật khẩu
+    if (user.isFirstLogin) {
+      return <Navigate to={`/change-password/${user.accountId}`} replace />;
+    }
+
+    return <Outlet />;
+  }
+
+  return <Navigate to="/unauthorized" replace />;
 };
 
 export default ProtectedRoute;

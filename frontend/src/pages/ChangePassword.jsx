@@ -8,7 +8,7 @@ import "../styles/changePassword.style.css";
 function ChangePassword() {
   const { accountId } = useParams();
   const navigate = useNavigate();
-  const { user } = useContext(AuthContext);
+  const { logout } = useContext(AuthContext);
 
   const [password1, setPassword1] = useState("");
   const [password2, setPassword2] = useState("");
@@ -31,6 +31,7 @@ function ChangePassword() {
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
+
       await axios.patch(
         `http://localhost:9999/account/change-password/${accountId}`,
         { newPassword: password1 },
@@ -39,19 +40,10 @@ function ChangePassword() {
         }
       );
 
-      setSuccess("Đổi mật khẩu thành công! Đang chuyển về trang chủ...");
+      setSuccess("Đổi mật khẩu thành công! Đang chuyển về trang đăng nhập...");
+
       setTimeout(() => {
-        const roleUpper = user.role?.toUpperCase();
-        switch (roleUpper) {
-          case "ADMIN":
-            return navigate("/admin/dashboard");
-          case "ACCOUNTANT":
-            return navigate("/accountant/page");
-          case "EMPLOYEE":
-            return navigate("/employee/page");
-          default:
-            return navigate("/unauthorized");
-        }
+        logout(); // Xóa token và chuyển về /login
       }, 2000);
     } catch (err) {
       setError(err.response?.data?.message || "Đổi mật khẩu thất bại!");
@@ -83,6 +75,7 @@ function ChangePassword() {
                   onChange={(e) => setPassword1(e.target.value)}
                   required
                   minLength={6}
+                  disabled={loading || success}
                 />
               </Form.Group>
 
@@ -94,10 +87,15 @@ function ChangePassword() {
                   value={password2}
                   onChange={(e) => setPassword2(e.target.value)}
                   required
+                  disabled={loading || success}
                 />
               </Form.Group>
 
-              <Button type="submit" className="w-100 cp-btn" disabled={loading}>
+              <Button
+                type="submit"
+                className="w-100 cp-btn"
+                disabled={loading || success}
+              >
                 {loading ? "Đang xử lý..." : "Xác nhận đổi mật khẩu"}
               </Button>
             </Form>

@@ -15,11 +15,19 @@ export const AuthProvider = ({ children }) => {
       axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
       try {
         const payload = JSON.parse(atob(token.split(".")[1]));
+
         setUser({
           accountId: payload.accountId,
           userId: payload.userId,
           role: payload.role,
-          email: payload.email,
+          isActive: payload.isActive,
+          isFirstLogin: payload.isFirstLogin,
+        });
+
+        console.log("User set:", {
+          accountId: payload.accountId,
+          userId: payload.userId,
+          role: payload.role,
         });
       } catch (err) {
         console.error("Invalid token:", err);
@@ -36,26 +44,34 @@ export const AuthProvider = ({ children }) => {
         password,
       });
 
-      const { token, data } = res.data;
+      const { token } = res.data;
 
       localStorage.setItem("token", token);
       axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
-      setUser({
-        accountId: data.accountId,
-        userId: data.user?.userId,
-        role: data.user?.role,
-        email: data.email,
-        fullName: data.user?.fullName,
-        isFirstLogin: data.user?.isFirstLogin,
-      });
+      const payload = JSON.parse(atob(token.split(".")[1]));
 
-      if (data.user?.isFirstLogin) {
-        navigate(`/change-password/${data.accountId}`);
+      console.log("Token payload:", payload);
+
+      const userData = {
+        accountId: payload.accountId,
+        userId: payload.userId,
+        role: payload.role,
+        isActive: payload.isActive,
+        isFirstLogin: payload.isFirstLogin,
+      };
+
+      setUser(userData);
+
+      console.log("User data set:", userData);
+
+      if (payload.isFirstLogin) {
+        navigate(`/change-password/${payload.accountId}`);
       } else {
-        redirectByRole(data.user?.role);
+        redirectByRole(payload.role);
       }
     } catch (err) {
+      console.error("Login error:", err);
       throw err.response?.data?.message || "Đăng nhập thất bại";
     }
   };
@@ -64,13 +80,13 @@ export const AuthProvider = ({ children }) => {
     const roleUpper = role?.toUpperCase();
 
     if (roleUpper === "ADMIN") {
-      navigate("/admin/dashboard");
+      navigate("/admin/dashboard", { replace: true });
     } else if (roleUpper === "ACCOUNTANT") {
-      navigate("/accountant/page");
+      navigate("/accountant/page", { replace: true });
     } else if (roleUpper === "EMPLOYEE") {
-      navigate("/employee/profile");
+      navigate("/employee/profile", { replace: true });
     } else {
-      navigate("/unauthorized");
+      navigate("/unauthorized", { replace: true });
     }
   };
 
@@ -82,7 +98,9 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider
+      value={{ user, login, logout, loading, redirectByRole }}
+    >
       {children}
     </AuthContext.Provider>
   );

@@ -27,28 +27,63 @@ const authenticateJWT = (req, res, next) => {
 
   try {
     const payload = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = payload;
+
+    // ✅ GÁN PAYLOAD VÀO req.user
+    req.user = {
+      accountId: payload.accountId,
+      userId: payload.userId, // ✅ Lấy từ root level của token
+      role: payload.role,
+      isActive: payload.isActive,
+      isFirstLogin: payload.isFirstLogin,
+    };
+
+    // Debug log (có thể tắt sau khi fix xong)
+    console.log("=== JWT AUTHENTICATE DEBUG ===");
+    console.log("Token payload:", payload);
+    console.log("req.user assigned:", req.user);
+    console.log("userId:", req.user.userId);
+    console.log("==============================");
+
     next();
   } catch (err) {
     // 3. Xử lý lỗi xác thực JWT
+    console.error("JWT verification error:", err.message);
     return next(createError(401, err.message || "Token invalid or expired"));
   }
 };
 
 // Kiểm tra quyền dựa trên role
 const authorizeRoles = (allowedRoles) => {
-  if (!Array.isArray(allowedRoles)) allowedRoles = [allowedRoles];
+  // Đảm bảo allowedRoles luôn là array
+  if (!Array.isArray(allowedRoles)) {
+    allowedRoles = [allowedRoles];
+  }
+
   return (req, res, next) => {
+    // Kiểm tra req.user tồn tại
     if (!req.user || !req.user.role) {
-      return next(createError(500, "Thông tin người dùng không xác định!"));
+      console.error(
+        "Authorization failed: req.user không tồn tại hoặc thiếu role"
+      );
+      return next(createError(401, "Thông tin người dùng không xác định!"));
     }
 
-    const userRole = req.user.role;
+    const userRole = req.user.role.toUpperCase();
+    const normalizedAllowedRoles = allowedRoles.map((role) =>
+      role.toUpperCase()
+    );
 
-    if (allowedRoles.includes(userRole)) {
+    // Debug log
+    console.log("=== ROLE AUTHORIZATION DEBUG ===");
+    console.log("User role:", userRole);
+    console.log("Allowed roles:", normalizedAllowedRoles);
+    console.log("Has permission:", normalizedAllowedRoles.includes(userRole));
+    console.log("================================");
+
+    if (normalizedAllowedRoles.includes(userRole)) {
       next();
     } else {
-      return next(createError(403, "Không có quyền sử dụng, truy cập!"));
+      return next(createError(403, "Không có quyền truy cập tài nguyên này!"));
     }
   };
 };
