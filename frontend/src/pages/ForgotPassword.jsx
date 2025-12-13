@@ -19,7 +19,7 @@ function ForgotPassword() {
 
     try {
       const response = await fetch(
-        "http://localhost:9999/accounts/auto-reset-password",
+        "http://localhost:9999/account/auto-reset-password",
         {
           method: "POST",
           headers: {
