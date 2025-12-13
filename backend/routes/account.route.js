@@ -25,10 +25,10 @@ router.post("/create-new-account", createNewAccount);
 router.post("/register", register);
 router.post("/login", login);
 router.post("/auto-reset-password", autoResetPassword);
-router.post(
+router.patch(
   "/change-password/:id",
   authenticateJWT,
-  authorizeRoles("EMPLOYEE"),
+  authorizeRoles(["ACCOUNTANT", "EMPLOYEE"]),
   changePassword
 );
 

@@ -1,4 +1,3 @@
-// AuthContext.js
 import React, { createContext, useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -16,11 +15,22 @@ export const AuthProvider = ({ children }) => {
       axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
       try {
         const payload = JSON.parse(atob(token.split(".")[1]));
+
+        console.log("=== FRONTEND: Loading user from token ===");
+        console.log("Payload:", payload);
+
         setUser({
           accountId: payload.accountId,
           userId: payload.userId,
           role: payload.role,
-          email: payload.email,
+          isActive: payload.isActive,
+          isFirstLogin: payload.isFirstLogin,
+        });
+
+        console.log("User set:", {
+          accountId: payload.accountId,
+          userId: payload.userId,
+          role: payload.role,
         });
       } catch (err) {
         console.error("Invalid token:", err);
@@ -37,34 +47,46 @@ export const AuthProvider = ({ children }) => {
         password,
       });
 
-      const { token, data } = res.data;
+      const { token } = res.data;
+
+      console.log("=== FRONTEND: Login successful ===");
+      console.log("Token received");
 
       localStorage.setItem("token", token);
       axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
+      const payload = JSON.parse(atob(token.split(".")[1]));
+
+      console.log("Token payload:", payload);
+
       const userData = {
-        accountId: data.accountId,
-        userId: data.user?.userId,
-        role: data.user?.role,
-        email: data.email,
-        fullName: data.user?.fullName,
-        isFirstLogin: data.user?.isFirstLogin,
+        accountId: payload.accountId,
+        userId: payload.userId,
+        role: payload.role,
+        isActive: payload.isActive,
+        isFirstLogin: payload.isFirstLogin,
       };
 
       setUser(userData);
 
-      if (data.user?.isFirstLogin) {
-        navigate(`/change-password/${data.accountId}`);
+      console.log("User data set:", userData);
+
+      if (payload.isFirstLogin) {
+        console.log("First login detected, redirecting to change password");
+        navigate(`/change-password/${payload.accountId}`);
       } else {
-        redirectByRole(data.user?.role);
+        redirectByRole(payload.role);
       }
     } catch (err) {
+      console.error("Login error:", err);
       throw err.response?.data?.message || "Đăng nhập thất bại";
     }
   };
 
   const redirectByRole = (role) => {
     const roleUpper = role?.toUpperCase();
+
+    console.log("Redirecting by role:", roleUpper);
 
     if (roleUpper === "ADMIN") {
       navigate("/admin/dashboard");
