@@ -16,9 +16,6 @@ export const AuthProvider = ({ children }) => {
       try {
         const payload = JSON.parse(atob(token.split(".")[1]));
 
-        console.log("=== FRONTEND: Loading user from token ===");
-        console.log("Payload:", payload);
-
         setUser({
           accountId: payload.accountId,
           userId: payload.userId,
@@ -49,9 +46,6 @@ export const AuthProvider = ({ children }) => {
 
       const { token } = res.data;
 
-      console.log("=== FRONTEND: Login successful ===");
-      console.log("Token received");
-
       localStorage.setItem("token", token);
       axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
@@ -72,7 +66,6 @@ export const AuthProvider = ({ children }) => {
       console.log("User data set:", userData);
 
       if (payload.isFirstLogin) {
-        console.log("First login detected, redirecting to change password");
         navigate(`/change-password/${payload.accountId}`);
       } else {
         redirectByRole(payload.role);
@@ -86,16 +79,14 @@ export const AuthProvider = ({ children }) => {
   const redirectByRole = (role) => {
     const roleUpper = role?.toUpperCase();
 
-    console.log("Redirecting by role:", roleUpper);
-
     if (roleUpper === "ADMIN") {
-      navigate("/admin/dashboard");
+      navigate("/admin/dashboard", { replace: true });
     } else if (roleUpper === "ACCOUNTANT") {
-      navigate("/accountant/page");
+      navigate("/accountant/page", { replace: true });
     } else if (roleUpper === "EMPLOYEE") {
-      navigate("/employee/profile");
+      navigate("/employee/profile", { replace: true });
     } else {
-      navigate("/unauthorized");
+      navigate("/unauthorized", { replace: true });
     }
   };
 
@@ -107,7 +98,9 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider
+      value={{ user, login, logout, loading, redirectByRole }}
+    >
       {children}
     </AuthContext.Provider>
   );
