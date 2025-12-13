@@ -8,6 +8,57 @@ const generator = require("generate-password");
 const sendEmail = require("../utils/mailer");
 const sendResetPassword = require("../utils/emailTemplates/resetPassword");
 
+// Tạo tài khoản mới thủ công
+const createNewAccount = async (req, res, next) => {
+  try {
+    const { email, password, userId } = req.body;
+
+    // Validate tối thiểu
+    if (!email || !password || !userId) {
+      return res.status(400).json({
+        success: false,
+        message: "email, password và userId là bắt buộc",
+      });
+    }
+
+    // Check user tồn tại
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User không tồn tại",
+      });
+    }
+
+    // Check trùng email
+    const existed = await Account.findOne({ email });
+    if (existed) {
+      return res.status(400).json({
+        success: false,
+        message: "Email đã tồn tại",
+      });
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create account
+    const account = await Account.create({
+      email,
+      password: hashedPassword,
+      user: userId,
+      isActive: true,
+    });
+
+    res.status(201).json({
+      success: true,
+      data: account,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // Đăng nhập
 const login = async (req, res, next) => {
   try {
@@ -52,6 +103,7 @@ const login = async (req, res, next) => {
         userId: account.user._id,
         role: account.user.role,
         email: account.email,
+        isFirstLogin: account.user.isFirstLogin,
       },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
@@ -278,6 +330,7 @@ const updateStatus = async (req, res, next) => {
 };
 
 module.exports = {
+  createNewAccount,
   login,
   changePassword,
   register,

@@ -1,6 +1,7 @@
 const express = require("express");
 const multer = require("multer");
 const {
+  createNewUser,
   registerByUser,
   createByAdmin,
   approveUser,
@@ -51,6 +52,7 @@ router.use(logRequestTime);
 router.use(express.json());
 
 // ========== BASIC ROUTES ==========
+router.post("/create-new-user", createNewUser);
 router.post("/register", registerByUser);
 router.post(
   "/create-by-admin",

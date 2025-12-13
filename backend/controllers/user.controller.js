@@ -11,6 +11,47 @@ const sendNewAccountTemplate = require("../utils/emailTemplates/sendNewAccount")
 const sendRejectTemplate = require("../utils/emailTemplates/sendReject");
 // const { getIO } = require("../config/socket");
 
+// Tạo người dùng mới thủ công
+const createNewUser = async (req, res, next) => {
+  try {
+    const { fullName, personalEmail, role, team } = req.body;
+
+    // Validate tối thiểu
+    if (!fullName || !personalEmail) {
+      return res.status(400).json({
+        success: false,
+        message: "fullName và personalEmail là bắt buộc",
+      });
+    }
+
+    // Check trùng email
+    const existed = await User.findOne({ personalEmail });
+    if (existed) {
+      return res.status(400).json({
+        success: false,
+        message: "Email đã tồn tại",
+      });
+    }
+
+    // Create user
+    const user = await User.create({
+      fullName,
+      personalEmail,
+      role: role || "EMPLOYEE",
+      status: "ACTIVE",
+      team: team || null,
+      isFirstLogin: true,
+    });
+
+    res.status(201).json({
+      success: true,
+      data: user,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // Tạo người dùng mới (bởi user tự đăng ký)
 const registerByUser = async (req, res, next) => {
   try {
@@ -770,6 +811,7 @@ const exportUserTemplate = async (req, res, next) => {
 };
 
 module.exports = {
+  createNewUser,
   registerByUser,
   createByAdmin,
   approveUser,

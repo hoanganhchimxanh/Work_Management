@@ -1,5 +1,6 @@
 const express = require("express");
 const {
+  createNewAccount,
   login,
   changePassword,
   register,
@@ -20,6 +21,7 @@ const logRequestTime = (req, res, next) => {
 router.use(logRequestTime);
 router.use(express.json());
 
+router.post("/create-new-account", createNewAccount);
 router.post("/register", register);
 router.post("/login", login);
 router.post("/auto-reset-password", autoResetPassword);
