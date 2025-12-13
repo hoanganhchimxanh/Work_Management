@@ -6,14 +6,10 @@ require("dotenv").config();
 const cors = require("cors");
 const connectDB = require("./config/db");
 const errorHandler = require("./middlewares/errorHandler");
-// const { initializeSocket } = require("./config/socket");
 
 // Express web server
 const app = express();
 const server = http.createServer(app);
-
-// Initialize Socket.IO
-// const io = initializeSocket(server);
 
 // --- Middlewares ---
 app.use(cors());
@@ -67,7 +63,6 @@ const startServer = async () => {
     await connectDB();
     server.listen(PORT, HOST, () => {
       console.log(`Server running at http://${HOST}:${PORT}/`);
-      // console.log(`Socket.IO initialized`);
     });
   } catch (error) {
     console.error("Failed to connect to DB:", error);
