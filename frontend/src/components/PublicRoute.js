@@ -20,8 +20,14 @@ const PublicRoute = ({ children }) => {
     );
   }
 
-  // Nếu đã login, redirect về trang phù hợp với role
+  // Nếu đã login
   if (user && user.role) {
+    // Kiểm tra nếu là lần đăng nhập đầu tiên
+    if (user.isFirstLogin) {
+      return <Navigate to={`/change-password/${user.accountId}`} replace />;
+    }
+
+    // Redirect về trang phù hợp với role
     const roleUpper = user.role.toUpperCase();
 
     if (roleUpper === "ADMIN") {

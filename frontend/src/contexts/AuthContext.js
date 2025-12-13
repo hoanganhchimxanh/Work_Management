@@ -53,9 +53,6 @@ export const AuthProvider = ({ children }) => {
 
       setUser(userData);
 
-      // Lưu user vào localStorage để dùng cho notification và các chỗ khác
-      localStorage.setItem("user", JSON.stringify(userData));
-
       if (data.user?.isFirstLogin) {
         navigate(`/change-password/${data.accountId}`);
       } else {
@@ -82,7 +79,6 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     localStorage.removeItem("token");
-    localStorage.removeItem("user");
     delete axios.defaults.headers.common["Authorization"];
     setUser(null);
     navigate("/login");
