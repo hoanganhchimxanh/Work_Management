@@ -32,31 +32,22 @@ import PublicRoute from "./components/PublicRoute";
 function App() {
   return (
     <Routes>
-      <Route
-        path="/login"
-        element={
-          <PublicRoute>
-            <Login />
-          </PublicRoute>
-        }
-      />
-      <Route
-        path="/"
-        element={
-          <PublicRoute>
-            <Login />
-          </PublicRoute>
-        }
-      />
-      <Route path="/register" element={<Register />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/unauthorized" element={<Unauthorized />} />
-      <Route path="/change-password/:accountId" element={<ChangePassword />} />
+      {/* PUBLIC ROUTES - Ai cũng truy cập được */}
+      <Route element={<PublicRoute />}>
+        <Route path="/" element={<Login />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/unauthorized" element={<Unauthorized />} />
+        <Route
+          path="/change-password/:accountId"
+          element={<ChangePassword />}
+        />
+      </Route>
 
-      {/* PROTECTED */}
-
-      {/* Admin pages */}
+      {/* PROTECTED ROUTES - Chỉ cho người đã đăng nhập */}
       <Route element={<ProtectedRoute />}>
+        {/* Admin pages */}
         <Route
           path="/admin/*"
           element={
