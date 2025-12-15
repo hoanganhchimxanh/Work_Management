@@ -1,7 +1,9 @@
 import React from "react";
 import { Card, ListGroup, Row, Col, Badge, Button } from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
 
 function AccountCard({ userData, accountId }) {
+  const navigate = useNavigate();
   const getRoleBadge = (role) => {
     const roleMap = {
       ADMIN: { variant: "danger", text: "Quản trị viên" },
@@ -128,7 +130,7 @@ function AccountCard({ userData, accountId }) {
           <div className="mt-3">
             <Button
               variant="outline-primary"
-              href={`/change-password/${accountId}`}
+              onClick={() => navigate(`/change-password/${accountId}`)}
               className="w-100"
             >
               <i className="bi bi-key me-2"></i>
