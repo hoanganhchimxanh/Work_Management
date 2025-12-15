@@ -37,13 +37,6 @@ const authenticateJWT = (req, res, next) => {
       isFirstLogin: payload.isFirstLogin,
     };
 
-    // Debug log (có thể tắt sau khi fix xong)
-    console.log("=== JWT AUTHENTICATE DEBUG ===");
-    console.log("Token payload:", payload);
-    console.log("req.user assigned:", req.user);
-    console.log("userId:", req.user.userId);
-    console.log("==============================");
-
     next();
   } catch (err) {
     // 3. Xử lý lỗi xác thực JWT
@@ -72,13 +65,6 @@ const authorizeRoles = (allowedRoles) => {
     const normalizedAllowedRoles = allowedRoles.map((role) =>
       role.toUpperCase()
     );
-
-    // Debug log
-    console.log("=== ROLE AUTHORIZATION DEBUG ===");
-    console.log("User role:", userRole);
-    console.log("Allowed roles:", normalizedAllowedRoles);
-    console.log("Has permission:", normalizedAllowedRoles.includes(userRole));
-    console.log("================================");
 
     if (normalizedAllowedRoles.includes(userRole)) {
       next();

@@ -34,7 +34,7 @@ const Sidebar = () => {
     },
     { to: "/employee/channels", icon: <FileSlides />, label: "Quản lý kênh" },
     {
-      to: "/employee/kpi_jobs",
+      to: "/employee/my_kpi_tasks",
       icon: <FileEarmarkTextFill />,
       label: "Quản lý KPI & Công việc",
     },

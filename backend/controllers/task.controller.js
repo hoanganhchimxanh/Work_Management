@@ -241,7 +241,21 @@ const getMyTasks = async (req, res, next) => {
   try {
     const userId = req.user.userId; // Từ JWT token
 
-    const tasks = await Task.find({ assignedToUser: userId })
+    // Lấy thông tin user để biết team
+    const user = await User.findById(userId).select("team").lean();
+
+    // Tìm tasks được gán cho user HOẶC team của user
+    const filter = {
+      $or: [{ assignedToUser: userId }],
+    };
+
+    // Nếu user thuộc team nào thì thêm điều kiện tìm theo team
+    if (user && user.team) {
+      filter.$or.push({ assignedToTeam: user.team });
+    }
+
+    const tasks = await Task.find(filter)
+      .populate("assignedToUser", "fullName personalEmail role")
       .populate("assignedToTeam", "name")
       .sort({ createdAt: -1 })
       .lean();

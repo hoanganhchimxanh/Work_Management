@@ -11,7 +11,7 @@ import Unauthorized from "./pages/Unauthorized";
 import AdminLayout from "./layouts/AdminLayout";
 import Dashboard from "./pages/admin/Dashboard";
 import UserManagement from "./pages/admin/User_Management";
-import KPIJobManagement from "./pages/admin/KPI_Job_Management";
+import KPITaskManagement from "./pages/admin/KPI_Task_Management";
 import NetworkManagement from "./pages/admin/Network_Management";
 import ChannelManagement from "./pages/admin/Channel_Management";
 
@@ -19,7 +19,7 @@ import ChannelManagement from "./pages/admin/Channel_Management";
 import EmployeeLayout from "./layouts/EmployeeLayout";
 import Profile from "./pages/employee/Profile";
 import EmployeeChannelManagement from "./pages/employee/Channel_Management";
-import EmployeeKPIJobManagement from "./pages/employee/KPI_Job_Management";
+import MyKPITasks from "./pages/employee/MyKPITasks";
 
 // Accountant pages
 import AccountantPage from "./pages/accountant/AccountantPage";
@@ -39,14 +39,15 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/unauthorized" element={<Unauthorized />} />
-        <Route
-          path="/change-password/:accountId"
-          element={<ChangePassword />}
-        />
       </Route>
 
       {/* PROTECTED ROUTES - Chỉ cho người đã đăng nhập */}
       <Route element={<ProtectedRoute />}>
+        <Route
+          path="/change-password/:accountId"
+          element={<ChangePassword />}
+        />
+
         {/* Admin pages */}
         <Route
           path="/admin/*"
@@ -58,7 +59,7 @@ function App() {
         >
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="users" element={<UserManagement />} />
-          <Route path="kpi_jobs" element={<KPIJobManagement />} />
+          <Route path="kpi_tasks" element={<KPITaskManagement />} />
           <Route path="networks" element={<NetworkManagement />} />
           <Route path="channels" element={<ChannelManagement />} />
         </Route>
@@ -84,7 +85,7 @@ function App() {
         >
           <Route path="profile" element={<Profile />} />
           <Route path="channels" element={<EmployeeChannelManagement />} />
-          <Route path="kpi_jobs" element={<EmployeeKPIJobManagement />} />
+          <Route path="my_kpi_tasks" element={<MyKPITasks />} />
         </Route>
       </Route>
     </Routes>

@@ -116,7 +116,7 @@ const handleCallback = async (req, res, next) => {
     const youtubeChannel = channelsResponse.data.items[0];
 
     // Lưu hoặc cập nhật auth tokens
-    const expiresAt = new Date(Date.now() + tokens.expiry_date);
+    const expiresAt = new Date(tokens.expiry_date);
 
     const existingAuth = await YoutubeAuth.findOne({
       user: userId,
@@ -146,10 +146,10 @@ const handleCallback = async (req, res, next) => {
     }
 
     // Redirect về frontend với success message
-    // res.redirect(`${process.env.FRONTEND_URL}/dashboard/channels?auth=success`);
+    res.redirect(`http://localhost:3000/user/channels?auth=success`);
   } catch (err) {
     console.error("OAuth callback error:", err);
-    // res.redirect(`${process.env.FRONTEND_URL}/dashboard/channels?auth=error`);
+    res.redirect(`http://localhost:3000/user/channels?auth=error`);
   }
 };
 
@@ -158,29 +158,63 @@ const checkAuthStatus = async (req, res, next) => {
   try {
     const { channelId } = req.params;
     const userId = req.user.userId;
-
     const auth = await YoutubeAuth.findOne({
       user: userId,
       channel: channelId,
     }).lean();
 
     if (!auth) {
+      // Trường hợp A: Không tìm thấy document nào khớp
       return res.json({
         success: true,
         data: {
           isAuthorized: false,
+          reason: "NOT_FOUND",
+          message: "Không tìm thấy thông tin Authorization cho kênh này.",
         },
       });
-    }
+    } // 2. Kiểm tra trạng thái Token có phải là ACTIVE không
 
-    // Kiểm tra token có hết hạn không
-    const isExpired = new Date() >= new Date(auth.expiresAt);
+    if (auth.status !== "ACTIVE") {
+      // Trường hợp B: Trạng thái không phải là ACTIVE (ví dụ: REVOKED, EXPIRED, PENDING)
+      return res.json({
+        success: true,
+        data: {
+          isAuthorized: false,
+          reason: "INACTIVE_STATUS",
+          status: auth.status,
+          message: `Trạng thái Authorization hiện tại là: ${auth.status}.`,
+          expiresAt: auth.expiresAt,
+          lastSyncedAt: auth.lastSyncedAt,
+        },
+      });
+    } // 3. Kiểm tra Token có hết hạn không
 
-    res.json({
+    const now = new Date();
+    const expiresAt = new Date(auth.expiresAt);
+    const isExpired = now >= expiresAt;
+
+    if (isExpired) {
+      // Trường hợp C: Token đã hết hạn
+      return res.json({
+        success: true,
+        data: {
+          isAuthorized: false,
+          reason: "TOKEN_EXPIRED",
+          status: auth.status,
+          message: `Access Token đã hết hạn vào lúc ${expiresAt.toISOString()}. Cần Refresh Token.`,
+          expiresAt: auth.expiresAt,
+          lastSyncedAt: auth.lastSyncedAt,
+        },
+      });
+    } // Trường hợp D: Authorized thành công (ACTIVE và CHƯA hết hạn)
+
+    return res.json({
       success: true,
       data: {
-        isAuthorized: auth.status === "ACTIVE" && !isExpired,
+        isAuthorized: true,
         status: auth.status,
+        message: "Authorization thành công và Access Token còn hiệu lực.",
         expiresAt: auth.expiresAt,
         lastSyncedAt: auth.lastSyncedAt,
       },
@@ -321,35 +355,3 @@ module.exports = {
   getAuthorizedChannels,
   getAllAuthorizedChannels,
 };
-
-// youtubeAuthSchema.pre("save", function (next) {
-//   if (this.isModified("accessToken")) {
-//     this.accessToken = CryptoJS.AES.encrypt(
-//       this.accessToken,
-//       process.env.ENCRYPTION_KEY
-//     ).toString();
-//   }
-//   if (this.isModified("refreshToken")) {
-//     this.refreshToken = CryptoJS.AES.encrypt(
-//       this.refreshToken,
-//       process.env.ENCRYPTION_KEY
-//     ).toString();
-//   }
-//   next();
-// });
-
-// youtubeAuthSchema.methods.getDecryptedAccessToken = function () {
-//   const bytes = CryptoJS.AES.decrypt(
-//     this.accessToken,
-//     process.env.ENCRYPTION_KEY
-//   );
-//   return bytes.toString(CryptoJS.enc.Utf8);
-// };
-
-// youtubeAuthSchema.methods.getDecryptedRefreshToken = function () {
-//   const bytes = CryptoJS.AES.decrypt(
-//     this.refreshToken,
-//     process.env.ENCRYPTION_KEY
-//   );
-//   return bytes.toString(CryptoJS.enc.Utf8);
-// };
