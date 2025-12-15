@@ -239,7 +239,21 @@ const getMyKPIs = async (req, res, next) => {
   try {
     const userId = req.user.userId; // Từ JWT token
 
-    const kpis = await KPI.find({ user: userId })
+    // Lấy thông tin user để biết team
+    const user = await User.findById(userId).select("team").lean();
+
+    // Tìm KPIs được gán cho user HOẶC team của user
+    const filter = {
+      $or: [{ user: userId }],
+    };
+
+    // Nếu user thuộc team nào thì thêm điều kiện tìm theo team
+    if (user && user.team) {
+      filter.$or.push({ team: user.team });
+    }
+
+    const kpis = await KPI.find(filter)
+      .populate("user", "fullName personalEmail role")
       .populate("team", "name")
       .sort({ startDate: -1 })
       .lean();
