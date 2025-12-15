@@ -321,35 +321,3 @@ module.exports = {
   getAuthorizedChannels,
   getAllAuthorizedChannels,
 };
-
-// youtubeAuthSchema.pre("save", function (next) {
-//   if (this.isModified("accessToken")) {
-//     this.accessToken = CryptoJS.AES.encrypt(
-//       this.accessToken,
-//       process.env.ENCRYPTION_KEY
-//     ).toString();
-//   }
-//   if (this.isModified("refreshToken")) {
-//     this.refreshToken = CryptoJS.AES.encrypt(
-//       this.refreshToken,
-//       process.env.ENCRYPTION_KEY
-//     ).toString();
-//   }
-//   next();
-// });
-
-// youtubeAuthSchema.methods.getDecryptedAccessToken = function () {
-//   const bytes = CryptoJS.AES.decrypt(
-//     this.accessToken,
-//     process.env.ENCRYPTION_KEY
-//   );
-//   return bytes.toString(CryptoJS.enc.Utf8);
-// };
-
-// youtubeAuthSchema.methods.getDecryptedRefreshToken = function () {
-//   const bytes = CryptoJS.AES.decrypt(
-//     this.refreshToken,
-//     process.env.ENCRYPTION_KEY
-//   );
-//   return bytes.toString(CryptoJS.enc.Utf8);
-// };
