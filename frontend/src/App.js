@@ -39,14 +39,15 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/unauthorized" element={<Unauthorized />} />
-        <Route
-          path="/change-password/:accountId"
-          element={<ChangePassword />}
-        />
       </Route>
 
       {/* PROTECTED ROUTES - Chỉ cho người đã đăng nhập */}
       <Route element={<ProtectedRoute />}>
+        <Route
+          path="/change-password/:accountId"
+          element={<ChangePassword />}
+        />
+
         {/* Admin pages */}
         <Route
           path="/admin/*"
