@@ -34,7 +34,7 @@ const Sidebar = () => {
     { to: "/admin/channels", icon: <FileSlides />, label: "Quản lý kênh" },
     { to: "/admin/networks", icon: <CashStack />, label: "Quản lý Network" },
     {
-      to: "/admin/kpi_jobs",
+      to: "/admin/kpi_tasks",
       icon: <FileEarmarkTextFill />,
       label: "Quản lý KPI & Công việc",
     },

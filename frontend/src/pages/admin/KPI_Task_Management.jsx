@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { Container, Row, Col, Button, Alert, Tabs, Tab } from "react-bootstrap";
 import axios from "axios";
-import KPITable from "../../components/admin/kpiJobManagement/KPITable";
-import TaskTable from "../../components/admin/kpiJobManagement/TaskTable";
-import KPIModal from "../../components/admin/kpiJobManagement/KPIModal";
-import TaskModal from "../../components/admin/kpiJobManagement/TaskModal";
+import KPITable from "../../components/admin/kpiTaskManagement/KPITable";
+import TaskTable from "../../components/admin/kpiTaskManagement/TaskTable";
+import KPIModal from "../../components/admin/kpiTaskManagement/KPIModal";
+import TaskModal from "../../components/admin/kpiTaskManagement/TaskModal";
 
-function KPI_Job_Management() {
+function KPI_Task_Management() {
   // KPIs state
   const [kpis, setKPIs] = useState([]);
   const [loadingKPIs, setLoadingKPIs] = useState(true);
@@ -240,4 +240,4 @@ function KPI_Job_Management() {
   );
 }
 
-export default KPI_Job_Management;
+export default KPI_Task_Management;
