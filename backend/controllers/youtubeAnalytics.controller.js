@@ -131,8 +131,12 @@ const getChannelAnalytics = async (req, res, next) => {
     const { startDate, endDate } = req.query;
     const userId = req.user.userId;
 
-    // Kiểm tra quyền truy cập
-    const channel = await Channel.findById(channelId);
+    // Bước 1: Lấy thông tin channel với populate trong 1 query
+    const channel = await Channel.findById(channelId)
+      .populate("assignedUser", "fullName personalEmail role team")
+      .populate("network", "profileAdsenseId emailAddress")
+      .lean();
+
     if (!channel) {
       return res.status(404).json({
         success: false,
@@ -140,10 +144,11 @@ const getChannelAnalytics = async (req, res, next) => {
       });
     }
 
-    // Chỉ người quản lý hoặc admin mới xem được
+    // Kiểm tra quyền truy cập
     if (
       req.user.role !== "ADMIN" &&
-      channel.assignedUser.toString() !== userId
+      req.user.role !== "ACCOUNTANT" &&
+      channel.assignedUser?._id.toString() !== userId
     ) {
       return res.status(403).json({
         success: false,
@@ -151,7 +156,29 @@ const getChannelAnalytics = async (req, res, next) => {
       });
     }
 
-    // Build query
+    // Bước 2: Lấy thông tin team nếu có (1 query)
+    let teamInfo = null;
+    if (channel.assignedUser?.team) {
+      const team = await db.Team.findById(channel.assignedUser.team)
+        .select("name")
+        .lean();
+      if (team) {
+        teamInfo = {
+          teamId: team._id,
+          teamName: team.name,
+        };
+      }
+    }
+
+    // Bước 3: Lấy channel managers (1 query)
+    const channelManagers = await ChannelManager.find({
+      channel: channelId,
+      status: "ACTIVE",
+    })
+      .select("managerEmail role")
+      .lean();
+
+    // Bước 4: Aggregate analytics data với totals trong 1 query
     const query = { channel: channelId };
     if (startDate && endDate) {
       query.date = {
@@ -160,30 +187,94 @@ const getChannelAnalytics = async (req, res, next) => {
       };
     }
 
-    const analytics = await ChannelAnalytics.find(query)
-      .sort({ date: 1 })
-      .lean();
+    const [analytics, totalsResult] = await Promise.all([
+      // Lấy chi tiết analytics
+      ChannelAnalytics.find(query).sort({ date: 1 }).lean(),
 
-    // Tính tổng
-    const totals = analytics.reduce(
-      (acc, record) => ({
-        totalRevenue: acc.totalRevenue + record.estimatedRevenue,
-        totalSubsGained: acc.totalSubsGained + record.subscribersGained,
-        totalSubsLost: acc.totalSubsLost + record.subscribersLost,
-      }),
-      {
-        totalRevenue: 0,
-        totalSubsGained: 0,
-        totalSubsLost: 0,
-      }
-    );
+      // Tính tổng bằng aggregation (hiệu quả hơn reduce)
+      ChannelAnalytics.aggregate([
+        { $match: query },
+        {
+          $group: {
+            _id: null,
+            totalRevenue: { $sum: "$estimatedRevenue" },
+            totalSubsGained: { $sum: "$subscribersGained" },
+            totalSubsLost: { $sum: "$subscribersLost" },
+            recordCount: { $sum: 1 },
+          },
+        },
+      ]),
+    ]);
 
+    const totals = totalsResult[0] || {
+      totalRevenue: 0,
+      totalSubsGained: 0,
+      totalSubsLost: 0,
+      recordCount: 0,
+    };
+
+    // Bước 5: Format response
     res.json({
       success: true,
       data: {
-        analytics,
-        totals,
-        recordCount: analytics.length,
+        // Thông tin kênh
+        channel: {
+          channelId: channel._id,
+          channelName: channel.name,
+          channelLink: channel.link,
+          channelStatus: channel.status,
+          isMainChannel: channel.isMainChannel,
+          isBrandAccount: channel.isBrandAccount,
+        },
+
+        // Thông tin nhân viên quản lý
+        assignedUser: channel.assignedUser
+          ? {
+              userId: channel.assignedUser._id,
+              fullName: channel.assignedUser.fullName,
+              personalEmail: channel.assignedUser.personalEmail,
+              role: channel.assignedUser.role,
+            }
+          : null,
+
+        // Thông tin team
+        team: teamInfo,
+
+        // Thông tin network
+        network: channel.network
+          ? {
+              networkId: channel.network._id,
+              profileAdsenseId: channel.network.profileAdsenseId,
+              emailAddress: channel.network.emailAddress,
+            }
+          : null,
+
+        // Tài khoản quản lý kênh
+        channelManagers: channelManagers.map((m) => ({
+          managerEmail: m.managerEmail,
+          role: m.role,
+        })),
+
+        // Analytics data theo ngày
+        analytics: analytics.map((record) => ({
+          date: record.date,
+          estimatedRevenue: record.estimatedRevenue,
+          subscribersGained: record.subscribersGained,
+          subscribersLost: record.subscribersLost,
+          totalSubscribers: record.totalSubscribers,
+        })),
+
+        // Tổng kết
+        totals: {
+          totalRevenue: totals.totalRevenue,
+          totalSubsGained: totals.totalSubsGained,
+          totalSubsLost: totals.totalSubsLost,
+          netSubsChange: totals.totalSubsGained - totals.totalSubsLost,
+        },
+
+        // Metadata
+        recordCount: totals.recordCount,
+        dateRange: startDate && endDate ? { startDate, endDate } : null,
       },
     });
   } catch (err) {
@@ -203,7 +294,8 @@ const getAllChannelsAnalytics = async (req, res, next) => {
       });
     }
 
-    const analytics = await ChannelAnalytics.aggregate([
+    // Bước 1: Aggregate analytics data với lookup trực tiếp
+    const analyticsData = await ChannelAnalytics.aggregate([
       {
         $match: {
           date: {
@@ -221,45 +313,143 @@ const getAllChannelsAnalytics = async (req, res, next) => {
           recordCount: { $sum: 1 },
         },
       },
+      // Lookup Channel với nested populate
+      {
+        $lookup: {
+          from: "channels",
+          localField: "_id",
+          foreignField: "_id",
+          as: "channel",
+        },
+      },
+      { $unwind: "$channel" },
+      // Lookup User (assignedUser)
+      {
+        $lookup: {
+          from: "users",
+          localField: "channel.assignedUser",
+          foreignField: "_id",
+          as: "assignedUser",
+        },
+      },
+      { $unwind: { path: "$assignedUser", preserveNullAndEmptyArrays: true } },
+      // Lookup Team
+      {
+        $lookup: {
+          from: "teams",
+          localField: "assignedUser.team",
+          foreignField: "_id",
+          as: "team",
+        },
+      },
+      { $unwind: { path: "$team", preserveNullAndEmptyArrays: true } },
+      // Lookup Network
+      {
+        $lookup: {
+          from: "networks",
+          localField: "channel.network",
+          foreignField: "_id",
+          as: "network",
+        },
+      },
+      { $unwind: { path: "$network", preserveNullAndEmptyArrays: true } },
+      // Project final shape
+      {
+        $project: {
+          channelId: "$_id",
+          channelName: "$channel.name",
+          channelLink: "$channel.link",
+          channelStatus: "$channel.status",
+          assignedUser: {
+            userId: "$assignedUser._id",
+            fullName: "$assignedUser.fullName",
+            personalEmail: "$assignedUser.personalEmail",
+            role: "$assignedUser.role",
+          },
+          team: {
+            teamId: "$team._id",
+            teamName: "$team.name",
+          },
+          network: {
+            networkId: "$network._id",
+            networkName: "$network.profileAdsenseId",
+          },
+          totalRevenue: 1,
+          totalSubsGained: 1,
+          totalSubsLost: 1,
+          recordCount: 1,
+        },
+      },
     ]);
 
-    // Populate channel info với assignedUser
-    const channelIds = analytics.map((a) => a._id);
-    const channels = await Channel.find({ _id: { $in: channelIds } })
-      .populate("assignedUser", "fullName personalEmail role")
-      .populate("network", "name")
+    // Bước 2: Lấy channelIds để query ChannelManager
+    const channelIds = analyticsData.map((item) => item.channelId);
+
+    // Lấy tất cả channel managers trong 1 query duy nhất
+    const channelManagers = await ChannelManager.find({
+      channel: { $in: channelIds },
+      status: "ACTIVE",
+    })
+      .select("channel managerEmail role")
       .lean();
 
-    const channelMap = channels.reduce((acc, ch) => {
-      acc[ch._id.toString()] = ch;
+    // Tạo map để tra cứu nhanh managers theo channelId
+    const managersMap = channelManagers.reduce((acc, manager) => {
+      const channelId = manager.channel.toString();
+      if (!acc[channelId]) {
+        acc[channelId] = [];
+      }
+      acc[channelId].push({
+        managerEmail: manager.managerEmail,
+        role: manager.role,
+      });
       return acc;
     }, {});
 
-    const result = analytics.map((a) => {
-      const channel = channelMap[a._id.toString()];
-      return {
-        channelId: a._id,
-        channelName: channel?.name || "N/A",
-        channelLink: channel?.link || "",
-        channelStatus: channel?.status || "N/A",
-        assignedUser: channel?.assignedUser
-          ? {
-              userId: channel.assignedUser._id,
-              fullName: channel.assignedUser.fullName,
-              personalEmail: channel.assignedUser.personalEmail,
-              role: channel.assignedUser.role,
-            }
-          : null,
-        assignedUserName: channel?.assignedUser?.fullName || "Chưa gán",
-        network: channel?.network?.name || "N/A",
-        totalRevenue: a.totalRevenue,
-        totalSubsGained: a.totalSubsGained,
-        totalSubsLost: a.totalSubsLost,
-        recordCount: a.recordCount,
-      };
-    });
+    // Bước 3: Kết hợp dữ liệu
+    const result = analyticsData.map((item) => ({
+      channelId: item.channelId,
+      channelName: item.channelName,
+      channelLink: item.channelLink,
+      channelStatus: item.channelStatus,
 
-    // Tính grand totals
+      // Thông tin nhân viên
+      assignedUser: item.assignedUser?.userId
+        ? {
+            userId: item.assignedUser.userId,
+            fullName: item.assignedUser.fullName,
+            personalEmail: item.assignedUser.personalEmail,
+            role: item.assignedUser.role,
+          }
+        : null,
+
+      // Thông tin team
+      team: item.team?.teamId
+        ? {
+            teamId: item.team.teamId,
+            teamName: item.team.teamName,
+          }
+        : null,
+
+      // Thông tin network
+      network: item.network?.networkId
+        ? {
+            networkId: item.network.networkId,
+            networkName: item.network.networkName,
+          }
+        : null,
+
+      // Tài khoản quản lý kênh
+      channelManagers: managersMap[item.channelId.toString()] || [],
+
+      // Metrics
+      totalRevenue: item.totalRevenue,
+      totalSubsGained: item.totalSubsGained,
+      totalSubsLost: item.totalSubsLost,
+      recordCount: item.recordCount,
+    }));
+
+    // Bước 4: Tính grand totals
     const grandTotals = result.reduce(
       (acc, item) => ({
         totalRevenue: acc.totalRevenue + item.totalRevenue,
