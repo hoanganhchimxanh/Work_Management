@@ -1,14 +1,52 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Container, Row, Col, Card, Button } from "react-bootstrap";
 import { ExclamationTriangleFill } from "react-bootstrap-icons";
 import { useNavigate } from "react-router-dom";
+import { jwtDecode } from "jwt-decode";
 
 function Unauthorized() {
   const navigate = useNavigate();
 
-  const handleGoToLogin = () => {
-    navigate("/login");
+  // Hàm xử lý chuyển hướng theo quyền
+  const handleRedirectBasedOnRole = () => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      // Nếu không có token, chuyển hướng đến trang đăng nhập
+      navigate("/login");
+      return;
+    }
+
+    try {
+      // Giải mã JWT để lấy thông tin role
+      const decoded = jwtDecode(token);
+      const userRole = decoded.role;
+
+      // Thực hiện chuyển hướng dựa trên vai trò
+      switch (userRole) {
+        case "ADMIN":
+          navigate("/admin/dashboard"); // Trang admin
+          break;
+        case "ACCOUNTANT":
+          navigate("/accountant/page"); // Trang kế toán
+          break;
+        case "EMPLOYEE":
+          navigate("/employee/profile"); // Trang nhân viên
+          break;
+        default:
+          navigate("/login"); // Quay về login nếu không xác định
+          break;
+      }
+    } catch (err) {
+      console.error("Lỗi giải mã token:", err);
+      // Nếu lỗi khi giải mã token, quay về trang login
+      navigate("/login");
+    }
   };
+
+  useEffect(() => {
+    handleRedirectBasedOnRole();
+  }, []);
 
   return (
     <Container
@@ -29,16 +67,16 @@ function Unauthorized() {
               </Card.Title>
 
               <Card.Text className="lead mb-4">
-                Bạn không có quyền truy cập vào trang này. Vui lòng đăng nhập
-                bằng tài khoản có thẩm quyền.
+                Quyền truy cập của bạn không được xác nhận. Hệ thống sẽ tự động
+                chuyển hướng bạn đến trang phù hợp với quyền của bạn.
               </Card.Text>
 
               <Button
                 variant="primary"
-                onClick={handleGoToLogin}
+                onClick={handleRedirectBasedOnRole}
                 className="w-100"
               >
-                Quay về Trang Đăng Nhập
+                Chuyển hướng ngay
               </Button>
             </Card.Body>
           </Card>
