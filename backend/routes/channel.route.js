@@ -64,9 +64,9 @@ router.put(
 
 // Lấy kênh theo owner
 router.get(
-  "/by-owner/:ownerId",
+  "/by-owner/:userId",
   authenticateJWT,
-  authorizeRoles(["ADMIN", "ACCOUNTANT", "EMPLOYEE"]),
+  authorizeRoles(["ADMIN", "EMPLOYEE"]),
   channelController.getByOwner
 );
 
