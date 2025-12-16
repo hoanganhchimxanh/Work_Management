@@ -146,10 +146,10 @@ const handleCallback = async (req, res, next) => {
     }
 
     // Redirect về frontend với success message
-    res.redirect(`http://localhost:3000/user/channels?auth=success`);
+    res.redirect(`http://localhost:3000/employee/channels?auth=success`);
   } catch (err) {
     console.error("OAuth callback error:", err);
-    res.redirect(`http://localhost:3000/user/channels?auth=error`);
+    res.redirect(`http://localhost:3000/employee/channels?auth=error`);
   }
 };
 
