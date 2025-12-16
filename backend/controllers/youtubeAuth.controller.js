@@ -158,13 +158,13 @@ const checkAuthStatus = async (req, res, next) => {
   try {
     const { channelId } = req.params;
     const userId = req.user.userId;
+
     const auth = await YoutubeAuth.findOne({
       user: userId,
       channel: channelId,
     }).lean();
 
     if (!auth) {
-      // Trường hợp A: Không tìm thấy document nào khớp
       return res.json({
         success: true,
         data: {
@@ -173,10 +173,9 @@ const checkAuthStatus = async (req, res, next) => {
           message: "Không tìm thấy thông tin Authorization cho kênh này.",
         },
       });
-    } // 2. Kiểm tra trạng thái Token có phải là ACTIVE không
+    }
 
     if (auth.status !== "ACTIVE") {
-      // Trường hợp B: Trạng thái không phải là ACTIVE (ví dụ: REVOKED, EXPIRED, PENDING)
       return res.json({
         success: true,
         data: {
@@ -184,30 +183,43 @@ const checkAuthStatus = async (req, res, next) => {
           reason: "INACTIVE_STATUS",
           status: auth.status,
           message: `Trạng thái Authorization hiện tại là: ${auth.status}.`,
-          expiresAt: auth.expiresAt,
-          lastSyncedAt: auth.lastSyncedAt,
         },
       });
-    } // 3. Kiểm tra Token có hết hạn không
+    }
 
     const now = new Date();
     const expiresAt = new Date(auth.expiresAt);
     const isExpired = now >= expiresAt;
 
     if (isExpired) {
-      // Trường hợp C: Token đã hết hạn
-      return res.json({
-        success: true,
-        data: {
-          isAuthorized: false,
-          reason: "TOKEN_EXPIRED",
-          status: auth.status,
-          message: `Access Token đã hết hạn vào lúc ${expiresAt.toISOString()}. Cần Refresh Token.`,
-          expiresAt: auth.expiresAt,
-          lastSyncedAt: auth.lastSyncedAt,
-        },
-      });
-    } // Trường hợp D: Authorized thành công (ACTIVE và CHƯA hết hạn)
+      // TỰ ĐỘNG REFRESH TOKEN THAY VÌ CHỈ THÔNG BÁO
+      try {
+        await refreshAccessToken(auth._id);
+        const refreshedAuth = await YoutubeAuth.findById(auth._id).lean();
+
+        return res.json({
+          success: true,
+          data: {
+            isAuthorized: true,
+            status: refreshedAuth.status,
+            message: "Access Token đã được refresh tự động.",
+            expiresAt: refreshedAuth.expiresAt,
+            lastSyncedAt: refreshedAuth.lastSyncedAt,
+          },
+        });
+      } catch (refreshError) {
+        return res.json({
+          success: true,
+          data: {
+            isAuthorized: false,
+            reason: "TOKEN_EXPIRED",
+            status: auth.status,
+            message: `Không thể refresh token: ${refreshError.message}`,
+            expiresAt: auth.expiresAt,
+          },
+        });
+      }
+    }
 
     return res.json({
       success: true,

@@ -1,31 +1,59 @@
 const cron = require("node-cron");
-const axios = require("axios");
+const {
+  syncAllChannels,
+} = require("../controllers/youtubeAnalytics.controller");
 
 // Sync mỗi ngày lúc 6:00 AM
-cron.schedule("0 6 * * *", async () => {
-  console.log("Starting daily YouTube analytics sync...");
+const syncYoutubeAnalytics = () => {
+  cron.schedule("0 6 * * *", async () => {
+    console.log("🔄 Starting daily YouTube analytics sync...");
 
-  try {
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const startDate = yesterday.toISOString().split("T")[0];
-    const endDate = startDate;
+    try {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const startDate = yesterday.toISOString().split("T")[0];
+      const endDate = startDate;
 
-    // Call sync endpoint với admin token
-    await axios.post(
-      `http://localhost:9999/youtube/analytics/sync-all?startDate=${startDate}&endDate=${endDate}`,
-      {},
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.ADMIN_TOKEN}`,
+      // Tạo mock req, res, next objects
+      const mockReq = {
+        query: {
+          startDate,
+          endDate,
         },
-      }
-    );
+        user: {
+          role: "ADMIN", // Scheduler chạy với quyền admin
+        },
+      };
 
-    console.log("Sync completed!");
-  } catch (err) {
-    console.error("Sync failed:", err);
-  }
-});
+      const mockRes = {
+        json: (data) => {
+          if (data.success) {
+            console.log("✅ Sync completed successfully!");
+            console.log(
+              `   - Successful: ${data.data.successful.length} channels`
+            );
+            console.log(`   - Failed: ${data.data.failed.length} channels`);
+          }
+        },
+        status: (code) => ({
+          json: (data) => {
+            console.error(`❌ Sync failed with status ${code}:`, data.message);
+          },
+        }),
+      };
 
-module.exports = cron;
+      const mockNext = (error) => {
+        console.error("❌ Sync error:", error);
+      };
+
+      // Gọi trực tiếp controller function
+      await syncAllChannels(mockReq, mockRes, mockNext);
+    } catch (err) {
+      console.error("❌ Sync failed:", err);
+    }
+  });
+
+  console.log("Analytics sync scheduler started (runs daily at 6:00 AM)");
+};
+
+module.exports = syncYoutubeAnalytics;

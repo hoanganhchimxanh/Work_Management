@@ -46,7 +46,12 @@ router.use(express.json());
 
 router.post("/create-new", authenticateJWT, authorizeRoles("ADMIN"), createNew);
 router.get("/get-all-team", authenticateJWT, authorizeRoles("ADMIN"), getAll);
-router.get("/get-team/:id", authenticateJWT, authorizeRoles("ADMIN"), getById);
+router.get(
+  "/get-team/:id",
+  authenticateJWT,
+  authorizeRoles(["ADMIN", "EMPLOYEE"]),
+  getById
+);
 
 router.put(
   "/edit-team-info/:id",

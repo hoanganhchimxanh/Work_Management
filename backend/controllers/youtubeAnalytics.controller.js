@@ -2,6 +2,7 @@ const { google } = require("googleapis");
 const db = require("../models");
 const YoutubeAuth = db.YoutubeAuth;
 const ChannelAnalytics = db.ChannelAnalytics;
+const ChannelManager = db.ChannelManager;
 const Channel = db.Channel;
 const { refreshAccessToken } = require("./youtubeAuth.controller");
 

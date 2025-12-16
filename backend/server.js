@@ -6,6 +6,8 @@ require("dotenv").config();
 const cors = require("cors");
 const connectDB = require("./config/db");
 const errorHandler = require("./middlewares/errorHandler");
+const refreshYoutubeToken = require("./jobs/refreshYoutubeToken");
+const syncYoutubeAnalytics = require("./jobs/syncYoutubeAnalytics");
 
 // Express web server
 const app = express();
@@ -61,6 +63,8 @@ const PORT = process.env.PORT || 9999;
 const startServer = async () => {
   try {
     await connectDB();
+    refreshYoutubeToken();
+    syncYoutubeAnalytics();
     server.listen(PORT, HOST, () => {
       console.log(`Server running at http://${HOST}:${PORT}/`);
     });

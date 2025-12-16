@@ -389,7 +389,12 @@ const getPersonal = async (req, res, next) => {
         hasAccount: !!account,
         accountIsActive: account ? account.isActive : false,
         status: user.status,
-        team: user.team ? user.team.name : null,
+        team: user.team
+          ? {
+              _id: user.team._id,
+              name: user.team.name,
+            }
+          : null,
         isFirstLogin: user.isFirstLogin,
         channels: channels.map((ch) => ({
           channelId: ch._id,
