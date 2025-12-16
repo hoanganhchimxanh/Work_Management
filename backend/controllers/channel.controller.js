@@ -6,13 +6,21 @@ const Network = db.Network;
 // Thêm kênh mới
 const addNew = async (req, res, next) => {
   try {
-    const { name, link, assignedUser, network, status, bktEnabled, bktDay } =
-      req.body;
+    const {
+      name,
+      link,
+      youtubeChannelId,
+      assignedUser,
+      network,
+      status,
+      bktEnabled,
+      bktDay,
+    } = req.body;
 
-    if (!name || !link || !assignedUser) {
+    if (!name || !link || !youtubeChannelId || !assignedUser) {
       return res.status(400).json({
         success: false,
-        message: "Thiếu thông tin bắt buộc (name, link hoặc owner)!",
+        message: "Thiếu thông tin bắt buộc (name, link hoặc người quản lý)!",
       });
     }
 
@@ -31,7 +39,7 @@ const addNew = async (req, res, next) => {
       if (!user) {
         return res.status(404).json({
           success: false,
-          message: "Không tìm thấy user owner!",
+          message: "Không tìm thấy người quản lý!",
         });
       }
     }
@@ -39,6 +47,7 @@ const addNew = async (req, res, next) => {
     const newChannel = await Channel.create({
       name,
       link,
+      youtubeChannelId,
       assignedUser: assignedUser || null,
       network: network || null,
       status: status || "ACTIVE",
@@ -108,8 +117,16 @@ const getById = async (req, res, next) => {
 const editChannelInfo = async (req, res, next) => {
   try {
     const channelId = req.params.id;
-    const { name, link, assignedUser, network, status, bktEnabled, bktDay } =
-      req.body;
+    const {
+      name,
+      link,
+      youtubeChannelId,
+      assignedUser,
+      network,
+      status,
+      bktEnabled,
+      bktDay,
+    } = req.body;
 
     const channel = await Channel.findById(channelId);
     if (!channel) {
@@ -122,6 +139,8 @@ const editChannelInfo = async (req, res, next) => {
     // Cập nhật các field
     if (name) channel.name = name;
     if (link !== undefined) channel.link = link;
+    if (youtubeChannelId !== undefined)
+      channel.youtubeChannelId = youtubeChannelId;
     if (assignedUser !== undefined) channel.assignedUser = assignedUser;
     if (network !== undefined) channel.network = network;
     if (status) channel.status = status;
