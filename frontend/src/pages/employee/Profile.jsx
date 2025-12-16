@@ -84,11 +84,11 @@ function Profile() {
         </div>
       </Row>
       {/* Modal nhóm chi tiết */}
-      {userData.team && (
+      {userData?.team?._id && (
         <TeamDetailModal
           show={showTeamModal}
           onHide={() => setShowTeamModal(false)}
-          teamId={userData.team?._id}
+          teamId={userData.team._id}
           token={token}
         />
       )}
