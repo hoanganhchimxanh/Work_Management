@@ -45,7 +45,7 @@ function SubscribersChart({ data }) {
           dataKey="netSubs"
           stroke="#6f42c1"
           strokeWidth={2}
-          name="Subs ròng"
+          name="Subs thực tế"
           dot={{ r: 4 }}
         />
       </LineChart>

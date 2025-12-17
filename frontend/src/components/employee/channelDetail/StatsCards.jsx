@@ -39,7 +39,7 @@ function StatsCards({ totals }) {
       color: "danger",
     },
     {
-      title: "Subs ròng",
+      title: "Subs thực tế",
       value: `${totals.netSubsChange >= 0 ? "+" : ""}${formatNumber(
         totals.netSubsChange || 0
       )}`,

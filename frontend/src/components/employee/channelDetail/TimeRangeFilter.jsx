@@ -7,6 +7,7 @@ function TimeRangeFilter({ selectedDays, onSelectDays }) {
     { label: "28 ngày", value: 28 },
     { label: "90 ngày", value: 90 },
     { label: "365 ngày", value: 365 },
+    { label: "Lifetime", value: "lifetime" },
   ];
 
   return (

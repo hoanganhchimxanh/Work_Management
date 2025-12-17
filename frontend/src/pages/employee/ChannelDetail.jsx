@@ -32,9 +32,15 @@ function ChannelDetail() {
       setLoading(true);
       setError(null);
 
+      let startDate;
       const endDate = new Date();
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() - days);
+
+      if (days === "lifetime") {
+        startDate = new Date(0);
+      } else {
+        startDate = new Date();
+        startDate.setDate(startDate.getDate() - days);
+      }
 
       const formatDate = (date) => date.toISOString().split("T")[0];
 
@@ -172,14 +178,14 @@ function ChannelDetail() {
                 <p className="fw-bold">{channelData.assignedUser.fullName}</p>
               </Col>
               <Col md={6}>
-                <p className="text-muted mb-1">Email</p>
+                <p className="text-muted mb-1">Email cá nhân</p>
                 <p className="fw-bold">
                   {channelData.assignedUser.personalEmail}
                 </p>
               </Col>
               {channelData.team && (
                 <Col md={6} className="mt-3">
-                  <p className="text-muted mb-1">Team</p>
+                  <p className="text-muted mb-1">Team trực thuộc</p>
                   <p className="fw-bold">{channelData.team.teamName}</p>
                 </Col>
               )}
