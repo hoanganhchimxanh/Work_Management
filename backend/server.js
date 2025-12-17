@@ -34,6 +34,7 @@ const channelManagerRouter = require("./routes/channelManager.route");
 const networkRouter = require("./routes/network.route");
 const youtubeAuthRouter = require("./routes/youtubeAuth.route");
 const youtubeAnalyticsRouter = require("./routes/youtubeAnalytics.route");
+const dashboardRouter = require("./routes/dashboard.route");
 
 app.use("/user", userRouter);
 app.use("/account", accountRouter);
@@ -45,6 +46,7 @@ app.use("/channel-manager", channelManagerRouter);
 app.use("/network", networkRouter);
 app.use("/youtube-auth", youtubeAuthRouter);
 app.use("/youtube-analytics", youtubeAnalyticsRouter);
+app.use("/dashboard", dashboardRouter);
 
 // --- Xử lý lỗi ---
 
