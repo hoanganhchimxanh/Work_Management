@@ -61,7 +61,7 @@ const getAuthUrl = async (req, res, next) => {
       access_type: "offline",
       scope: scopes,
       state: state,
-      prompt: "consent", // Bắt buộc lấy refresh token
+      prompt: "select_account consent", // Bắt buộc lấy refresh token
     });
 
     res.json({
