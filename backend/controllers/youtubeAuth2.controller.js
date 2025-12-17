@@ -3,7 +3,6 @@ const db = require("../models");
 const YoutubeAuth = db.YoutubeAuth;
 const Channel = db.Channel;
 const User = db.User;
-const CryptoJS = require("crypto-js");
 
 // Cấu hình OAuth2 client
 const getOAuth2Client = () => {
@@ -18,7 +17,7 @@ const getOAuth2Client = () => {
 const getAuthUrl = async (req, res, next) => {
   try {
     const { channelId } = req.query;
-    const userId = req.user.userId; // Từ JWT middleware
+    const userId = req.user.userId;
 
     if (!channelId) {
       return res.status(400).json({
@@ -45,7 +44,7 @@ const getAuthUrl = async (req, res, next) => {
 
     const oauth2Client = getOAuth2Client();
 
-    // Scopes cần thiết cho YouTube Data API và YouTube Analytics API
+    // Scopes cần thiết
     const scopes = [
       "https://www.googleapis.com/auth/youtube.readonly",
       "https://www.googleapis.com/auth/yt-analytics.readonly",
@@ -73,8 +72,8 @@ const getAuthUrl = async (req, res, next) => {
   }
 };
 
-// Xử lý callback từ Google OAuth
-const handleCallback = async (req, res, next) => {
+// ✅ MỚI: Lấy danh sách tất cả channels của user (bao gồm Brand Accounts)
+const getAvailableChannels = async (req, res, next) => {
   try {
     const { code, state } = req.query;
 
@@ -85,21 +84,10 @@ const handleCallback = async (req, res, next) => {
       });
     }
 
-    // Decode state để lấy channelId và userId
+    // Decode state
     const { channelId, userId } = JSON.parse(
       Buffer.from(state, "base64").toString()
     );
-
-    // Lấy thông tin channel từ database
-    const dbChannel = await Channel.findById(channelId);
-    if (!dbChannel) {
-      console.error(`❌ Channel ${channelId} không tồn tại trong database`);
-      return res.redirect(
-        `http://localhost:3000/user/channels?auth=error&msg=${encodeURIComponent(
-          "Channel không tồn tại"
-        )}`
-      );
-    }
 
     const oauth2Client = getOAuth2Client();
 
@@ -107,122 +95,189 @@ const handleCallback = async (req, res, next) => {
     const { tokens } = await oauth2Client.getToken(code);
     oauth2Client.setCredentials(tokens);
 
-    // Lấy thông tin YouTube channel của user
+    // ✅ Lấy TẤT CẢ channels (bao gồm Brand Accounts)
     const youtube = google.youtube({ version: "v3", auth: oauth2Client });
     const channelsResponse = await youtube.channels.list({
       part: "snippet,contentDetails,statistics",
-      mine: true,
+      mine: true, // Lấy tất cả channels mà user có quyền truy cập
+      maxResults: 50,
     });
 
     if (
       !channelsResponse.data.items ||
       channelsResponse.data.items.length === 0
     ) {
-      console.error("❌ Không tìm thấy kênh YouTube nào");
-      return res.redirect(
-        `http://localhost:3000/user/channels?auth=error&msg=${encodeURIComponent(
-          "Không tìm thấy kênh YouTube"
-        )}`
-      );
+      return res.status(400).json({
+        success: false,
+        message: "Không tìm thấy kênh YouTube nào!",
+      });
     }
 
-    // Log để debug
-    console.log(
-      `📺 Found ${channelsResponse.data.items.length} YouTube channel(s):`
-    );
-    channelsResponse.data.items.forEach((ch) => {
-      console.log(`   - ${ch.snippet.title} (ID: ${ch.id})`);
+    // Format danh sách channels
+    const availableChannels = channelsResponse.data.items.map((ch) => ({
+      youtubeChannelId: ch.id,
+      title: ch.snippet.title,
+      thumbnail: ch.snippet.thumbnails?.default?.url,
+      subscriberCount: ch.statistics?.subscriberCount || "0",
+      videoCount: ch.statistics?.videoCount || "0",
+    }));
+
+    // ✅ Lưu tạm tokens và state vào session hoặc cache
+    // (Hoặc bạn có thể trả về cho frontend kèm encrypted tokens)
+
+    res.json({
+      success: true,
+      message: "Vui lòng chọn kênh bạn muốn kết nối",
+      data: {
+        channels: availableChannels,
+        // Gửi kèm state để frontend gửi lại khi chọn channel
+        authState: state,
+        tempTokens: Buffer.from(JSON.stringify(tokens)).toString("base64"), // ⚠️ Nên encrypt tokens
+      },
     });
+  } catch (err) {
+    next(err);
+  }
+};
 
-    // TÌM KÊNH KHỚP VỚI youtubeChannelId trong database
-    let youtubeChannel = null;
+// ✅ MỚI: Xác nhận channel được chọn và lưu vào database
+const confirmChannelSelection = async (req, res, next) => {
+  try {
+    const { authState, tempTokens, selectedYoutubeChannelId } = req.body;
 
-    if (dbChannel.youtubeChannelId) {
-      // Nếu đã có youtubeChannelId, tìm kênh khớp
-      youtubeChannel = channelsResponse.data.items.find(
-        (ch) => ch.id === dbChannel.youtubeChannelId
-      );
-
-      if (!youtubeChannel) {
-        console.error(
-          `❌ Không tìm thấy kênh YouTube với ID: ${dbChannel.youtubeChannelId}`
-        );
-        return res.redirect(
-          `http://localhost:3000/user/channels?auth=error&msg=${encodeURIComponent(
-            "Kênh YouTube không khớp với database"
-          )}`
-        );
-      }
-    } else {
-      // Nếu chưa có youtubeChannelId, lấy kênh đầu tiên và cập nhật vào database
-      youtubeChannel = channelsResponse.data.items[0];
-
-      // Cập nhật youtubeChannelId vào Channel
-      dbChannel.youtubeChannelId = youtubeChannel.id;
-      await dbChannel.save();
-
-      console.log(
-        `✅ Đã cập nhật youtubeChannelId cho channel ${channelId}: ${youtubeChannel.id}`
-      );
+    if (!authState || !tempTokens || !selectedYoutubeChannelId) {
+      return res.status(400).json({
+        success: false,
+        message: "Thiếu thông tin bắt buộc!",
+      });
     }
 
+    // Decode state và tokens
+    const { channelId, userId } = JSON.parse(
+      Buffer.from(authState, "base64").toString()
+    );
+    const tokens = JSON.parse(Buffer.from(tempTokens, "base64").toString());
+
+    // Kiểm tra user có quyền không
+    const channel = await Channel.findById(channelId);
+    if (!channel || channel.assignedUser.toString() !== userId) {
+      return res.status(403).json({
+        success: false,
+        message: "Không có quyền kết nối kênh này!",
+      });
+    }
+
+    // ✅ Cập nhật youtubeChannelId vào Channel model
+    channel.youtubeChannelId = selectedYoutubeChannelId;
+    await channel.save();
+
+    // Lưu hoặc cập nhật auth tokens
     const expiresAt = new Date(tokens.expiry_date);
 
-    // Tìm hoặc tạo mới YoutubeAuth
     const existingAuth = await YoutubeAuth.findOne({
       user: userId,
       channel: channelId,
     });
 
     if (existingAuth) {
-      // Cập nhật auth existing
       existingAuth.accessToken = tokens.access_token;
       existingAuth.refreshToken =
         tokens.refresh_token || existingAuth.refreshToken;
       existingAuth.expiresAt = expiresAt;
-      existingAuth.youtubeChannelId = youtubeChannel.id;
+      existingAuth.youtubeChannelId = selectedYoutubeChannelId;
       existingAuth.scopes = tokens.scope.split(" ");
       existingAuth.status = "ACTIVE";
       await existingAuth.save();
-
-      console.log(`✅ Đã cập nhật auth cho channel ${channelId}`);
     } else {
-      // Tạo mới auth
       await YoutubeAuth.create({
         user: userId,
         channel: channelId,
         accessToken: tokens.access_token,
         refreshToken: tokens.refresh_token,
         expiresAt,
-        youtubeChannelId: youtubeChannel.id,
+        youtubeChannelId: selectedYoutubeChannelId,
         scopes: tokens.scope.split(" "),
         status: "ACTIVE",
       });
-
-      console.log(`✅ Đã tạo auth mới cho channel ${channelId}`);
     }
 
-    // Redirect về frontend với success message
-    res.redirect(`http://localhost:3000/user/channels?auth=success`);
+    res.json({
+      success: true,
+      message: "Kết nối kênh YouTube thành công!",
+      data: {
+        channelId,
+        youtubeChannelId: selectedYoutubeChannelId,
+      },
+    });
   } catch (err) {
-    console.error("❌ OAuth callback error:", err);
-
-    // Log chi tiết nếu là lỗi duplicate key
-    if (err.code === 11000) {
-      console.error("❌ Duplicate key error:");
-      console.error("   Pattern:", err.keyPattern);
-      console.error("   Value:", err.keyValue);
-    }
-
-    res.redirect(
-      `http://localhost:3000/user/channels?auth=error&msg=${encodeURIComponent(
-        err.message
-      )}`
-    );
+    next(err);
   }
 };
 
-// Kiểm tra trạng thái authorization của channel
+// ❌ XÓA hoặc SỬA LẠI handleCallback (không dùng nữa)
+// Hoặc giữ lại cho trường hợp redirect từ Google
+const handleCallback = async (req, res, next) => {
+  try {
+    const { code, state } = req.query;
+
+    if (!code || !state) {
+      return res.redirect(
+        `${process.env.FRONTEND_URL}/channels?auth=error&reason=missing_params`
+      );
+    }
+
+    // Decode state
+    const { channelId, userId } = JSON.parse(
+      Buffer.from(state, "base64").toString()
+    );
+
+    const oauth2Client = getOAuth2Client();
+    const { tokens } = await oauth2Client.getToken(code);
+    oauth2Client.setCredentials(tokens);
+
+    // Lấy tất cả channels
+    const youtube = google.youtube({ version: "v3", auth: oauth2Client });
+    const channelsResponse = await youtube.channels.list({
+      part: "snippet,contentDetails,statistics",
+      mine: true,
+      maxResults: 50,
+    });
+
+    if (
+      !channelsResponse.data.items ||
+      channelsResponse.data.items.length === 0
+    ) {
+      return res.redirect(
+        `${process.env.FRONTEND_URL}/channels?auth=error&reason=no_channels`
+      );
+    }
+
+    // ✅ Redirect về frontend với danh sách channels
+    const channels = channelsResponse.data.items.map((ch) => ({
+      id: ch.id,
+      title: ch.snippet.title,
+      thumbnail: ch.snippet.thumbnails?.default?.url,
+    }));
+
+    // Encode data để gửi qua URL
+    const encodedData = Buffer.from(
+      JSON.stringify({
+        channels,
+        state,
+        tokens: Buffer.from(JSON.stringify(tokens)).toString("base64"),
+      })
+    ).toString("base64");
+
+    res.redirect(
+      `${process.env.FRONTEND_URL}/channels/select?data=${encodedData}`
+    );
+  } catch (err) {
+    console.error("OAuth callback error:", err);
+    res.redirect(`${process.env.FRONTEND_URL}/channels?auth=error`);
+  }
+};
+
+// Các functions khác giữ nguyên...
 const checkAuthStatus = async (req, res, next) => {
   try {
     const { channelId } = req.params;
@@ -261,7 +316,6 @@ const checkAuthStatus = async (req, res, next) => {
     const isExpired = now >= expiresAt;
 
     if (isExpired) {
-      // TỰ ĐỘNG REFRESH TOKEN THAY VÌ CHỈ THÔNG BÁO
       try {
         await refreshAccessToken(auth._id);
         const refreshedAuth = await YoutubeAuth.findById(auth._id).lean();
@@ -305,7 +359,6 @@ const checkAuthStatus = async (req, res, next) => {
   }
 };
 
-// Thu hồi quyền truy cập
 const revokeAuth = async (req, res, next) => {
   try {
     const { channelId } = req.params;
@@ -323,7 +376,6 @@ const revokeAuth = async (req, res, next) => {
       });
     }
 
-    // Revoke token trên Google
     try {
       const oauth2Client = getOAuth2Client();
       await oauth2Client.revokeToken(auth.accessToken);
@@ -331,7 +383,6 @@ const revokeAuth = async (req, res, next) => {
       console.error("Error revoking token:", err);
     }
 
-    // Cập nhật status
     auth.status = "REVOKED";
     await auth.save();
 
@@ -344,7 +395,6 @@ const revokeAuth = async (req, res, next) => {
   }
 };
 
-// Refresh access token
 const refreshAccessToken = async (youtubeAuthId) => {
   const auth = await YoutubeAuth.findById(youtubeAuthId);
   if (!auth || !auth.refreshToken) {
@@ -365,7 +415,6 @@ const refreshAccessToken = async (youtubeAuthId) => {
   return credentials.access_token;
 };
 
-// Lấy danh sách channels đã authorize
 const getAuthorizedChannels = async (req, res, next) => {
   try {
     const userId = req.user.userId;
@@ -395,7 +444,6 @@ const getAuthorizedChannels = async (req, res, next) => {
   }
 };
 
-// [ADMIN] Lấy tất cả channels đã authorize
 const getAllAuthorizedChannels = async (req, res, next) => {
   try {
     const authorizedChannels = await YoutubeAuth.find({
@@ -427,6 +475,8 @@ const getAllAuthorizedChannels = async (req, res, next) => {
 
 module.exports = {
   getAuthUrl,
+  getAvailableChannels, // ✅ MỚI
+  confirmChannelSelection, // ✅ MỚI
   handleCallback,
   checkAuthStatus,
   revokeAuth,

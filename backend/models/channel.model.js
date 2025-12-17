@@ -4,7 +4,6 @@ const channelSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
     link: { type: String },
-    youtubeChannelId: { type: String, sparse: true, unique: true },
 
     status: {
       type: String,
