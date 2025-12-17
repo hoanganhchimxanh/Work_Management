@@ -1,55 +1,189 @@
-import React, { useState } from "react";
-import { Container, Row, Col } from "react-bootstrap";
+import React, { useState, useEffect } from "react";
+import { Container, Row, Col, Spinner, Alert } from "react-bootstrap";
 
 import Overview from "../../components/admin/dashboard/Overview";
 import TopRanking from "../../components/admin/dashboard/TopRanking";
 
+const API_BASE_URL = "http://localhost:9999";
+
 function Dashboard() {
-  const [stats] = useState({
-    totalRevenue: 2450000000,
-    totalEmployees: 156,
-    totalChannels: 89,
-    activeNetworks: 12,
+  const [stats, setStats] = useState({
+    totalRevenue: 0,
+    totalEmployees: 0,
+    totalChannels: 0,
+    activeNetworks: 0,
   });
 
-  const revenueData = [
-    { month: "T1", revenue: 1800000 },
-    { month: "T2", revenue: 1950000 },
-    { month: "T3", revenue: 2100000 },
-    { month: "T4", revenue: 1980000 },
-    { month: "T5", revenue: 2250000 },
-    { month: "T6", revenue: 2400000 },
-    { month: "T7", revenue: 2350000 },
-    { month: "T8", revenue: 2580000 },
-    { month: "T9", revenue: 2700000 },
-    { month: "T10", revenue: 2850000 },
-    { month: "T11", revenue: 2950000 },
-    { month: "T12", revenue: 3100000 },
-  ];
+  const [revenueData, setRevenueData] = useState([]);
+  const [topEmployees, setTopEmployees] = useState([]);
+  const [topTeams, setTopTeams] = useState([]);
+  const [topChannels, setTopChannels] = useState([]);
 
-  const topEmployees = [
-    { name: "Nguyễn Văn A", revenue: 850000 },
-    { name: "Trần Thị B", revenue: 780000 },
-    { name: "Lê Văn C", revenue: 720000 },
-    { name: "Phạm Thị D", revenue: 680000 },
-    { name: "Hoàng Văn E", revenue: 650000 },
-  ];
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const topTeams = [
-    { name: "Team Marketing", revenue: 4500000 },
-    { name: "Team Sales", revenue: 4200000 },
-    { name: "Team Digital", revenue: 3800000 },
-    { name: "Team Content", revenue: 3500000 },
-    { name: "Team Operations", revenue: 3200000 },
-  ];
+  const getAuthToken = () => {
+    return localStorage.getItem("token") || "";
+  };
 
-  const topChannels = [
-    { name: "Facebook Ads", revenue: 52000 },
-    { name: "Google Ads", revenue: 48000 },
-    { name: "TikTok Ads", revenue: 42500 },
-    { name: "Instagram", revenue: 38000 },
-    { name: "YouTube", revenue: 35000 },
-  ];
+  // Fetch Dashboard Statistics
+  const fetchDashboardStats = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/dashboard/stats`, {
+        headers: {
+          Authorization: `Bearer ${getAuthToken()}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setStats({
+          totalRevenue: data.data.totalRevenue || 0,
+          totalEmployees: data.data.totalEmployees || 0,
+          totalChannels: data.data.totalChannels || 0,
+          activeNetworks: data.data.activeNetworks || 0,
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching dashboard stats:", error);
+      setError("Không thể tải thống kê tổng quan");
+    }
+  };
+
+  // Fetch Monthly Revenue Data
+  const fetchRevenueData = async () => {
+    try {
+      const currentYear = new Date().getFullYear();
+      const response = await fetch(
+        `${API_BASE_URL}/dashboard/revenue-by-month?year=${currentYear}`,
+        {
+          headers: {
+            Authorization: `Bearer ${getAuthToken()}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const data = await response.json();
+      if (data.success) {
+        // Format data for chart
+        const formattedData = data.data.map((item) => ({
+          month: `T${item.month}`,
+          revenue: item.revenue || 0,
+        }));
+        setRevenueData(formattedData);
+      }
+    } catch (error) {
+      console.error("Error fetching revenue data:", error);
+    }
+  };
+
+  // Fetch Top Employees
+  const fetchTopEmployees = async () => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/dashboard/top-employees?limit=5`,
+        {
+          headers: {
+            Authorization: `Bearer ${getAuthToken()}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const data = await response.json();
+      if (data.success) {
+        setTopEmployees(
+          data.data.map((item) => ({
+            name: item.fullName || item.name,
+            revenue: item.totalRevenue || 0,
+          }))
+        );
+      }
+    } catch (error) {
+      console.error("Error fetching top employees:", error);
+    }
+  };
+
+  // Fetch Top Teams
+  const fetchTopTeams = async () => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/dashboard/top-teams?limit=5`,
+        {
+          headers: {
+            Authorization: `Bearer ${getAuthToken()}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const data = await response.json();
+      if (data.success) {
+        setTopTeams(
+          data.data.map((item) => ({
+            name: item.teamName || item.name,
+            revenue: item.totalRevenue || 0,
+          }))
+        );
+      }
+    } catch (error) {
+      console.error("Error fetching top teams:", error);
+    }
+  };
+
+  // Fetch Top Channels
+  const fetchTopChannels = async () => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/dashboard/top-channels?limit=5`,
+        {
+          headers: {
+            Authorization: `Bearer ${getAuthToken()}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const data = await response.json();
+      if (data.success) {
+        setTopChannels(
+          data.data.map((item) => ({
+            name: item.channelName || item.name,
+            revenue: item.totalRevenue || 0,
+          }))
+        );
+      }
+    } catch (error) {
+      console.error("Error fetching top channels:", error);
+    }
+  };
+
+  // Load all data on mount
+  useEffect(() => {
+    const loadDashboardData = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        await Promise.all([
+          fetchDashboardStats(),
+          fetchRevenueData(),
+          fetchTopEmployees(),
+          fetchTopTeams(),
+          fetchTopChannels(),
+        ]);
+      } catch (error) {
+        console.error("Error loading dashboard data:", error);
+        setError("Có lỗi xảy ra khi tải dữ liệu dashboard");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadDashboardData();
+  }, []);
 
   const formatCurrency = (value) =>
     new Intl.NumberFormat("en-US", {
@@ -60,8 +194,24 @@ function Dashboard() {
   const formatShortCurrency = (value) => {
     if (value >= 1e9) return `${(value / 1e9).toFixed(1)}B`;
     if (value >= 1e6) return `${(value / 1e6).toFixed(0)}M`;
+    if (value >= 1e3) return `${(value / 1e3).toFixed(0)}K`;
     return value;
   };
+
+  if (loading) {
+    return (
+      <Container
+        fluid
+        className="p-4 d-flex justify-content-center align-items-center"
+        style={{ minHeight: "80vh" }}
+      >
+        <div className="text-center">
+          <Spinner animation="border" variant="primary" />
+          <p className="mt-3">Đang tải dữ liệu dashboard...</p>
+        </div>
+      </Container>
+    );
+  }
 
   return (
     <Container fluid className="p-4">
@@ -71,6 +221,12 @@ function Dashboard() {
           <p className="text-muted">Tổng quan hoạt động kinh doanh</p>
         </Col>
       </Row>
+
+      {error && (
+        <Alert variant="danger" dismissible onClose={() => setError(null)}>
+          {error}
+        </Alert>
+      )}
 
       <Overview
         stats={stats}

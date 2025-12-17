@@ -12,7 +12,7 @@ const addNew = async (req, res, next) => {
     if (!name || !link || !assignedUser) {
       return res.status(400).json({
         success: false,
-        message: "Thiếu thông tin bắt buộc (name, link hoặc owner)!",
+        message: "Thiếu thông tin bắt buộc (name, link hoặc người quản lý)!",
       });
     }
 
@@ -31,7 +31,7 @@ const addNew = async (req, res, next) => {
       if (!user) {
         return res.status(404).json({
           success: false,
-          message: "Không tìm thấy user owner!",
+          message: "Không tìm thấy người quản lý!",
         });
       }
     }

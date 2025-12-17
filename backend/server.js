@@ -6,6 +6,8 @@ require("dotenv").config();
 const cors = require("cors");
 const connectDB = require("./config/db");
 const errorHandler = require("./middlewares/errorHandler");
+const refreshYoutubeToken = require("./jobs/refreshYoutubeToken");
+const syncYoutubeAnalytics = require("./jobs/syncYoutubeAnalytics");
 
 // Express web server
 const app = express();
@@ -32,6 +34,7 @@ const channelManagerRouter = require("./routes/channelManager.route");
 const networkRouter = require("./routes/network.route");
 const youtubeAuthRouter = require("./routes/youtubeAuth.route");
 const youtubeAnalyticsRouter = require("./routes/youtubeAnalytics.route");
+const dashboardRouter = require("./routes/dashboard.route");
 
 app.use("/user", userRouter);
 app.use("/account", accountRouter);
@@ -43,6 +46,7 @@ app.use("/channel-manager", channelManagerRouter);
 app.use("/network", networkRouter);
 app.use("/youtube-auth", youtubeAuthRouter);
 app.use("/youtube-analytics", youtubeAnalyticsRouter);
+app.use("/dashboard", dashboardRouter);
 
 // --- Xử lý lỗi ---
 
@@ -61,6 +65,8 @@ const PORT = process.env.PORT || 9999;
 const startServer = async () => {
   try {
     await connectDB();
+    refreshYoutubeToken();
+    syncYoutubeAnalytics();
     server.listen(PORT, HOST, () => {
       console.log(`Server running at http://${HOST}:${PORT}/`);
     });

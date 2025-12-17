@@ -150,7 +150,10 @@ function User_Management() {
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", "users.xlsx");
+      link.setAttribute(
+        "download",
+        `users_${new Date().toISOString().split("T")[0]}.xlsx`
+      );
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -190,7 +193,10 @@ function User_Management() {
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", "teams.xlsx");
+      link.setAttribute(
+        "download",
+        `teams_${new Date().toISOString().split("T")[0]}.xlsx`
+      );
       document.body.appendChild(link);
       link.click();
       link.remove();

@@ -33,7 +33,7 @@ function TeamCard({ userData, onOpenDetail }) {
                 ></i>
               </div>
 
-              <h4 className="text-success mb-2">{userData.team}</h4>
+              <h4 className="text-success mb-2">{userData.team?.name}</h4>
 
               <Badge bg="success" className="px-3 py-2">
                 Thành viên

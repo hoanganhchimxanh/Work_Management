@@ -1,7 +1,9 @@
 const { google } = require("googleapis");
+const mongoose = require("mongoose");
 const db = require("../models");
 const YoutubeAuth = db.YoutubeAuth;
 const ChannelAnalytics = db.ChannelAnalytics;
+const ChannelManager = db.ChannelManager;
 const Channel = db.Channel;
 const { refreshAccessToken } = require("./youtubeAuth.controller");
 
@@ -179,7 +181,7 @@ const getChannelAnalytics = async (req, res, next) => {
       .lean();
 
     // Bước 4: Aggregate analytics data với totals trong 1 query
-    const query = { channel: channelId };
+    const query = { channel: new mongoose.Types.ObjectId(channelId) };
     if (startDate && endDate) {
       query.date = {
         $gte: new Date(startDate),
