@@ -9,8 +9,11 @@ import {
   Col,
   InputGroup,
   Modal,
+  Dropdown,
 } from "react-bootstrap";
+import { ThreeDotsVertical } from "react-bootstrap-icons";
 import axios from "axios";
+import SendResourcesModal from "./SendResourcesModal";
 
 function UserTable({ users, loading, onEdit, onRefresh, teams }) {
   const [filterStatus, setFilterStatus] = useState("ALL");
@@ -25,6 +28,11 @@ function UserTable({ users, loading, onEdit, onRefresh, teams }) {
     team: "",
   });
   const [approving, setApproving] = useState(false);
+
+  // Send resources modal state
+  const [showSendResourcesModal, setShowSendResourcesModal] = useState(false);
+  const [selectedUserForResources, setSelectedUserForResources] =
+    useState(null);
 
   const getRoleBadge = (role) => {
     const variants = {
@@ -95,11 +103,17 @@ function UserTable({ users, loading, onEdit, onRefresh, teams }) {
 
     try {
       setApproving(true);
+      const token = localStorage.getItem("token");
       await axios.post(
         `http://localhost:9999/user/approve/${selectedUser.userId}`,
         {
           role: approveData.role,
           team: approveData.team || null,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
       );
 
@@ -124,7 +138,11 @@ function UserTable({ users, loading, onEdit, onRefresh, teams }) {
     }
 
     try {
+      const token = localStorage.getItem("token");
       await axios.delete(`http://localhost:9999/user/reject/${userId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
         data: { reason },
       });
 
@@ -135,6 +153,17 @@ function UserTable({ users, loading, onEdit, onRefresh, teams }) {
         "Không thể từ chối: " + (err.response?.data?.message || err.message)
       );
     }
+  };
+
+  const handleSendResourcesClick = (user) => {
+    setSelectedUserForResources(user);
+    setShowSendResourcesModal(true);
+  };
+
+  const handleResourcesSent = () => {
+    alert("Đã gửi tài nguyên thành công!");
+    setShowSendResourcesModal(false);
+    setSelectedUserForResources(null);
   };
 
   const filteredUsers = getFilteredAndSortedUsers();
@@ -290,13 +319,28 @@ function UserTable({ users, loading, onEdit, onRefresh, teams }) {
                         </Button>
                       </>
                     ) : (
-                      <Button
-                        variant="outline-primary"
-                        size="sm"
-                        onClick={() => onEdit(user)}
-                      >
-                        <i className="bi bi-pencil"></i> Sửa
-                      </Button>
+                      <Dropdown>
+                        <Dropdown.Toggle
+                          variant="outline-primary"
+                          size="sm"
+                          id={`dropdown-${user.userId}`}
+                        >
+                          <ThreeDotsVertical />
+                        </Dropdown.Toggle>
+
+                        <Dropdown.Menu>
+                          <Dropdown.Item onClick={() => onEdit(user)}>
+                            <i className="bi bi-pencil me-2"></i>
+                            Chỉnh sửa
+                          </Dropdown.Item>
+                          <Dropdown.Item
+                            onClick={() => handleSendResourcesClick(user)}
+                          >
+                            <i className="bi bi-send me-2"></i>
+                            Gửi tài nguyên
+                          </Dropdown.Item>
+                        </Dropdown.Menu>
+                      </Dropdown>
                     )}
                   </td>
                 </tr>
@@ -391,6 +435,17 @@ function UserTable({ users, loading, onEdit, onRefresh, teams }) {
           </Button>
         </Modal.Footer>
       </Modal>
+
+      {/* Send Resources Modal */}
+      <SendResourcesModal
+        show={showSendResourcesModal}
+        user={selectedUserForResources}
+        onHide={() => {
+          setShowSendResourcesModal(false);
+          setSelectedUserForResources(null);
+        }}
+        onSent={handleResourcesSent}
+      />
     </>
   );
 }

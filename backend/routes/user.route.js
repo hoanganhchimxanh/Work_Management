@@ -9,13 +9,22 @@ const {
   getPersonal,
   updateUser,
   deleteUser,
+  sendResources,
 } = require("../controllers/user.controller");
 const {
   authenticateJWT,
   authorizeRoles,
 } = require("../middlewares/auth.middleware");
+const multer = require("multer");
 
 const router = express.Router();
+
+const resourceUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024, // Giới hạn 10MB
+  },
+});
 
 const logRequestTime = (req, res, next) => {
   console.log("Time: ", Date.now());
@@ -64,6 +73,14 @@ router.delete(
   authenticateJWT,
   authorizeRoles("ADMIN"),
   deleteUser
+);
+
+router.post(
+  "/send-resources/:userId",
+  authenticateJWT,
+  authorizeRoles("ADMIN"),
+  resourceUpload.single("file"), // Chấp nhận 1 file với field name là "file"
+  sendResources
 );
 
 module.exports = router;

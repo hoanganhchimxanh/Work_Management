@@ -9,7 +9,7 @@ const sendEmail = require("../utils/mailer");
 const XLSX = require("xlsx");
 const sendNewAccountTemplate = require("../utils/emailTemplates/sendNewAccount");
 const sendRejectTemplate = require("../utils/emailTemplates/sendReject");
-const sendResources = require("../utils/emailTemplates/sendResources");
+const sendResourcesTemplate = require("../utils/emailTemplates/sendResources");
 
 // Tạo người dùng mới thủ công
 const createNewUser = async (req, res, next) => {
@@ -480,6 +480,59 @@ const deleteUser = async (req, res, next) => {
   }
 };
 
+const sendResources = async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+
+    // Kiểm tra có file không
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "Vui lòng upload file tài nguyên!",
+      });
+    }
+
+    // Tìm user
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy người dùng!",
+      });
+    }
+
+    // Gửi email với file đính kèm
+    try {
+      await sendEmail({
+        to: user.personalEmail,
+        subject: "Tài nguyên từ hệ thống",
+        text: "",
+        html: sendResourcesTemplate(user.fullName),
+        attachments: [
+          {
+            filename: req.file.originalname,
+            content: req.file.buffer,
+            contentType: req.file.mimetype,
+          },
+        ],
+      });
+
+      res.json({
+        success: true,
+        message: `Đã gửi tài nguyên đến ${user.personalEmail}`,
+      });
+    } catch (mailErr) {
+      console.error("Gửi email thất bại:", mailErr);
+      return res.status(500).json({
+        success: false,
+        message: "Không thể gửi email: " + mailErr.message,
+      });
+    }
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   createNewUser,
   registerByUser,
@@ -490,4 +543,5 @@ module.exports = {
   getPersonal,
   updateUser,
   deleteUser,
+  sendResources,
 };
