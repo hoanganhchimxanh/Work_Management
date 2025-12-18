@@ -1,40 +1,87 @@
 import React from "react";
-import { Container, Table } from "react-bootstrap";
+import { Table, Badge, Spinner } from "react-bootstrap";
 
-function networkTable() {
+const NetworkTable = ({ networks, loading }) => {
+  const getStatusBadge = (status) => {
+    const variants = {
+      ACTIVE: "success",
+      PROCESSING: "warning",
+      INACTIVE: "secondary",
+      LOCKED: "danger",
+    };
+    return <Badge bg={variants[status] || "secondary"}>{status}</Badge>;
+  };
+
+  const formatDate = (date) => {
+    if (!date) return "N/A";
+    return new Date(date).toLocaleDateString("vi-VN");
+  };
+
+  if (loading) {
+    return (
+      <div className="text-center py-5">
+        <Spinner animation="border" variant="primary" />
+        <p className="mt-3">Đang tải dữ liệu...</p>
+      </div>
+    );
+  }
+
   return (
-    <Container fluid>
-      <h1>Quản lý Network</h1>
+    <div className="table-responsive">
       <Table striped bordered hover>
-        <thead>
+        <thead className="table-dark">
           <tr>
-            <th>ID</th>
+            <th style={{ width: "50px" }}>STT</th>
+            <th>Profile AdSense ID</th>
+            <th>Email Address</th>
             <th>Nhân viên</th>
-            <th>Lịch kiểm tra</th>
-            <th>Profile AdSense</th>
-            <th>Email của Profile AdSense</th>
-            <th>Recovery Email</th>
-            <th>Ngày tạo Profile AdSense</th>
-            <th>Thông tin thuế</th>
-            <th>Vị trí làm việc</th>
-            <th>Kênh liên kết</th>
-            <th>Link kênh</th>
-            <th>Email quản lý kênh</th>
-            <th>Ngày tạo kênh</th>
+            <th>Vị trí</th>
+            <th>Ngày tạo</th>
             <th>Quốc gia</th>
             <th>Trạng thái</th>
-            <th>Ghi chú</th>
+            <th>Số kênh</th>
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <td>1</td>
-            <td>...</td>
-          </tr>
+          {networks.length === 0 ? (
+            <tr>
+              <td colSpan="9" className="text-center py-4">
+                Không tìm thấy network nào
+              </td>
+            </tr>
+          ) : (
+            networks.map((network, index) => (
+              <tr key={network._id}>
+                <td>{index + 1}</td>
+                <td>
+                  <small className="text-muted">
+                    {network.profileAdsenseId}
+                  </small>
+                </td>
+                <td>{network.emailAddress}</td>
+                <td>
+                  {network.assignedUser?.fullName || "N/A"}
+                  <br />
+                  <small className="text-muted">
+                    {network.assignedUser?.personalEmail}
+                  </small>
+                </td>
+                <td>
+                  <Badge bg="info">{network.location}</Badge>
+                </td>
+                <td>{formatDate(network.creationDate)}</td>
+                <td>{network.country}</td>
+                <td>{getStatusBadge(network.status)}</td>
+                <td>
+                  <Badge bg="primary">{network.channelCount || 0}</Badge>
+                </td>
+              </tr>
+            ))
+          )}
         </tbody>
       </Table>
-    </Container>
+    </div>
   );
-}
+};
 
-export default networkTable;
+export default NetworkTable;
