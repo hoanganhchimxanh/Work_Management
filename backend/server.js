@@ -35,6 +35,7 @@ const networkRouter = require("./routes/network.route");
 const youtubeAuthRouter = require("./routes/youtubeAuth.route");
 const youtubeAnalyticsRouter = require("./routes/youtubeAnalytics.route");
 const dashboardRouter = require("./routes/dashboard.route");
+const excelRouter = require("./routes/excel.route");
 
 app.use("/user", userRouter);
 app.use("/account", accountRouter);
@@ -47,6 +48,7 @@ app.use("/network", networkRouter);
 app.use("/youtube-auth", youtubeAuthRouter);
 app.use("/youtube-analytics", youtubeAnalyticsRouter);
 app.use("/dashboard", dashboardRouter);
+app.use("/excel", excelRouter);
 
 // --- Xử lý lỗi ---
 

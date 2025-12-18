@@ -61,7 +61,7 @@ function TeamImportModal({ show, onHide, onSubmit }) {
 
       <Modal.Body>
         <Form.Group className="mb-3">
-          <Form.Label>Chọn file Excel (.xlsx hoặc .xls)</Form.Label>
+          <Form.Label>Chọn file Excel (.xlsx,.xls hoặc .csv)</Form.Label>
           <Form.Control
             type="file"
             accept=".xlsx, .xls, .csv"
