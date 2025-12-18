@@ -52,4 +52,11 @@ router.get(
   kpiController.getTeamKPIs
 );
 
+router.get(
+  "/get-all-with-progress",
+  authenticateJWT,
+  authorizeRoles(["ADMIN", "EMPLOYEE"]),
+  kpiController.getAllWithProgress
+);
+
 module.exports = router;
