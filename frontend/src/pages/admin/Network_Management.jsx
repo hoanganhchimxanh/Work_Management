@@ -1,4 +1,3 @@
-// src/pages/NetworkManagement/NetworkManagement.jsx
 import React, { useState, useEffect } from "react";
 import { Container, Button, Alert } from "react-bootstrap";
 import { Plus } from "react-bootstrap-icons";

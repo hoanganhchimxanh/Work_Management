@@ -41,7 +41,6 @@ const NetworkTable = ({ networks, loading, onEdit, onDelete }) => {
             <th>Ngày tạo</th>
             <th>Quốc gia</th>
             <th>Trạng thái</th>
-            <th>Số kênh</th>
             <th style={{ width: "120px" }}>Thao tác</th>
           </tr>
         </thead>
@@ -75,9 +74,6 @@ const NetworkTable = ({ networks, loading, onEdit, onDelete }) => {
                 <td>{formatDate(network.creationDate)}</td>
                 <td>{network.country}</td>
                 <td>{getStatusBadge(network.status)}</td>
-                <td>
-                  <Badge bg="primary">{network.channelCount || 0}</Badge>
-                </td>
                 <td>
                   <div className="d-flex gap-1">
                     <Button
