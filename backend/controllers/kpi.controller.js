@@ -320,6 +320,151 @@ const getTeamKPIs = async (req, res, next) => {
   }
 };
 
+const getAllWithProgress = async (req, res, next) => {
+  try {
+    const { user, team, status } = req.query;
+
+    // Build filter
+    const filter = {};
+    if (user) filter.user = user;
+    if (team) filter.team = team;
+
+    const kpis = await KPI.find(filter)
+      .populate("user", "fullName personalEmail role")
+      .populate("team", "name")
+      .sort({ startDate: -1 })
+      .lean();
+
+    // Thêm status (ongoing, completed, upcoming)
+    const now = new Date();
+
+    const kpisWithProgressPromises = kpis.map(async (kpi) => {
+      let kpiStatus = "upcoming";
+      if (now >= new Date(kpi.startDate) && now <= new Date(kpi.endDate)) {
+        kpiStatus = "ongoing";
+      } else if (now > new Date(kpi.endDate)) {
+        kpiStatus = "completed";
+      }
+
+      // Tính toán tiến độ thực tế
+      let actualRevenue = 0;
+      let actualBkt = 0;
+
+      // Chỉ tính tiến độ nếu đã đến ngày bắt đầu
+      const hasStarted = now >= new Date(kpi.startDate);
+
+      try {
+        // Lấy dữ liệu revenue từ ChannelAnalytics
+        if (hasStarted && kpi.user) {
+          // Tìm các channel của user
+          const channels = await db.Channel.find({
+            assignedUser: kpi.user._id || kpi.user,
+          }).lean();
+
+          const channelIds = channels.map((ch) => ch._id);
+
+          // Tính tổng revenue trong khoảng thời gian KPI
+          const revenueData = await db.ChannelAnalytics.aggregate([
+            {
+              $match: {
+                channel: { $in: channelIds },
+                date: {
+                  $gte: new Date(kpi.startDate),
+                  $lte: new Date(kpi.endDate),
+                },
+              },
+            },
+            {
+              $group: {
+                _id: null,
+                totalRevenue: { $sum: "$estimatedRevenue" },
+              },
+            },
+          ]);
+
+          actualRevenue = revenueData[0]?.totalRevenue || 0;
+
+          // Đếm số kênh đã BKT (status ACTIVE)
+          actualBkt = channels.filter((ch) => ch.status === "ACTIVE").length;
+        } else if (kpi.team) {
+          // Tìm các user thuộc team
+          const teamUsers = await db.User.find({
+            team: kpi.team._id || kpi.team,
+          }).lean();
+          const userIds = teamUsers.map((u) => u._id);
+
+          // Tìm các channel của team
+          const channels = await db.Channel.find({
+            assignedUser: { $in: userIds },
+          }).lean();
+
+          const channelIds = channels.map((ch) => ch._id);
+
+          // Tính tổng revenue
+          const revenueData = await db.ChannelAnalytics.aggregate([
+            {
+              $match: {
+                channel: { $in: channelIds },
+                date: {
+                  $gte: new Date(kpi.startDate),
+                  $lte: new Date(kpi.endDate),
+                },
+              },
+            },
+            {
+              $group: {
+                _id: null,
+                totalRevenue: { $sum: "$estimatedRevenue" },
+              },
+            },
+          ]);
+
+          actualRevenue = revenueData[0]?.totalRevenue || 0;
+
+          // Đếm số kênh đã BKT
+          actualBkt = channels.filter((ch) => ch.status === "ACTIVE").length;
+        }
+      } catch (error) {
+        console.error("Error calculating KPI progress:", error);
+      }
+
+      // Tính phần trăm hoàn thành
+      const revenueProgress =
+        kpi.revenueTarget > 0
+          ? Math.min(100, Math.round((actualRevenue / kpi.revenueTarget) * 100))
+          : 0;
+
+      const bktProgress =
+        kpi.bktTarget > 0
+          ? Math.min(100, Math.round((actualBkt / kpi.bktTarget) * 100))
+          : 0;
+
+      return {
+        ...kpi,
+        status: kpiStatus,
+        actualRevenue,
+        actualBkt,
+        revenueProgress,
+        bktProgress,
+      };
+    });
+
+    const kpisWithProgress = await Promise.all(kpisWithProgressPromises);
+
+    // Filter by status nếu có
+    const filteredKPIs = status
+      ? kpisWithProgress.filter((k) => k.status === status)
+      : kpisWithProgress;
+
+    res.json({
+      success: true,
+      data: filteredKPIs,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   createNew,
   getAll,
@@ -328,4 +473,5 @@ module.exports = {
   deleteKPI,
   getMyKPIs,
   getTeamKPIs,
+  getAllWithProgress,
 };

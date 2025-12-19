@@ -126,9 +126,13 @@ function User_Management() {
       const formData = new FormData();
       formData.append("file", file);
 
-      await axios.post("http://localhost:9999/user/import-excel", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      await axios.post(
+        "http://localhost:9999/excel/import-user-excel",
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        }
+      );
 
       alert("Import người dùng thành công!");
       setShowUserImportModal(false);
@@ -141,7 +145,7 @@ function User_Management() {
   const handleUserExport = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:9999/user/export-excel",
+        "http://localhost:9999/excel/export-user-excel",
         {
           responseType: "blob",
         }
@@ -168,9 +172,13 @@ function User_Management() {
       const formData = new FormData();
       formData.append("file", file);
 
-      await axios.post("http://localhost:9999/team/import-excel", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      await axios.post(
+        "http://localhost:9999/excel/import-team-excel",
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        }
+      );
 
       alert("Import team thành công!");
       setShowTeamImportModal(false);
@@ -184,7 +192,7 @@ function User_Management() {
   const handleTeamExport = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:9999/team/export-excel",
+        "http://localhost:9999/excel/export-team-excel",
         {
           responseType: "blob",
         }

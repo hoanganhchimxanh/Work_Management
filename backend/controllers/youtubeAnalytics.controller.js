@@ -1,13 +1,16 @@
 const { google } = require("googleapis");
 const mongoose = require("mongoose");
 const db = require("../models");
+
 const YoutubeAuth = db.YoutubeAuth;
 const ChannelAnalytics = db.ChannelAnalytics;
-const ChannelManager = db.ChannelManager;
 const Channel = db.Channel;
+
 const { refreshAccessToken } = require("./youtubeAuth.controller");
 
-// Helper: Lấy OAuth client với token hợp lệ
+/**
+ * Helper: Lấy OAuth client với token hợp lệ
+ */
 const getAuthenticatedClient = async (channelId, userId) => {
   const auth = await YoutubeAuth.findOne({
     channel: channelId,
@@ -19,10 +22,9 @@ const getAuthenticatedClient = async (channelId, userId) => {
     throw new Error("Channel chưa được authorize!");
   }
 
-  // Kiểm tra token có hết hạn không
+  // Refresh token nếu hết hạn
   if (new Date() >= new Date(auth.expiresAt)) {
     await refreshAccessToken(auth._id);
-    // Reload auth sau khi refresh
     const refreshedAuth = await YoutubeAuth.findById(auth._id);
     auth.accessToken = refreshedAuth.accessToken;
   }
@@ -45,7 +47,9 @@ const getAuthenticatedClient = async (channelId, userId) => {
   };
 };
 
-// Sync analytics data cho một channel
+/**
+ * Sync analytics cho 1 channel
+ */
 const syncChannelAnalytics = async (req, res, next) => {
   try {
     const { channelId } = req.params;
@@ -67,7 +71,6 @@ const syncChannelAnalytics = async (req, res, next) => {
       auth: oauth2Client,
     });
 
-    // Lấy metrics từ YouTube Analytics API
     const response = await youtubeAnalytics.reports.query({
       ids: `channel==${youtubeChannelId}`,
       startDate,
@@ -78,37 +81,28 @@ const syncChannelAnalytics = async (req, res, next) => {
     });
 
     const rows = response.data.rows || [];
-
-    // Lưu hoặc cập nhật analytics data
     const savedRecords = [];
+
     for (const row of rows) {
       const [date, revenue, subGained, subLost] = row;
 
-      const existingRecord = await ChannelAnalytics.findOne({
-        channel: channelId,
-        date: new Date(date),
-      });
-
-      if (existingRecord) {
-        existingRecord.estimatedRevenue = revenue;
-        existingRecord.subscribersGained = subGained;
-        existingRecord.subscribersLost = subLost;
-        existingRecord.syncedAt = new Date();
-        await existingRecord.save();
-        savedRecords.push(existingRecord);
-      } else {
-        const newRecord = await ChannelAnalytics.create({
+      const record = await ChannelAnalytics.findOneAndUpdate(
+        {
           channel: channelId,
           date: new Date(date),
+        },
+        {
           estimatedRevenue: revenue,
           subscribersGained: subGained,
           subscribersLost: subLost,
-        });
-        savedRecords.push(newRecord);
-      }
+          syncedAt: new Date(),
+        },
+        { new: true, upsert: true }
+      );
+
+      savedRecords.push(record);
     }
 
-    // Cập nhật lastSyncedAt
     authDoc.lastSyncedAt = new Date();
     await authDoc.save();
 
@@ -126,14 +120,16 @@ const syncChannelAnalytics = async (req, res, next) => {
   }
 };
 
-// Lấy analytics data từ database
+/**
+ * Lấy analytics của 1 channel
+ */
 const getChannelAnalytics = async (req, res, next) => {
   try {
     const { channelId } = req.params;
     const { startDate, endDate } = req.query;
     const userId = req.user.userId;
 
-    // Bước 1: Lấy thông tin channel với populate trong 1 query
+    // Lấy channel
     const channel = await Channel.findById(channelId)
       .populate("assignedUser", "fullName personalEmail role team")
       .populate("network", "profileAdsenseId emailAddress")
@@ -146,7 +142,7 @@ const getChannelAnalytics = async (req, res, next) => {
       });
     }
 
-    // Kiểm tra quyền truy cập
+    // Kiểm tra quyền
     if (
       req.user.role !== "ADMIN" &&
       req.user.role !== "ACCOUNTANT" &&
@@ -158,12 +154,13 @@ const getChannelAnalytics = async (req, res, next) => {
       });
     }
 
-    // Bước 2: Lấy thông tin team nếu có (1 query)
+    // Lấy team nếu có
     let teamInfo = null;
     if (channel.assignedUser?.team) {
       const team = await db.Team.findById(channel.assignedUser.team)
         .select("name")
         .lean();
+
       if (team) {
         teamInfo = {
           teamId: team._id,
@@ -172,15 +169,7 @@ const getChannelAnalytics = async (req, res, next) => {
       }
     }
 
-    // Bước 3: Lấy channel managers (1 query)
-    const channelManagers = await ChannelManager.find({
-      channel: channelId,
-      status: "ACTIVE",
-    })
-      .select("managerEmail role")
-      .lean();
-
-    // Bước 4: Aggregate analytics data với totals trong 1 query
+    // Query analytics
     const query = { channel: new mongoose.Types.ObjectId(channelId) };
     if (startDate && endDate) {
       query.date = {
@@ -190,10 +179,7 @@ const getChannelAnalytics = async (req, res, next) => {
     }
 
     const [analytics, totalsResult] = await Promise.all([
-      // Lấy chi tiết analytics
       ChannelAnalytics.find(query).sort({ date: 1 }).lean(),
-
-      // Tính tổng bằng aggregation (hiệu quả hơn reduce)
       ChannelAnalytics.aggregate([
         { $match: query },
         {
@@ -215,11 +201,9 @@ const getChannelAnalytics = async (req, res, next) => {
       recordCount: 0,
     };
 
-    // Bước 5: Format response
     res.json({
       success: true,
       data: {
-        // Thông tin kênh
         channel: {
           channelId: channel._id,
           channelName: channel.name,
@@ -229,7 +213,6 @@ const getChannelAnalytics = async (req, res, next) => {
           isBrandAccount: channel.isBrandAccount,
         },
 
-        // Thông tin nhân viên quản lý
         assignedUser: channel.assignedUser
           ? {
               userId: channel.assignedUser._id,
@@ -239,10 +222,8 @@ const getChannelAnalytics = async (req, res, next) => {
             }
           : null,
 
-        // Thông tin team
         team: teamInfo,
 
-        // Thông tin network
         network: channel.network
           ? {
               networkId: channel.network._id,
@@ -251,22 +232,14 @@ const getChannelAnalytics = async (req, res, next) => {
             }
           : null,
 
-        // Tài khoản quản lý kênh
-        channelManagers: channelManagers.map((m) => ({
-          managerEmail: m.managerEmail,
-          role: m.role,
+        analytics: analytics.map((r) => ({
+          date: r.date,
+          estimatedRevenue: r.estimatedRevenue,
+          subscribersGained: r.subscribersGained,
+          subscribersLost: r.subscribersLost,
+          totalSubscribers: r.totalSubscribers,
         })),
 
-        // Analytics data theo ngày
-        analytics: analytics.map((record) => ({
-          date: record.date,
-          estimatedRevenue: record.estimatedRevenue,
-          subscribersGained: record.subscribersGained,
-          subscribersLost: record.subscribersLost,
-          totalSubscribers: record.totalSubscribers,
-        })),
-
-        // Tổng kết
         totals: {
           totalRevenue: totals.totalRevenue,
           totalSubsGained: totals.totalSubsGained,
@@ -274,7 +247,6 @@ const getChannelAnalytics = async (req, res, next) => {
           netSubsChange: totals.totalSubsGained - totals.totalSubsLost,
         },
 
-        // Metadata
         recordCount: totals.recordCount,
         dateRange: startDate && endDate ? { startDate, endDate } : null,
       },
@@ -284,7 +256,9 @@ const getChannelAnalytics = async (req, res, next) => {
   }
 };
 
-// [ADMIN] Lấy analytics của tất cả channels
+/**
+ * [ADMIN] Lấy analytics của tất cả channels
+ */
 const getAllChannelsAnalytics = async (req, res, next) => {
   try {
     const { startDate, endDate } = req.query;
@@ -296,7 +270,6 @@ const getAllChannelsAnalytics = async (req, res, next) => {
       });
     }
 
-    // Bước 1: Aggregate analytics data với lookup trực tiếp
     const analyticsData = await ChannelAnalytics.aggregate([
       {
         $match: {
@@ -315,7 +288,6 @@ const getAllChannelsAnalytics = async (req, res, next) => {
           recordCount: { $sum: 1 },
         },
       },
-      // Lookup Channel với nested populate
       {
         $lookup: {
           from: "channels",
@@ -325,7 +297,6 @@ const getAllChannelsAnalytics = async (req, res, next) => {
         },
       },
       { $unwind: "$channel" },
-      // Lookup User (assignedUser)
       {
         $lookup: {
           from: "users",
@@ -335,7 +306,6 @@ const getAllChannelsAnalytics = async (req, res, next) => {
         },
       },
       { $unwind: { path: "$assignedUser", preserveNullAndEmptyArrays: true } },
-      // Lookup Team
       {
         $lookup: {
           from: "teams",
@@ -345,7 +315,6 @@ const getAllChannelsAnalytics = async (req, res, next) => {
         },
       },
       { $unwind: { path: "$team", preserveNullAndEmptyArrays: true } },
-      // Lookup Network
       {
         $lookup: {
           from: "networks",
@@ -355,7 +324,6 @@ const getAllChannelsAnalytics = async (req, res, next) => {
         },
       },
       { $unwind: { path: "$network", preserveNullAndEmptyArrays: true } },
-      // Project final shape
       {
         $project: {
           channelId: "$_id",
@@ -374,7 +342,7 @@ const getAllChannelsAnalytics = async (req, res, next) => {
           },
           network: {
             networkId: "$network._id",
-            networkName: "$network.profileAdsenseId",
+            profileAdsenseId: "$network.profileAdsenseId",
           },
           totalRevenue: 1,
           totalSubsGained: 1,
@@ -384,75 +352,7 @@ const getAllChannelsAnalytics = async (req, res, next) => {
       },
     ]);
 
-    // Bước 2: Lấy channelIds để query ChannelManager
-    const channelIds = analyticsData.map((item) => item.channelId);
-
-    // Lấy tất cả channel managers trong 1 query duy nhất
-    const channelManagers = await ChannelManager.find({
-      channel: { $in: channelIds },
-      status: "ACTIVE",
-    })
-      .select("channel managerEmail role")
-      .lean();
-
-    // Tạo map để tra cứu nhanh managers theo channelId
-    const managersMap = channelManagers.reduce((acc, manager) => {
-      const channelId = manager.channel.toString();
-      if (!acc[channelId]) {
-        acc[channelId] = [];
-      }
-      acc[channelId].push({
-        managerEmail: manager.managerEmail,
-        role: manager.role,
-      });
-      return acc;
-    }, {});
-
-    // Bước 3: Kết hợp dữ liệu
-    const result = analyticsData.map((item) => ({
-      channelId: item.channelId,
-      channelName: item.channelName,
-      channelLink: item.channelLink,
-      channelStatus: item.channelStatus,
-
-      // Thông tin nhân viên
-      assignedUser: item.assignedUser?.userId
-        ? {
-            userId: item.assignedUser.userId,
-            fullName: item.assignedUser.fullName,
-            personalEmail: item.assignedUser.personalEmail,
-            role: item.assignedUser.role,
-          }
-        : null,
-
-      // Thông tin team
-      team: item.team?.teamId
-        ? {
-            teamId: item.team.teamId,
-            teamName: item.team.teamName,
-          }
-        : null,
-
-      // Thông tin network
-      network: item.network?.networkId
-        ? {
-            networkId: item.network.networkId,
-            networkName: item.network.networkName,
-          }
-        : null,
-
-      // Tài khoản quản lý kênh
-      channelManagers: managersMap[item.channelId.toString()] || [],
-
-      // Metrics
-      totalRevenue: item.totalRevenue,
-      totalSubsGained: item.totalSubsGained,
-      totalSubsLost: item.totalSubsLost,
-      recordCount: item.recordCount,
-    }));
-
-    // Bước 4: Tính grand totals
-    const grandTotals = result.reduce(
+    const grandTotals = analyticsData.reduce(
       (acc, item) => ({
         totalRevenue: acc.totalRevenue + item.totalRevenue,
         totalSubsGained: acc.totalSubsGained + item.totalSubsGained,
@@ -468,13 +368,10 @@ const getAllChannelsAnalytics = async (req, res, next) => {
     res.json({
       success: true,
       data: {
-        channels: result,
+        channels: analyticsData,
         grandTotals,
-        channelCount: result.length,
-        dateRange: {
-          startDate,
-          endDate,
-        },
+        channelCount: analyticsData.length,
+        dateRange: { startDate, endDate },
       },
     });
   } catch (err) {
@@ -482,7 +379,9 @@ const getAllChannelsAnalytics = async (req, res, next) => {
   }
 };
 
-// [ADMIN] Sync tất cả channels đã authorize
+/**
+ * [ADMIN] Sync tất cả channels đã authorize
+ */
 const syncAllChannels = async (req, res, next) => {
   try {
     const { startDate, endDate } = req.query;
@@ -494,7 +393,6 @@ const syncAllChannels = async (req, res, next) => {
       });
     }
 
-    // Lấy tất cả channels đã authorize
     const authorizedChannels = await YoutubeAuth.find({
       status: "ACTIVE",
     }).populate("channel user");
@@ -504,7 +402,6 @@ const syncAllChannels = async (req, res, next) => {
 
     for (const auth of authorizedChannels) {
       try {
-        // Sync từng channel
         const { oauth2Client, youtubeChannelId } = await getAuthenticatedClient(
           auth.channel._id,
           auth.user._id

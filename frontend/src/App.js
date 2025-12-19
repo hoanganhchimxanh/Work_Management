@@ -23,7 +23,8 @@ import ChannelDetail from "./pages/employee/ChannelDetail";
 import MyKPITasks from "./pages/employee/MyKPITasks";
 
 // Accountant pages
-import AccountantPage from "./pages/accountant/AccountantPage";
+import AccountantLayout from "./layouts/AccountantLayout";
+import AccountantNetworkManagement from "./pages/accountant/Network_Management";
 
 // Protected route
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -67,13 +68,15 @@ function App() {
 
         {/* Accountant pages */}
         <Route
-          path="/accountant/page"
+          path="/accountant/*"
           element={
             <RoleBasedRoute allowedRoles={["ACCOUNTANT"]}>
-              <AccountantPage />
+              <AccountantLayout />
             </RoleBasedRoute>
           }
-        />
+        >
+          <Route path="networks" element={<AccountantNetworkManagement />} />
+        </Route>
 
         {/* Employee pages */}
         <Route

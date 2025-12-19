@@ -31,8 +31,6 @@ function Channel_Management() {
 
   // Modal states
   const [showAddChannelModal, setShowAddChannelModal] = useState(false);
-  const [showAddManagerModal, setShowAddManagerModal] = useState(false);
-  const [selectedChannel, setSelectedChannel] = useState(null);
 
   // Form states for new channel
   const [newChannel, setNewChannel] = useState({
@@ -41,12 +39,6 @@ function Channel_Management() {
     assignedUser: "",
     network: "",
     status: "ACTIVE",
-  });
-
-  // Form states for channel manager
-  const [newManager, setNewManager] = useState({
-    managerEmail: "",
-    role: "MANAGER",
   });
 
   // Get token from localStorage
@@ -130,28 +122,6 @@ function Channel_Management() {
       alert("Thêm kênh thành công!");
     } catch (err) {
       alert(err.response?.data?.message || "Lỗi khi thêm kênh");
-    }
-  };
-
-  // Handle add channel manager
-  const handleAddManager = async (e) => {
-    e.preventDefault();
-    try {
-      const token = getToken();
-      await axios.post(
-        `http://localhost:9999/channel-manager/add-manager/${selectedChannel}`,
-        newManager,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      setShowAddManagerModal(false);
-      setNewManager({ managerEmail: "", role: "MANAGER" });
-      setSelectedChannel(null);
-      alert("Thêm người quản lý thành công!");
-    } catch (err) {
-      alert(err.response?.data?.message || "Lỗi khi thêm người quản lý");
     }
   };
 
@@ -341,18 +311,7 @@ function Channel_Management() {
                 </td>
                 <td>{channel.totalSubscribers.toLocaleString()}</td>
                 <td>${channel.totalRevenue.toFixed(2)}</td>
-                <td>
-                  <Button
-                    size="sm"
-                    variant="outline-primary"
-                    onClick={() => {
-                      setSelectedChannel(channel._id);
-                      setShowAddManagerModal(true);
-                    }}
-                  >
-                    + Thêm quản lý
-                  </Button>
-                </td>
+                <td></td>
               </tr>
             ))
           )}
@@ -456,62 +415,6 @@ function Channel_Management() {
               </Button>
               <Button variant="primary" type="submit">
                 Thêm kênh
-              </Button>
-            </div>
-          </Form>
-        </Modal.Body>
-      </Modal>
-
-      {/* Modal: Add Channel Manager */}
-      <Modal
-        show={showAddManagerModal}
-        onHide={() => setShowAddManagerModal(false)}
-      >
-        <Modal.Header closeButton>
-          <Modal.Title>Thêm người quản lý kênh</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form onSubmit={handleAddManager}>
-            <Form.Group className="mb-3">
-              <Form.Label>Email quản lý *</Form.Label>
-              <Form.Control
-                type="email"
-                required
-                placeholder="manager@gmail.com"
-                value={newManager.managerEmail}
-                onChange={(e) =>
-                  setNewManager({
-                    ...newManager,
-                    managerEmail: e.target.value,
-                  })
-                }
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Vai trò *</Form.Label>
-              <Form.Select
-                required
-                value={newManager.role}
-                onChange={(e) =>
-                  setNewManager({ ...newManager, role: e.target.value })
-                }
-              >
-                <option value="MANAGER">MANAGER</option>
-                <option value="OWNER">OWNER</option>
-                <option value="PRIMARY_OWNER">PRIMARY_OWNER</option>
-              </Form.Select>
-            </Form.Group>
-
-            <div className="d-flex justify-content-end gap-2">
-              <Button
-                variant="secondary"
-                onClick={() => setShowAddManagerModal(false)}
-              >
-                Hủy
-              </Button>
-              <Button variant="primary" type="submit">
-                Thêm người quản lý
               </Button>
             </div>
           </Form>

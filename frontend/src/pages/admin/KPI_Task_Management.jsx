@@ -31,11 +31,23 @@ function KPI_Task_Management() {
   // Active tab
   const [activeTab, setActiveTab] = useState("kpi");
 
-  // Fetch KPIs
+  // Get auth token
+  const getAuthToken = () => {
+    return localStorage.getItem("token") || "";
+  };
+
+  // Fetch KPIs with progress
   const fetchKPIs = async () => {
     try {
       setLoadingKPIs(true);
-      const response = await axios.get("http://localhost:9999/kpi/get-all");
+      const response = await axios.get(
+        "http://localhost:9999/kpi/get-all-with-progress",
+        {
+          headers: {
+            Authorization: `Bearer ${getAuthToken()}`,
+          },
+        }
+      );
       setKPIs(response.data.data);
       setError(null);
     } catch (err) {
@@ -50,7 +62,11 @@ function KPI_Task_Management() {
   const fetchTasks = async () => {
     try {
       setLoadingTasks(true);
-      const response = await axios.get("http://localhost:9999/task/get-all");
+      const response = await axios.get("http://localhost:9999/task/get-all", {
+        headers: {
+          Authorization: `Bearer ${getAuthToken()}`,
+        },
+      });
       setTasks(response.data.data);
       setError(null);
     } catch (err) {
@@ -64,7 +80,11 @@ function KPI_Task_Management() {
   // Fetch Users
   const fetchUsers = async () => {
     try {
-      const response = await axios.get("http://localhost:9999/user/get-all");
+      const response = await axios.get("http://localhost:9999/user/get-all", {
+        headers: {
+          Authorization: `Bearer ${getAuthToken()}`,
+        },
+      });
       const normalizedUsers = response.data.data.map((user) => ({
         ...user,
         _id: user.userId,
@@ -79,7 +99,12 @@ function KPI_Task_Management() {
   const fetchTeams = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:9999/team/get-all-team"
+        "http://localhost:9999/team/get-all-team",
+        {
+          headers: {
+            Authorization: `Bearer ${getAuthToken()}`,
+          },
+        }
       );
       setTeams(response.data.data);
     } catch (err) {
@@ -176,7 +201,6 @@ function KPI_Task_Management() {
               </div>
             </Col>
           </Row>
-
           <Row>
             <Col>
               <KPITable

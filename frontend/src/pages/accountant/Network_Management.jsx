@@ -1,15 +1,13 @@
+// src/pages/NetworkManagement/NetworkManagement.jsx
 import React, { useState, useEffect } from "react";
-import { Container, Button, Alert } from "react-bootstrap";
-import { Plus } from "react-bootstrap-icons";
-import NetworkFilters from "../../components/admin/networkManagement/NetworkFilters";
-import NetworkTable from "../../components/admin/networkManagement/NetworkTable";
-import NetworkFormModal from "../../components/admin/networkManagement/NetworkFormModal";
+import { Container, Alert } from "react-bootstrap";
+import NetworkFilters from "../../components/accountant/networkManagement/NetworkFilters";
+import NetworkTable from "../../components/accountant/networkManagement/NetworkTable";
 
 const API_BASE_URL = "http://localhost:9999";
 
 const NetworkManagement = () => {
   const [networks, setNetworks] = useState([]);
-  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
     search: "",
@@ -17,8 +15,6 @@ const NetworkManagement = () => {
     location: "",
     country: "",
   });
-  const [showFormModal, setShowFormModal] = useState(false);
-  const [selectedNetwork, setSelectedNetwork] = useState(null);
   const [alert, setAlert] = useState(null);
 
   const getAuthToken = () => {
@@ -57,27 +53,8 @@ const NetworkManagement = () => {
     }
   };
 
-  const fetchUsers = async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/user/get-all`, {
-        headers: {
-          Authorization: `Bearer ${getAuthToken()}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      const data = await response.json();
-      if (data.success) {
-        setUsers(data.data);
-      }
-    } catch (error) {
-      console.error("Error fetching users:", error);
-    }
-  };
-
   useEffect(() => {
     fetchNetworks();
-    fetchUsers();
   }, [filters.status, filters.location, filters.country]);
 
   const filteredNetworks = networks.filter((network) => {
@@ -136,95 +113,10 @@ const NetworkManagement = () => {
     }
   };
 
-  const handleEdit = (network) => {
-    setSelectedNetwork(network);
-    setShowFormModal(true);
-  };
-
-  const handleDelete = async (network) => {
-    if (
-      !window.confirm(
-        `Bạn có chắc chắn muốn xóa network ${network.profileAdsenseId}?`
-      )
-    ) {
-      return;
-    }
-
-    try {
-      const response = await fetch(
-        `${API_BASE_URL}/network/delete/${network._id}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${getAuthToken()}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      const data = await response.json();
-      if (data.success) {
-        showAlert("Xóa network thành công!");
-        fetchNetworks();
-      } else {
-        showAlert(data.message || "Lỗi khi xóa network", "danger");
-      }
-    } catch (error) {
-      showAlert("Lỗi khi xóa network", "danger");
-      console.error("Error deleting network:", error);
-    }
-  };
-
-  const handleSave = async (formData) => {
-    try {
-      const url = selectedNetwork
-        ? `${API_BASE_URL}/network/update/${selectedNetwork._id}`
-        : `${API_BASE_URL}/network/create-new`;
-
-      const method = selectedNetwork ? "PUT" : "POST";
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          Authorization: `Bearer ${getAuthToken()}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
-
-      const data = await response.json();
-      if (data.success) {
-        showAlert(
-          selectedNetwork
-            ? "Cập nhật network thành công!"
-            : "Thêm network thành công!"
-        );
-        setShowFormModal(false);
-        setSelectedNetwork(null);
-        fetchNetworks();
-      } else {
-        showAlert(data.message || "Có lỗi xảy ra", "danger");
-      }
-    } catch (error) {
-      showAlert("Lỗi khi lưu network", "danger");
-      console.error("Error saving network:", error);
-    }
-  };
-
   return (
     <Container fluid className="py-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h2>Quản lý Network</h2>
-        <Button
-          variant="primary"
-          onClick={() => {
-            setSelectedNetwork(null);
-            setShowFormModal(true);
-          }}
-        >
-          <Plus className="me-2" />
-          Thêm Network
-        </Button>
       </div>
 
       {alert && (
@@ -246,23 +138,8 @@ const NetworkManagement = () => {
       <div className="mb-3">
         <strong>Tổng số network:</strong> {filteredNetworks.length}
       </div>
-      <NetworkTable
-        networks={filteredNetworks}
-        loading={loading}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-      />
 
-      <NetworkFormModal
-        show={showFormModal}
-        network={selectedNetwork}
-        users={users}
-        onHide={() => {
-          setShowFormModal(false);
-          setSelectedNetwork(null);
-        }}
-        onSave={handleSave}
-      />
+      <NetworkTable networks={filteredNetworks} loading={loading} />
     </Container>
   );
 };

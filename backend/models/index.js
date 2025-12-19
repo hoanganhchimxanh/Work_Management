@@ -6,7 +6,6 @@ const Network = require("./network.model");
 const Task = require("./task.model");
 const KPI = require("./kpi.model");
 const YoutubeAuth = require("./youtubeAuth.model");
-const ChannelManager = require("./channelManager.model");
 const ChannelAnalytics = require("./channelAnalytics.model");
 
 module.exports = {
@@ -18,6 +17,5 @@ module.exports = {
   Task,
   KPI,
   YoutubeAuth,
-  ChannelManager,
   ChannelAnalytics,
 };
