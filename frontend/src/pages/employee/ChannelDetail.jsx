@@ -16,7 +16,7 @@ import StatsCards from "../../components/employee/channelDetail/StatsCards";
 import TimeRangeFilter from "../../components/employee/channelDetail/TimeRangeFilter";
 import ChannelInfoCard from "../../components/employee/channelDetail/ChannelInfoCard";
 
-const API_BASE_URL = "http://localhost:9999";
+import config from "../../configs/api";
 
 function ChannelDetail() {
   const { channelId } = useParams();
@@ -45,7 +45,9 @@ function ChannelDetail() {
       const formatDate = (date) => date.toISOString().split("T")[0];
 
       const response = await fetch(
-        `${API_BASE_URL}/youtube-analytics/get-analytics/${channelId}?startDate=${formatDate(
+        `${
+          config.backendBase
+        }/youtube-analytics/get-analytics/${channelId}?startDate=${formatDate(
           startDate
         )}&endDate=${formatDate(endDate)}`,
         {

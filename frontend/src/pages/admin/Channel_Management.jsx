@@ -13,7 +13,7 @@ import {
 } from "react-bootstrap";
 import axios from "axios";
 
-const API_BASE_URL = "http://localhost:9999";
+import config from "../../configs/api";
 
 function Channel_Management() {
   // States for data
@@ -56,17 +56,17 @@ function Channel_Management() {
 
       const [channelsRes, usersRes, networksRes, analyticsRes] =
         await Promise.all([
-          axios.get(`http://localhost:9999/channel/get-all`, {
+          axios.get(`${config.backendBase}/channel/get-all`, {
             headers: { Authorization: `Bearer ${token}` },
           }),
-          axios.get(`http://localhost:9999/user/get-all`, {
+          axios.get(`${config.backendBase}/user/get-all`, {
             headers: { Authorization: `Bearer ${token}` },
           }),
-          axios.get(`http://localhost:9999/network/get-all`, {
+          axios.get(`${config.backendBase}/network/get-all`, {
             headers: { Authorization: `Bearer ${token}` },
           }),
           axios.get(
-            `http://localhost:9999/youtube-analytics/get-all-analytics`,
+            `${config.backendBase}/youtube-analytics/get-all-analytics`,
             {
               params: {
                 startDate: "2024-01-01",
@@ -106,7 +106,7 @@ function Channel_Management() {
     e.preventDefault();
     try {
       const token = getToken();
-      await axios.post(`http://localhost:9999/channel/add-new`, newChannel, {
+      await axios.post(`${config.backendBase}/channel/add-new`, newChannel, {
         headers: { Authorization: `Bearer ${token}` },
       });
 

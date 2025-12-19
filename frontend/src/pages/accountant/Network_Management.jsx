@@ -4,7 +4,7 @@ import { Container, Alert } from "react-bootstrap";
 import NetworkFilters from "../../components/accountant/networkManagement/NetworkFilters";
 import NetworkTable from "../../components/accountant/networkManagement/NetworkTable";
 
-const API_BASE_URL = "http://localhost:9999";
+import config from "../../configs/api";
 
 const NetworkManagement = () => {
   const [networks, setNetworks] = useState([]);
@@ -30,7 +30,7 @@ const NetworkManagement = () => {
       if (filters.country) queryParams.append("country", filters.country);
 
       const response = await fetch(
-        `${API_BASE_URL}/network/get-all?${queryParams}`,
+        `${config.backendBase}/network/get-all?${queryParams}`,
         {
           headers: {
             Authorization: `Bearer ${getAuthToken()}`,
@@ -84,7 +84,7 @@ const NetworkManagement = () => {
       if (filters.country) queryParams.append("country", filters.country);
 
       const response = await fetch(
-        `${API_BASE_URL}/network/export-excel?${queryParams}`,
+        `${config.backendBase}/network/export-excel?${queryParams}`,
         {
           headers: {
             Authorization: `Bearer ${getAuthToken()}`,

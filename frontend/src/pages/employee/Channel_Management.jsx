@@ -6,7 +6,7 @@ import ChannelActionButtons from "../../components/employee/channelManagement/Ch
 import ChannelTable from "../../components/employee/channelManagement/ChannelTable";
 import AddChannelModal from "../../components/employee/channelManagement/AddChannelModal";
 
-const API_BASE_URL = "http://localhost:9999";
+import config from "../../configs/api";
 
 function EmployeeChannelManagement() {
   const { user } = useContext(AuthContext);
@@ -23,7 +23,7 @@ function EmployeeChannelManagement() {
       setError(null);
 
       const response = await axios.get(
-        `${API_BASE_URL}/channel/by-owner/${user.userId}`,
+        `${config.backendBase}/channel/by-owner/${user.userId}`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -46,7 +46,7 @@ function EmployeeChannelManagement() {
   const handleGetAuthUrl = async (channelId) => {
     try {
       const response = await axios.get(
-        `${API_BASE_URL}/youtube-auth/get-auth-url`,
+        `${config.backendBase}/youtube-auth/get-auth-url`,
         {
           params: { channelId },
           headers: {
@@ -69,7 +69,7 @@ function EmployeeChannelManagement() {
   const handleCheckAuthStatus = async (channelId) => {
     try {
       const response = await axios.get(
-        `${API_BASE_URL}/youtube-auth/check-status/${channelId}`,
+        `${config.backendBase}/youtube-auth/check-status/${channelId}`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -101,7 +101,7 @@ function EmployeeChannelManagement() {
 
     try {
       const response = await axios.delete(
-        `${API_BASE_URL}/youtube-auth/revoke/${channelId}`,
+        `${config.backendBase}/youtube-auth/revoke/${channelId}`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -132,7 +132,7 @@ function EmployeeChannelManagement() {
     try {
       setSyncing(true);
       const response = await axios.post(
-        `${API_BASE_URL}/youtube-analytics/sync/${channelId}`,
+        `${config.backendBase}/youtube-analytics/sync/${channelId}`,
         null,
         {
           params: { startDate, endDate },
@@ -157,7 +157,7 @@ function EmployeeChannelManagement() {
   const handleAddChannel = async (channelData) => {
     try {
       const response = await axios.post(
-        `${API_BASE_URL}/channel/add-new`,
+        `${config.backendBase}/channel/add-new`,
         {
           ...channelData,
           assignedUser: user.userId,
@@ -188,7 +188,7 @@ function EmployeeChannelManagement() {
 
     try {
       const response = await axios.delete(
-        `${API_BASE_URL}/channel/delete/${channelId}`,
+        `${config.backendBase}/channel/delete/${channelId}`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,

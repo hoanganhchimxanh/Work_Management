@@ -3,6 +3,7 @@ import { Button, Col, Container, Form, Row, Alert } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import "../styles/register.style.css";
+import config from "../configs/api";
 
 function RegisterPage() {
   const [fullName, setFullName] = useState("");
@@ -19,7 +20,7 @@ function RegisterPage() {
     setLoading(true);
 
     try {
-      const response = await axios.post("http://localhost:9999/user/register", {
+      const response = await axios.post(`${config.backendBase}/user/register`, {
         fullName,
         personalEmail,
       });

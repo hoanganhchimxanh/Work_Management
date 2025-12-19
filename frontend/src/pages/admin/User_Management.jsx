@@ -8,6 +8,8 @@ import TeamModal from "../../components/admin/userManagement/TeamModal";
 import UserImportModal from "../../components/admin/userManagement/UserImportModal";
 import TeamImportModal from "../../components/admin/userManagement/TeamImportModal";
 
+import config from "../../configs/api";
+
 function User_Management() {
   // Users state
   const [users, setUsers] = useState([]);
@@ -33,7 +35,7 @@ function User_Management() {
   const fetchUsers = async () => {
     try {
       setLoadingUsers(true);
-      const response = await axios.get("http://localhost:9999/user/get-all");
+      const response = await axios.get(`${config.backendBase}/user/get-all`);
 
       const normalizedUsers = response.data.data.map((user) => ({
         ...user,
@@ -55,7 +57,7 @@ function User_Management() {
     try {
       setLoadingTeams(true);
       const response = await axios.get(
-        "http://localhost:9999/team/get-all-team"
+        `${config.backendBase}/team/get-all-team`
       );
       setTeams(response.data.data);
       setError(null);
@@ -127,7 +129,7 @@ function User_Management() {
       formData.append("file", file);
 
       await axios.post(
-        "http://localhost:9999/excel/import-user-excel",
+        `${config.backendBase}/excel/import-user-excel`,
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
@@ -145,7 +147,7 @@ function User_Management() {
   const handleUserExport = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:9999/excel/export-user-excel",
+        `${config.backendBase}/excel/export-user-excel`,
         {
           responseType: "blob",
         }
@@ -173,7 +175,7 @@ function User_Management() {
       formData.append("file", file);
 
       await axios.post(
-        "http://localhost:9999/excel/import-team-excel",
+        `${config.backendBase}/excel/import-team-excel`,
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
@@ -192,7 +194,7 @@ function User_Management() {
   const handleTeamExport = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:9999/excel/export-team-excel",
+        `${config.backendBase}/excel/export-team-excel`,
         {
           responseType: "blob",
         }

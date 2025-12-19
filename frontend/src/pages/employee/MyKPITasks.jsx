@@ -3,6 +3,7 @@ import { Container, Row, Col, Alert, Tabs, Tab } from "react-bootstrap";
 import axios from "axios";
 import EmployeeKPITable from "../../components/employee/kpiTaskManagement/EmpolyeeKPITable";
 import EmployeeTaskTable from "../../components/employee/kpiTaskManagement/EmployeeTaskTable";
+import config from "../../configs/api";
 
 function MyKPITasks() {
   // KPIs state
@@ -24,7 +25,7 @@ function MyKPITasks() {
     try {
       setLoadingKPIs(true);
       const token = localStorage.getItem("token");
-      const response = await axios.get("http://localhost:9999/kpi/my-kpis", {
+      const response = await axios.get(`${config.backendBase}/kpi/my-kpis`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -44,7 +45,7 @@ function MyKPITasks() {
     try {
       setLoadingTasks(true);
       const token = localStorage.getItem("token");
-      const response = await axios.get("http://localhost:9999/task/my-tasks", {
+      const response = await axios.get(`${config.backendBase}/task/my-tasks`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

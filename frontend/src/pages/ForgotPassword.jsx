@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Button, Col, Container, Form, Row, Alert } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import "../styles/login.style.css";
+import config from "../configs/api";
 
 function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -19,7 +20,7 @@ function ForgotPassword() {
 
     try {
       const response = await fetch(
-        "http://localhost:9999/account/auto-reset-password",
+        `${config.backendBase}/account/auto-reset-password`,
         {
           method: "POST",
           headers: {
