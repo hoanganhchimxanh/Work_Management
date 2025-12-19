@@ -1,6 +1,13 @@
 // src/pages/EmployeeDashboard.jsx
-import React from "react";
-import { Container, Row, Col, Card, Spinner, Table } from "react-bootstrap";
+import React, { useState } from "react";
+import {
+  Container,
+  Row,
+  Col,
+  Card,
+  ButtonGroup,
+  Button,
+} from "react-bootstrap";
 import {
   CashStack,
   BroadcastPin,
@@ -13,46 +20,93 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
 } from "recharts";
 
 function EmployeeDashboard() {
-  // Fake data
-  const stats = {
-    totalRevenueThisMonth: 285000000, // ~285M VND
-    ownedChannels: 8,
-    completedTasks: 42,
-    completedKPI: 87, // %
+  const [timeFilter, setTimeFilter] = useState("lifetime");
+
+  // Fake data theo các khoảng thời gian (USD)
+  const dataByPeriod = {
+    "7days": [
+      { date: "12/13", revenue: 8500 },
+      { date: "12/14", revenue: 9200 },
+      { date: "12/15", revenue: 7800 },
+      { date: "12/16", revenue: 11000 },
+      { date: "12/17", revenue: 9500 },
+      { date: "12/18", revenue: 10200 },
+      { date: "12/19", revenue: 11800 },
+    ],
+    "28days": [
+      { date: "11/22", revenue: 7800 },
+      { date: "11/29", revenue: 9200 },
+      { date: "12/06", revenue: 10500 },
+      { date: "12/13", revenue: 11800 },
+      { date: "12/19", revenue: 12200 },
+    ],
+    "90days": [
+      { date: "Sep", revenue: 28500 },
+      { date: "Oct", revenue: 31200 },
+      { date: "Nov", revenue: 29800 },
+      { date: "Dec", revenue: 33500 },
+    ],
+    "365days": [
+      { month: "Jan", revenue: 9500 },
+      { month: "Feb", revenue: 8800 },
+      { month: "Mar", revenue: 10200 },
+      { month: "Apr", revenue: 11500 },
+      { month: "May", revenue: 10800 },
+      { month: "Jun", revenue: 12500 },
+      { month: "Jul", revenue: 13200 },
+      { month: "Aug", revenue: 13800 },
+      { month: "Sep", revenue: 14200 },
+      { month: "Oct", revenue: 14500 },
+      { month: "Nov", revenue: 13800 },
+      { month: "Dec", revenue: 14200 },
+    ],
+    lifetime: [
+      { month: "2021", revenue: 5200 },
+      { month: "2022", revenue: 8800 },
+      { month: "2023", revenue: 11200 },
+      { month: "2024", revenue: 12800 },
+      { month: "2025", revenue: 14200 },
+    ],
   };
 
-  const revenueData = [
-    { month: "T1", revenue: 120000000 },
-    { month: "T2", revenue: 180000000 },
-    { month: "T3", revenue: 150000000 },
-    { month: "T4", revenue: 220000000 },
-    { month: "T5", revenue: 195000000 },
-    { month: "T6", revenue: 260000000 },
-    { month: "T7", revenue: 280000000 },
-    { month: "T8", revenue: 310000000 },
-    { month: "T9", revenue: 290000000 },
-    { month: "T10", revenue: 305000000 },
-    { month: "T11", revenue: 270000000 },
-    { month: "T12", revenue: 285000000 },
-  ];
+  const currentData = dataByPeriod[timeFilter];
+
+  // Doanh thu tháng hiện tại (USD) - thay đổi theo filter
+  const revenueThisPeriod =
+    timeFilter === "7days"
+      ? 77000
+      : timeFilter === "28days"
+      ? 315000
+      : timeFilter === "90days"
+      ? 1230000
+      : timeFilter === "365days"
+      ? 1420000
+      : 1420000; // lifetime
+
+  const stats = {
+    totalRevenueThisPeriod: revenueThisPeriod,
+    ownedChannels: 8,
+    completedTasks: timeFilter === "lifetime" ? 528 : 42,
+    completedKPI: timeFilter === "lifetime" ? 92 : 87,
+  };
 
   const formatCurrency = (value) =>
-    new Intl.NumberFormat("vi-VN", {
+    new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: "VND",
+      currency: "USD",
       minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     }).format(value);
 
   const formatShortCurrency = (value) => {
-    if (value >= 1e9) return `${(value / 1e9).toFixed(1)} tỷ`;
-    if (value >= 1e6) return `${(value / 1e6).toFixed(0)} tr`;
-    if (value >= 1e3) return `${(value / 1e3).toFixed(0)} nghìn`;
-    return value;
+    if (value >= 1e9) return `$${(value / 1e9).toFixed(1)}B`;
+    if (value >= 1e6) return `$${(value / 1e6).toFixed(0)}M`;
+    if (value >= 1e3) return `$${(value / 1e3).toFixed(0)}K`;
+    return `$${value}`;
   };
 
   const CustomTooltip = ({ active, payload, label }) => {
@@ -78,10 +132,46 @@ function EmployeeDashboard() {
 
   return (
     <Container fluid className="p-4">
-      <Row className="mb-4">
+      <Row className="mb-4 align-items-center">
         <Col>
           <h2 className="fw-bold">Dashboard Nhân viên</h2>
           <p className="text-muted">Tổng quan hiệu suất cá nhân</p>
+        </Col>
+        <Col xs="auto">
+          <ButtonGroup size="sm">
+            <Button
+              variant={timeFilter === "7days" ? "primary" : "outline-primary"}
+              onClick={() => setTimeFilter("7days")}
+            >
+              7 ngày
+            </Button>
+            <Button
+              variant={timeFilter === "28days" ? "primary" : "outline-primary"}
+              onClick={() => setTimeFilter("28days")}
+            >
+              28 ngày
+            </Button>
+            <Button
+              variant={timeFilter === "90days" ? "primary" : "outline-primary"}
+              onClick={() => setTimeFilter("90days")}
+            >
+              90 ngày
+            </Button>
+            <Button
+              variant={timeFilter === "365days" ? "primary" : "outline-primary"}
+              onClick={() => setTimeFilter("365days")}
+            >
+              365 ngày
+            </Button>
+            <Button
+              variant={
+                timeFilter === "lifetime" ? "primary" : "outline-primary"
+              }
+              onClick={() => setTimeFilter("lifetime")}
+            >
+              Toàn thời gian
+            </Button>
+          </ButtonGroup>
         </Col>
       </Row>
 
@@ -92,9 +182,9 @@ function EmployeeDashboard() {
             <Card.Body>
               <div className="d-flex justify-content-between align-items-start">
                 <div>
-                  <p className="text-muted mb-1">Doanh thu tháng này</p>
+                  <p className="text-muted mb-1">Doanh thu kỳ này</p>
                   <h3 className="fw-bold mb-0">
-                    {formatShortCurrency(stats.totalRevenueThisMonth)}
+                    {formatShortCurrency(stats.totalRevenueThisPeriod)}
                   </h3>
                 </div>
                 <div
@@ -172,15 +262,28 @@ function EmployeeDashboard() {
           <Card className="border-0 shadow-sm">
             <Card.Body>
               <h5 className="fw-bold mb-4">
-                Doanh thu cá nhân theo tháng (năm 2025)
+                Doanh thu cá nhân (
+                {timeFilter === "lifetime"
+                  ? "Toàn thời gian"
+                  : timeFilter === "365days"
+                  ? "Năm 2025"
+                  : "Gần đây"}
+                )
               </h5>
               <ResponsiveContainer width="100%" height={400}>
-                <LineChart data={revenueData}>
+                <LineChart data={currentData}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
+                  <XAxis
+                    dataKey={
+                      timeFilter === "7days"
+                        ? "date"
+                        : timeFilter === "28days"
+                        ? "date"
+                        : "month"
+                    }
+                  />
                   <YAxis tickFormatter={formatShortCurrency} />
                   <Tooltip content={<CustomTooltip />} />
-                  <Legend />
                   <Line
                     type="monotone"
                     dataKey="revenue"

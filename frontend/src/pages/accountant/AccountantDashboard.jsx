@@ -1,5 +1,13 @@
-import React from "react";
-import { Container, Row, Col, Card } from "react-bootstrap";
+// src/pages/AccountantDashboard.jsx
+import React, { useState } from "react";
+import {
+  Container,
+  Row,
+  Col,
+  Card,
+  ButtonGroup,
+  Button,
+} from "react-bootstrap";
 import {
   LineChart,
   Line,
@@ -18,66 +26,111 @@ import {
   Diagram3Fill,
 } from "react-bootstrap-icons";
 
-// Fake data giống admin
-const stats = {
-  totalRevenue: 12500000000, // 12.5 tỷ
-  totalEmployees: 156,
-  totalChannels: 42,
-  activeNetworks: 38,
-};
-
-const revenueData = [
-  { month: "T1", revenue: 8500000000 },
-  { month: "T2", revenue: 9200000000 },
-  { month: "T3", revenue: 8800000000 },
-  { month: "T4", revenue: 10500000000 },
-  { month: "T5", revenue: 9800000000 },
-  { month: "T6", revenue: 11200000000 },
-  { month: "T7", revenue: 11800000000 },
-  { month: "T8", revenue: 12500000000 },
-  { month: "T9", revenue: 12000000000 },
-  { month: "T10", revenue: 12200000000 },
-  { month: "T11", revenue: 11900000000 },
-  { month: "T12", revenue: 12500000000 },
-];
-
-const topEmployees = [
-  { name: "Nguyễn Văn A", revenue: 1850000000 },
-  { name: "Trần Thị B", revenue: 1720000000 },
-  { name: "Lê Văn C", revenue: 1580000000 },
-  { name: "Phạm Thị D", revenue: 1450000000 },
-  { name: "Hoàng Văn E", revenue: 1320000000 },
-];
-
-const topTeams = [
-  { name: "Team Alpha", revenue: 4200000000 },
-  { name: "Team Beta", revenue: 3800000000 },
-  { name: "Team Gamma", revenue: 3500000000 },
-  { name: "Team Delta", revenue: 3100000000 },
-  { name: "Team Omega", revenue: 2800000000 },
-];
-
-const topChannels = [
-  { name: "Kênh Facebook Premium", revenue: 5100000000 },
-  { name: "Kênh TikTok Pro", revenue: 4800000000 },
-  { name: "Kênh YouTube Gold", revenue: 4200000000 },
-  { name: "Kênh Zalo OA", revenue: 3500000000 },
-  { name: "Kênh Shopee Affiliate", revenue: 3100000000 },
-];
-
 function AccountantDashboard() {
+  const [timeFilter, setTimeFilter] = useState("lifetime");
+
+  // Fake data toàn công ty theo thời gian (USD)
+  const revenueDataByPeriod = {
+    "7days": [
+      { date: "12/13", revenue: 420000 },
+      { date: "12/14", revenue: 485000 },
+      { date: "12/15", revenue: 410000 },
+      { date: "12/16", revenue: 520000 },
+      { date: "12/17", revenue: 480000 },
+      { date: "12/18", revenue: 510000 },
+      { date: "12/19", revenue: 535000 },
+    ],
+    "28days": [
+      { date: "11/22", revenue: 420000 },
+      { date: "11/29", revenue: 465000 },
+      { date: "12/06", revenue: 490000 },
+      { date: "12/13", revenue: 510000 },
+      { date: "12/19", revenue: 535000 },
+    ],
+    "90days": [
+      { month: "Sep", revenue: 480000 },
+      { month: "Oct", revenue: 510000 },
+      { month: "Nov", revenue: 495000 },
+      { month: "Dec", revenue: 535000 },
+    ],
+    "365days": [
+      { month: "Jan", revenue: 380000 },
+      { month: "Feb", revenue: 410000 },
+      { month: "Mar", revenue: 425000 },
+      { month: "Apr", revenue: 460000 },
+      { month: "May", revenue: 445000 },
+      { month: "Jun", revenue: 490000 },
+      { month: "Jul", revenue: 510000 },
+      { month: "Aug", revenue: 520000 },
+      { month: "Sep", revenue: 505000 },
+      { month: "Oct", revenue: 515000 },
+      { month: "Nov", revenue: 500000 },
+      { month: "Dec", revenue: 535000 },
+    ],
+    lifetime: [
+      { year: "2021", revenue: 280000 },
+      { year: "2022", revenue: 380000 },
+      { year: "2023", revenue: 445000 },
+      { year: "2024", revenue: 490000 },
+      { year: "2025", revenue: 535000 },
+    ],
+  };
+
+  const topEmployees = [
+    { name: "John Smith", revenue: 78000 },
+    { name: "Emma Wilson", revenue: 72000 },
+    { name: "Michael Chen", revenue: 68000 },
+    { name: "Sarah Davis", revenue: 62000 },
+    { name: "David Lee", revenue: 58000 },
+  ];
+
+  const topTeams = [
+    { name: "Team Alpha", revenue: 185000 },
+    { name: "Team Beta", revenue: 168000 },
+    { name: "Team Gamma", revenue: 152000 },
+    { name: "Team Delta", revenue: 138000 },
+    { name: "Team Omega", revenue: 125000 },
+  ];
+
+  const topChannels = [
+    { name: "Facebook Premium", revenue: 220000 },
+    { name: "TikTok Pro", revenue: 198000 },
+    { name: "YouTube Gold", revenue: 175000 },
+    { name: "Zalo OA", revenue: 148000 },
+    { name: "Shopee Affiliate", revenue: 132000 },
+  ];
+
+  const totalRevenueThisPeriod =
+    timeFilter === "7days"
+      ? 3360000
+      : timeFilter === "28days"
+      ? 13200000
+      : timeFilter === "90days"
+      ? 45000000
+      : timeFilter === "365days"
+      ? 535000
+      : 535000; // monthly avg for year & lifetime
+
+  const stats = {
+    totalRevenue: totalRevenueThisPeriod,
+    totalEmployees: 156,
+    totalChannels: 42,
+    activeNetworks: 38,
+  };
+
   const formatCurrency = (value) =>
-    new Intl.NumberFormat("vi-VN", {
+    new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: "VND",
+      currency: "USD",
       minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     }).format(value);
 
   const formatShortCurrency = (value) => {
-    if (value >= 1e9) return `${(value / 1e9).toFixed(1)} tỷ`;
-    if (value >= 1e6) return `${(value / 1e6).toFixed(0)} tr`;
-    if (value >= 1e3) return `${(value / 1e3).toFixed(0)} nghìn`;
-    return value;
+    if (value >= 1e9) return `$${(value / 1e9).toFixed(1)}B`;
+    if (value >= 1e6) return `$${(value / 1e6).toFixed(0)}M`;
+    if (value >= 1e3) return `$${(value / 1e3).toFixed(0)}K`;
+    return `$${value}`;
   };
 
   const CustomTooltip = ({ active, payload, label }) =>
@@ -97,12 +150,48 @@ function AccountantDashboard() {
 
   return (
     <Container fluid className="p-4">
-      <Row className="mb-4">
+      <Row className="mb-4 align-items-center">
         <Col>
           <h2 className="fw-bold">Dashboard Kế toán</h2>
           <p className="text-muted">
             Tổng quan hoạt động kinh doanh toàn công ty
           </p>
+        </Col>
+        <Col xs="auto">
+          <ButtonGroup size="sm">
+            <Button
+              variant={timeFilter === "7days" ? "primary" : "outline-primary"}
+              onClick={() => setTimeFilter("7days")}
+            >
+              7 ngày
+            </Button>
+            <Button
+              variant={timeFilter === "28days" ? "primary" : "outline-primary"}
+              onClick={() => setTimeFilter("28days")}
+            >
+              28 ngày
+            </Button>
+            <Button
+              variant={timeFilter === "90days" ? "primary" : "outline-primary"}
+              onClick={() => setTimeFilter("90days")}
+            >
+              90 ngày
+            </Button>
+            <Button
+              variant={timeFilter === "365days" ? "primary" : "outline-primary"}
+              onClick={() => setTimeFilter("365days")}
+            >
+              365 ngày
+            </Button>
+            <Button
+              variant={
+                timeFilter === "lifetime" ? "primary" : "outline-primary"
+              }
+              onClick={() => setTimeFilter("lifetime")}
+            >
+              Toàn thời gian
+            </Button>
+          </ButtonGroup>
         </Col>
       </Row>
 
@@ -113,7 +202,7 @@ function AccountantDashboard() {
             <Card.Body>
               <div className="d-flex justify-content-between align-items-start">
                 <div>
-                  <p className="text-muted mb-1">Tổng doanh thu tháng</p>
+                  <p className="text-muted mb-1">Tổng doanh thu kỳ này</p>
                   <h3 className="fw-bold mb-0">
                     {formatShortCurrency(stats.totalRevenue)}
                   </h3>
@@ -128,7 +217,7 @@ function AccountantDashboard() {
             </Card.Body>
           </Card>
         </Col>
-
+        {/* Các card còn lại giữ nguyên */}
         <Col xs={12} sm={6} lg={3}>
           <Card className="border-0 shadow-sm h-100">
             <Card.Body>
@@ -147,7 +236,6 @@ function AccountantDashboard() {
             </Card.Body>
           </Card>
         </Col>
-
         <Col xs={12} sm={6} lg={3}>
           <Card className="border-0 shadow-sm h-100">
             <Card.Body>
@@ -166,7 +254,6 @@ function AccountantDashboard() {
             </Card.Body>
           </Card>
         </Col>
-
         <Col xs={12} sm={6} lg={3}>
           <Card className="border-0 shadow-sm h-100">
             <Card.Body>
@@ -187,16 +274,24 @@ function AccountantDashboard() {
         </Col>
       </Row>
 
-      {/* Revenue Line Chart */}
+      {/* Revenue Chart */}
       <Row className="mb-4">
         <Col xs={12}>
           <Card className="border-0 shadow-sm">
             <Card.Body>
-              <h5 className="fw-bold mb-4">Tăng trưởng doanh thu theo tháng</h5>
+              <h5 className="fw-bold mb-4">Tăng trưởng doanh thu</h5>
               <ResponsiveContainer width="100%" height={350}>
-                <LineChart data={revenueData}>
+                <LineChart data={revenueDataByPeriod[timeFilter]}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
+                  <XAxis
+                    dataKey={
+                      timeFilter === "lifetime"
+                        ? "year"
+                        : timeFilter.includes("days")
+                        ? "date"
+                        : "month"
+                    }
+                  />
                   <YAxis tickFormatter={formatShortCurrency} />
                   <Tooltip content={<CustomTooltip />} />
                   <Line
@@ -215,14 +310,12 @@ function AccountantDashboard() {
         </Col>
       </Row>
 
-      {/* Top Ranking */}
+      {/* Top Ranking - giữ nguyên vì không phụ thuộc thời gian */}
       <Row className="g-4">
         <Col xs={12} lg={4}>
           <Card className="border-0 shadow-sm h-100">
             <Card.Body>
-              <h6 className="fw-bold mb-4">
-                Top 5 Nhân viên - Doanh thu cao nhất
-              </h6>
+              <h6 className="fw-bold mb-4">Top 5 Nhân viên</h6>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={topEmployees}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -235,7 +328,7 @@ function AccountantDashboard() {
                   />
                   <YAxis tickFormatter={formatShortCurrency} />
                   <Tooltip content={<CustomTooltip />} />
-                  <Bar dataKey="revenue" fill="#0d6efd" name="Doanh thu" />
+                  <Bar dataKey="revenue" fill="#0d6efd" />
                 </BarChart>
               </ResponsiveContainer>
             </Card.Body>
@@ -245,7 +338,7 @@ function AccountantDashboard() {
         <Col xs={12} lg={4}>
           <Card className="border-0 shadow-sm h-100">
             <Card.Body>
-              <h6 className="fw-bold mb-4">Top 5 Team - Doanh thu cao nhất</h6>
+              <h6 className="fw-bold mb-4">Top 5 Team</h6>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={topTeams}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -258,7 +351,7 @@ function AccountantDashboard() {
                   />
                   <YAxis tickFormatter={formatShortCurrency} />
                   <Tooltip content={<CustomTooltip />} />
-                  <Bar dataKey="revenue" fill="#198754" name="Doanh thu" />
+                  <Bar dataKey="revenue" fill="#198754" />
                 </BarChart>
               </ResponsiveContainer>
             </Card.Body>
@@ -268,7 +361,7 @@ function AccountantDashboard() {
         <Col xs={12} lg={4}>
           <Card className="border-0 shadow-sm h-100">
             <Card.Body>
-              <h6 className="fw-bold mb-4">Top 5 Kênh - Doanh thu cao nhất</h6>
+              <h6 className="fw-bold mb-4">Top 5 Kênh</h6>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={topChannels}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -281,7 +374,7 @@ function AccountantDashboard() {
                   />
                   <YAxis tickFormatter={formatShortCurrency} />
                   <Tooltip content={<CustomTooltip />} />
-                  <Bar dataKey="revenue" fill="#ffc107" name="Doanh thu" />
+                  <Bar dataKey="revenue" fill="#ffc107" />
                 </BarChart>
               </ResponsiveContainer>
             </Card.Body>
