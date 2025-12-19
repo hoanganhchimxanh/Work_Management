@@ -4,7 +4,7 @@ import { Container, Row, Col, Spinner, Alert } from "react-bootstrap";
 import Overview from "../../components/admin/dashboard/Overview";
 import TopRanking from "../../components/admin/dashboard/TopRanking";
 
-const API_BASE_URL = "http://localhost:9999";
+import config from "../../configs/api";
 
 function Dashboard() {
   const [stats, setStats] = useState({
@@ -29,7 +29,7 @@ function Dashboard() {
   // Fetch Dashboard Statistics
   const fetchDashboardStats = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/dashboard/stats`, {
+      const response = await fetch(`${config.backendBase}/dashboard/stats`, {
         headers: {
           Authorization: `Bearer ${getAuthToken()}`,
           "Content-Type": "application/json",
@@ -56,7 +56,7 @@ function Dashboard() {
     try {
       const currentYear = new Date().getFullYear();
       const response = await fetch(
-        `${API_BASE_URL}/dashboard/revenue-by-month?year=${currentYear}`,
+        `${config.backendBase}/dashboard/revenue-by-month?year=${currentYear}`,
         {
           headers: {
             Authorization: `Bearer ${getAuthToken()}`,
@@ -83,7 +83,7 @@ function Dashboard() {
   const fetchTopEmployees = async () => {
     try {
       const response = await fetch(
-        `${API_BASE_URL}/dashboard/top-employees?limit=5`,
+        `${config.backendBase}/dashboard/top-employees?limit=5`,
         {
           headers: {
             Authorization: `Bearer ${getAuthToken()}`,
@@ -110,7 +110,7 @@ function Dashboard() {
   const fetchTopTeams = async () => {
     try {
       const response = await fetch(
-        `${API_BASE_URL}/dashboard/top-teams?limit=5`,
+        `${config.backendBase}/dashboard/top-teams?limit=5`,
         {
           headers: {
             Authorization: `Bearer ${getAuthToken()}`,
@@ -137,7 +137,7 @@ function Dashboard() {
   const fetchTopChannels = async () => {
     try {
       const response = await fetch(
-        `${API_BASE_URL}/dashboard/top-channels?limit=5`,
+        `${config.backendBase}/dashboard/top-channels?limit=5`,
         {
           headers: {
             Authorization: `Bearer ${getAuthToken()}`,

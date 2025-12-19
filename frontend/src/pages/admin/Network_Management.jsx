@@ -5,7 +5,7 @@ import NetworkFilters from "../../components/admin/networkManagement/NetworkFilt
 import NetworkTable from "../../components/admin/networkManagement/NetworkTable";
 import NetworkFormModal from "../../components/admin/networkManagement/NetworkFormModal";
 
-const API_BASE_URL = "http://localhost:9999";
+import config from "../../configs/api";
 
 const NetworkManagement = () => {
   const [networks, setNetworks] = useState([]);
@@ -34,7 +34,7 @@ const NetworkManagement = () => {
       if (filters.country) queryParams.append("country", filters.country);
 
       const response = await fetch(
-        `${API_BASE_URL}/network/get-all?${queryParams}`,
+        `${config.backendBase}/network/get-all?${queryParams}`,
         {
           headers: {
             Authorization: `Bearer ${getAuthToken()}`,
@@ -59,7 +59,7 @@ const NetworkManagement = () => {
 
   const fetchUsers = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/user/get-all`, {
+      const response = await fetch(`${config.backendBase}/user/get-all`, {
         headers: {
           Authorization: `Bearer ${getAuthToken()}`,
           "Content-Type": "application/json",
@@ -107,7 +107,7 @@ const NetworkManagement = () => {
       if (filters.country) queryParams.append("country", filters.country);
 
       const response = await fetch(
-        `${API_BASE_URL}/network/export-excel?${queryParams}`,
+        `${config.backendBase}/network/export-excel?${queryParams}`,
         {
           headers: {
             Authorization: `Bearer ${getAuthToken()}`,
@@ -152,7 +152,7 @@ const NetworkManagement = () => {
 
     try {
       const response = await fetch(
-        `${API_BASE_URL}/network/delete/${network._id}`,
+        `${config.backendBase}/network/delete/${network._id}`,
         {
           method: "DELETE",
           headers: {
@@ -178,8 +178,8 @@ const NetworkManagement = () => {
   const handleSave = async (formData) => {
     try {
       const url = selectedNetwork
-        ? `${API_BASE_URL}/network/update/${selectedNetwork._id}`
-        : `${API_BASE_URL}/network/create-new`;
+        ? `${config.backendBase}/network/update/${selectedNetwork._id}`
+        : `${config.backendBase}/network/create-new`;
 
       const method = selectedNetwork ? "PUT" : "POST";
 

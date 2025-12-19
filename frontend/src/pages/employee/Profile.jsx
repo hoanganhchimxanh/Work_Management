@@ -6,6 +6,7 @@ import { jwtDecode } from "jwt-decode";
 import AccountCard from "../../components/employee/profile/AccountCard";
 import TeamCard from "../../components/employee/profile/TeamCard";
 import TeamDetailModal from "../../components/employee/profile/TeamDetailModal";
+import config from "../../configs/api";
 
 function Profile() {
   const [loading, setLoading] = useState(true);
@@ -30,7 +31,7 @@ function Profile() {
     try {
       setLoading(true);
       const res = await axios.get(
-        `http://localhost:9999/user/get-one/${userId}`,
+        `${config.backendBase}/user/get-one/${userId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }

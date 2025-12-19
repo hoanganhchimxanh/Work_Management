@@ -1,6 +1,7 @@
 import React, { createContext, useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import config from "../configs/api";
 
 export const AuthContext = createContext();
 
@@ -39,7 +40,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const res = await axios.post("http://localhost:9999/account/login", {
+      const res = await axios.post(`${config.backendBase}/account/login`, {
         email,
         password,
       });
@@ -82,9 +83,9 @@ export const AuthProvider = ({ children }) => {
     if (roleUpper === "ADMIN") {
       navigate("/admin/dashboard", { replace: true });
     } else if (roleUpper === "ACCOUNTANT") {
-      navigate("/accountant/page", { replace: true });
+      navigate("/accountant/dashboard", { replace: true });
     } else if (roleUpper === "EMPLOYEE") {
-      navigate("/employee/profile", { replace: true });
+      navigate("/employee/dashboard", { replace: true });
     } else {
       navigate("/unauthorized", { replace: true });
     }

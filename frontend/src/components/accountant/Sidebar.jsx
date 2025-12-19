@@ -1,6 +1,12 @@
 import React, { useState } from "react";
 import { NavLink } from "react-router-dom";
-import { CashStack, BoxArrowRight, List } from "react-bootstrap-icons";
+import {
+  CashStack,
+  BoxArrowRight,
+  List,
+  BellFill,
+  HouseDoorFill,
+} from "react-bootstrap-icons";
 import { useContext } from "react";
 import { AuthContext } from "../../contexts/AuthContext";
 import { Button, Nav, OverlayTrigger, Tooltip } from "react-bootstrap";
@@ -21,6 +27,12 @@ const Sidebar = () => {
   const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
 
   const menuItems = [
+    { to: "/accountant/notifications", icon: <BellFill />, label: "Thông báo" },
+    {
+      to: "/accountant/dashboard",
+      icon: <HouseDoorFill />,
+      label: "Dashboard",
+    },
     {
       to: "/accountant/networks",
       icon: <CashStack />,

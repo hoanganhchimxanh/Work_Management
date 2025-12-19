@@ -22,7 +22,6 @@ const channelSchema = new mongoose.Schema(
       default: null,
     },
 
-    isMainChannel: { type: Boolean, default: false },
     isBrandAccount: { type: Boolean, default: false },
   },
   { timestamps: true }

@@ -4,6 +4,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { AuthContext } from "../contexts/AuthContext";
 import "../styles/changePassword.style.css";
+import config from "../configs/api";
 
 function ChangePassword() {
   const { accountId } = useParams();
@@ -33,7 +34,7 @@ function ChangePassword() {
       const token = localStorage.getItem("token");
 
       await axios.patch(
-        `http://localhost:9999/account/change-password/${accountId}`,
+        `${config.backendBase}/account/change-password/${accountId}`,
         { newPassword: password1 },
         {
           headers: { Authorization: `Bearer ${token}` },

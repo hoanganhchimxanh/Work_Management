@@ -6,6 +6,8 @@ import TaskTable from "../../components/admin/kpiTaskManagement/TaskTable";
 import KPIModal from "../../components/admin/kpiTaskManagement/KPIModal";
 import TaskModal from "../../components/admin/kpiTaskManagement/TaskModal";
 
+import config from "../../configs/api";
+
 function KPI_Task_Management() {
   // KPIs state
   const [kpis, setKPIs] = useState([]);
@@ -41,7 +43,7 @@ function KPI_Task_Management() {
     try {
       setLoadingKPIs(true);
       const response = await axios.get(
-        "http://localhost:9999/kpi/get-all-with-progress",
+        `${config.backendBase}/kpi/get-all-with-progress`,
         {
           headers: {
             Authorization: `Bearer ${getAuthToken()}`,
@@ -62,7 +64,7 @@ function KPI_Task_Management() {
   const fetchTasks = async () => {
     try {
       setLoadingTasks(true);
-      const response = await axios.get("http://localhost:9999/task/get-all", {
+      const response = await axios.get(`${config.backendBase}/task/get-all`, {
         headers: {
           Authorization: `Bearer ${getAuthToken()}`,
         },
@@ -80,7 +82,7 @@ function KPI_Task_Management() {
   // Fetch Users
   const fetchUsers = async () => {
     try {
-      const response = await axios.get("http://localhost:9999/user/get-all", {
+      const response = await axios.get(`${config.backendBase}/user/get-all`, {
         headers: {
           Authorization: `Bearer ${getAuthToken()}`,
         },
@@ -99,7 +101,7 @@ function KPI_Task_Management() {
   const fetchTeams = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:9999/team/get-all-team",
+        `${config.backendBase}/team/get-all-team`,
         {
           headers: {
             Authorization: `Bearer ${getAuthToken()}`,
