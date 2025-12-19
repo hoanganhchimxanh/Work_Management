@@ -7,6 +7,7 @@ import {
   BoxArrowRight,
   List,
   BellFill,
+  HouseDoorFill,
 } from "react-bootstrap-icons";
 import { useContext } from "react";
 import { AuthContext } from "../../contexts/AuthContext";
@@ -29,6 +30,7 @@ const Sidebar = () => {
 
   const menuItems = [
     { to: "/employee/notifications", icon: <BellFill />, label: "Thông báo" },
+    { to: "/employee/dashboard", icon: <HouseDoorFill />, label: "Dashboard" },
     {
       to: "/employee/profile",
       icon: <PeopleFill />,

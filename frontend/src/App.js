@@ -23,11 +23,13 @@ import EmployeeChannelManagement from "./pages/employee/Channel_Management";
 import ChannelDetail from "./pages/employee/ChannelDetail";
 import MyKPITasks from "./pages/employee/MyKPITasks";
 import EmployeeNotification from "./pages/employee/Notification_Page";
+import EmployeeDashboard from "./pages/employee/EmployeeDashboard";
 
 // Accountant pages
 import AccountantLayout from "./layouts/AccountantLayout";
 import AccountantNetworkManagement from "./pages/accountant/Network_Management";
 import AccountantNotification from "./pages/accountant/Notification_Page";
+import AccountantDashboard from "./pages/accountant/AccountantDashboard";
 
 // Protected route
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -79,6 +81,7 @@ function App() {
             </RoleBasedRoute>
           }
         >
+          <Route path="dashboard" element={<AccountantDashboard />} />
           <Route path="networks" element={<AccountantNetworkManagement />} />
           <Route path="notifications" element={<AccountantNotification />} />
         </Route>
@@ -92,6 +95,7 @@ function App() {
             </RoleBasedRoute>
           }
         >
+          <Route path="dashboard" element={<EmployeeDashboard />} />
           <Route path="profile" element={<Profile />} />
           <Route path="channels" element={<EmployeeChannelManagement />} />
           <Route path="channels/:channelId" element={<ChannelDetail />} />
