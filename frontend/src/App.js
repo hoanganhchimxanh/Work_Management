@@ -14,6 +14,7 @@ import UserManagement from "./pages/admin/User_Management";
 import KPITaskManagement from "./pages/admin/KPI_Task_Management";
 import NetworkManagement from "./pages/admin/Network_Management";
 import ChannelManagement from "./pages/admin/Channel_Management";
+import AdminNotification from "./pages/admin/Notification_Page";
 
 // Employee pages
 import EmployeeLayout from "./layouts/EmployeeLayout";
@@ -21,10 +22,12 @@ import Profile from "./pages/employee/Profile";
 import EmployeeChannelManagement from "./pages/employee/Channel_Management";
 import ChannelDetail from "./pages/employee/ChannelDetail";
 import MyKPITasks from "./pages/employee/MyKPITasks";
+import EmployeeNotification from "./pages/employee/Notification_Page";
 
 // Accountant pages
 import AccountantLayout from "./layouts/AccountantLayout";
 import AccountantNetworkManagement from "./pages/accountant/Network_Management";
+import AccountantNotification from "./pages/accountant/Notification_Page";
 
 // Protected route
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -64,6 +67,7 @@ function App() {
           <Route path="kpi_tasks" element={<KPITaskManagement />} />
           <Route path="networks" element={<NetworkManagement />} />
           <Route path="channels" element={<ChannelManagement />} />
+          <Route path="notifications" element={<AdminNotification />} />
         </Route>
 
         {/* Accountant pages */}
@@ -76,6 +80,7 @@ function App() {
           }
         >
           <Route path="networks" element={<AccountantNetworkManagement />} />
+          <Route path="notifications" element={<AccountantNotification />} />
         </Route>
 
         {/* Employee pages */}
@@ -91,6 +96,7 @@ function App() {
           <Route path="channels" element={<EmployeeChannelManagement />} />
           <Route path="channels/:channelId" element={<ChannelDetail />} />
           <Route path="my_kpi_tasks" element={<MyKPITasks />} />
+          <Route path="notifications" element={<EmployeeNotification />} />
         </Route>
       </Route>
     </Routes>

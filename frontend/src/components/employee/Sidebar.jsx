@@ -6,6 +6,7 @@ import {
   FileSlides,
   BoxArrowRight,
   List,
+  BellFill,
 } from "react-bootstrap-icons";
 import { useContext } from "react";
 import { AuthContext } from "../../contexts/AuthContext";
@@ -27,6 +28,7 @@ const Sidebar = () => {
   const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
 
   const menuItems = [
+    { to: "/employee/notifications", icon: <BellFill />, label: "Thông báo" },
     {
       to: "/employee/profile",
       icon: <PeopleFill />,

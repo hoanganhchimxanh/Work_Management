@@ -8,6 +8,7 @@ import {
   CashStack,
   BoxArrowRight,
   List,
+  BellFill,
 } from "react-bootstrap-icons";
 import { useContext } from "react";
 import { AuthContext } from "../../contexts/AuthContext";
@@ -29,6 +30,7 @@ const Sidebar = () => {
   const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
 
   const menuItems = [
+    { to: "/admin/notifications", icon: <BellFill />, label: "Thông báo" },
     { to: "/admin/dashboard", icon: <HouseDoorFill />, label: "Dashboard" },
     { to: "/admin/users", icon: <PeopleFill />, label: "Quản lý nhân viên" },
     { to: "/admin/channels", icon: <FileSlides />, label: "Quản lý kênh" },
