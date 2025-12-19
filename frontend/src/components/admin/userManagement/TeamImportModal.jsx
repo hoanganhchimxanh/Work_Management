@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Modal, Form, Button, Table, Alert } from "react-bootstrap";
 import * as XLSX from "xlsx";
+import axios from "axios";
 
 function TeamImportModal({ show, onHide, onSubmit }) {
   const [file, setFile] = useState(null);
@@ -53,6 +54,25 @@ function TeamImportModal({ show, onHide, onSubmit }) {
     onHide();
   };
 
+  const handleDownloadTemplate = async () => {
+    try {
+      const response = await axios.get(
+        "http://localhost:9999/excel/download-team-template",
+        { responseType: "blob" }
+      );
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", "team_import_template.xlsx");
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      setError("Không thể tải file template!");
+    }
+  };
+
   return (
     <Modal show={show} onHide={handleClose} centered size="lg">
       <Modal.Header closeButton>
@@ -102,6 +122,14 @@ function TeamImportModal({ show, onHide, onSubmit }) {
             </div>
           </>
         )}
+        <Button
+          variant="outline-success"
+          size="sm"
+          onClick={handleDownloadTemplate}
+        >
+          <i className="bi bi-download me-2"></i>
+          Tải file template Team
+        </Button>
       </Modal.Body>
 
       <Modal.Footer>
