@@ -1,4 +1,3 @@
-// src/pages/AccountantDashboard.jsx
 import React, { useState } from "react";
 import {
   Container,
