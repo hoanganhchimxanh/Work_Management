@@ -7,6 +7,9 @@ const {
   importTeamExcel,
   exportTeamExcel,
   exportTeamTemplate,
+  importResourceExcel,
+  exportResourceExcel,
+  exportResourceTemplate,
 } = require("../controllers/excel.controller");
 const {
   authenticateJWT,
@@ -45,6 +48,8 @@ const logRequestTime = (req, res, next) => {
 router.use(logRequestTime);
 router.use(express.json());
 
+// ========== USER EXCEL ROUTES ==========
+
 // Download template Excel để import
 router.get(
   "/download-user-template",
@@ -58,7 +63,7 @@ router.post(
   "/import-user-excel",
   authenticateJWT,
   authorizeRoles("ADMIN"),
-  upload.single("file"), // field name là "file"
+  upload.single("file"),
   importUserExcel
 );
 
@@ -70,7 +75,8 @@ router.get(
   exportUserExcel
 );
 
-// Excel routes
+// ========== TEAM EXCEL ROUTES ==========
+
 router.get(
   "/download-team-template",
   authenticateJWT,
@@ -91,6 +97,33 @@ router.get(
   authenticateJWT,
   authorizeRoles("ADMIN"),
   exportTeamExcel
+);
+
+// ========== RESOURCE EXCEL ROUTES ==========
+
+// Download template Excel để import resources
+router.get(
+  "/download-resource-template",
+  authenticateJWT,
+  authorizeRoles("ADMIN"),
+  exportResourceTemplate
+);
+
+// Import resources từ Excel
+router.post(
+  "/import-resource-excel",
+  authenticateJWT,
+  authorizeRoles("ADMIN"),
+  upload.single("file"),
+  importResourceExcel
+);
+
+// Export resources ra Excel
+router.get(
+  "/export-resource-excel",
+  authenticateJWT,
+  authorizeRoles("ADMIN"),
+  exportResourceExcel
 );
 
 module.exports = router;
