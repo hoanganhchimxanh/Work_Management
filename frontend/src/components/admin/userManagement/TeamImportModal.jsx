@@ -3,6 +3,8 @@ import { Modal, Form, Button, Table, Alert } from "react-bootstrap";
 import * as XLSX from "xlsx";
 import axios from "axios";
 
+import config from "../../../configs/api";
+
 function TeamImportModal({ show, onHide, onSubmit }) {
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState([]);
@@ -57,7 +59,7 @@ function TeamImportModal({ show, onHide, onSubmit }) {
   const handleDownloadTemplate = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:9999/excel/download-team-template",
+        `${config.backendBase}/excel/download-team-template`,
         { responseType: "blob" }
       );
 

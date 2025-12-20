@@ -11,6 +11,8 @@ import {
 } from "react-bootstrap";
 import axios from "axios";
 
+import config from "../../../configs/api";
+
 function TeamTable({ teams, loading, onEdit, onRefresh, onDeleted }) {
   const [deleting, setDeleting] = useState(null);
   const [filterStatus, setFilterStatus] = useState("ALL");
@@ -36,7 +38,7 @@ function TeamTable({ teams, loading, onEdit, onRefresh, onDeleted }) {
 
     try {
       setDeleting(teamId);
-      await axios.delete(`http://localhost:9999/team/delete-team/${teamId}`);
+      await axios.delete(`${config.backendBase}/team/delete-team/${teamId}`);
       onDeleted();
     } catch (err) {
       alert(

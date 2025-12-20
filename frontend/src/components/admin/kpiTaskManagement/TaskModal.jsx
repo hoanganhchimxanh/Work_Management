@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Modal, Form, Button, Alert } from "react-bootstrap";
 import axios from "axios";
 
+import config from "../../../configs/api";
+
 function TaskModal({ show, onHide, task, users, teams, onSaved }) {
   const [formData, setFormData] = useState({
     title: "",
@@ -79,12 +81,12 @@ function TaskModal({ show, onHide, task, users, teams, onSaved }) {
       if (task) {
         // Update task
         await axios.put(
-          `http://localhost:9999/task/update/${task._id}`,
+          `${config.backendBase}/task/update/${task._id}`,
           payload
         );
       } else {
         // Create new task
-        await axios.post("http://localhost:9999/task/create-new", payload);
+        await axios.post(`${config.backendBase}/task/create-new`, payload);
       }
 
       onSaved();

@@ -9,6 +9,8 @@ import {
 } from "react-bootstrap";
 import axios from "axios";
 
+import config from "../../../configs/api";
+
 function TeamDetailModal({ show, onHide, teamId, token }) {
   const [team, setTeam] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -23,7 +25,7 @@ function TeamDetailModal({ show, onHide, teamId, token }) {
         setError(null);
 
         const res = await axios.get(
-          `http://localhost:9999/team/get-team/${teamId}`,
+          `${config.backendBase}/team/get-team/${teamId}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
 

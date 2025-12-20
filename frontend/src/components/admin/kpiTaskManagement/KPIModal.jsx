@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Modal, Form, Button, Alert, InputGroup } from "react-bootstrap";
 import axios from "axios";
 
+import config from "../../../configs/api";
+
 function KPIModal({ show, onHide, kpi, users, teams, onSaved }) {
   const [formData, setFormData] = useState({
     user: "",
@@ -78,10 +80,10 @@ function KPIModal({ show, onHide, kpi, users, teams, onSaved }) {
 
       if (kpi) {
         // Update KPI
-        await axios.put(`http://localhost:9999/kpi/update/${kpi._id}`, payload);
+        await axios.put(`${config.backendBase}/kpi/update/${kpi._id}`, payload);
       } else {
         // Create new KPI
-        await axios.post("http://localhost:9999/kpi/create-new", payload);
+        await axios.post(`${config.backendBase}/kpi/create-new`, payload);
       }
 
       onSaved();
