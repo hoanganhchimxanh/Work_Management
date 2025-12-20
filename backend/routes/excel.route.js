@@ -10,6 +10,9 @@ const {
   importResourceExcel,
   exportResourceExcel,
   exportResourceTemplate,
+  importNetworkExcel,
+  exportNetworkExcel,
+  exportNetworkTemplate,
 } = require("../controllers/excel.controller");
 const {
   authenticateJWT,
@@ -97,6 +100,33 @@ router.get(
   authenticateJWT,
   authorizeRoles("ADMIN"),
   exportTeamExcel
+);
+
+// ========== NETWORK EXCEL ROUTES ==========
+
+// Download template Excel
+router.get(
+  "/download-network-template",
+  authenticateJWT,
+  authorizeRoles("ADMIN"),
+  exportNetworkTemplate
+);
+
+// Import networks từ Excel
+router.post(
+  "/import-network-excel",
+  authenticateJWT,
+  authorizeRoles("ADMIN"),
+  upload.single("file"),
+  importNetworkExcel
+);
+
+// Export networks ra Excel
+router.get(
+  "/export-network-excel",
+  authenticateJWT,
+  authorizeRoles(["ADMIN", "ACCOUNTANT"]),
+  exportNetworkExcel
 );
 
 // ========== RESOURCE EXCEL ROUTES ==========

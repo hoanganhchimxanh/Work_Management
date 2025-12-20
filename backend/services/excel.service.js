@@ -8,7 +8,7 @@ class ExcelService {
 
   /**
    * Import data từ Excel
-   * @param {string} entityType - Loại entity (user, team, resource)
+   * @param {string} entityType - Loại entity (user, team, resource, network)
    * @param {Buffer} fileBuffer - Buffer của file Excel
    * @returns {Promise<Object>} - Kết quả import
    */
@@ -337,6 +337,7 @@ class ExcelService {
       User: "fullName personalEmail role team",
       Team: "name",
       Channel: "name link status",
+      Network: "profileAdsenseId emailAddress status",
     };
     return fieldMap[modelName] || "name";
   }

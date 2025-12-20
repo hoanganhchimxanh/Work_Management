@@ -97,6 +97,11 @@ const importTeamExcel = importExcel("team");
 const exportTeamExcel = exportExcel("team");
 const exportTeamTemplate = exportTemplate("team");
 
+//Network
+const importNetworkExcel = importExcel("network");
+const exportNetworkExcel = exportExcel("network");
+const exportNetworkTemplate = exportTemplate("network");
+
 // Resource
 const importResourceExcel = importExcel("resource");
 const exportResourceExcel = exportExcel("resource");
@@ -112,6 +117,11 @@ module.exports = {
   importTeamExcel,
   exportTeamExcel,
   exportTeamTemplate,
+
+  //Network
+  importNetworkExcel,
+  exportNetworkExcel,
+  exportNetworkTemplate,
 
   // Resource
   importResourceExcel,

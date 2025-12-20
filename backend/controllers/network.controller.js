@@ -5,6 +5,11 @@ const Channel = db.Channel;
 const User = db.User;
 const XLSX = require("xlsx");
 
+const {
+  sendNotification,
+  sendBulkNotification,
+} = require("../services/notification.service");
+
 // Tạo Network mới
 const createNew = async (req, res, next) => {
   try {
@@ -88,6 +93,25 @@ const createNew = async (req, res, next) => {
       .populate("assignedUser", "fullName personalEmail role")
       .populate("mainChannel", "name link")
       .lean();
+
+    // 🔔 SEND NOTIFICATION
+    if (userIds.length === 1) {
+      await sendNotification({
+        userId: userIds[0],
+        title: "Bạn đã được gán quản lý kênh mới",
+        message: `Bạn được làm quản lý cho kênh "${name}".`,
+        // type: "TEAM",
+        metadata: {},
+      });
+    } else if (userIds.length > 1) {
+      await sendBulkNotification({
+        userIds,
+        title: "Bạn đã được gán quản lý kênh mới",
+        message: `Bạn được làm quản lý cho kênh "${name}".`,
+        // type: "TEAM",
+        metadata: {},
+      });
+    }
 
     res.status(201).json({
       success: true,
@@ -339,6 +363,25 @@ const assignChannel = async (req, res, next) => {
     channel.network = networkId;
     await channel.save();
 
+    // 🔔 SEND NOTIFICATION
+    if (userIds.length === 1) {
+      await sendNotification({
+        userId: userIds[0],
+        title: "Bạn đã được gán quản lý kênh mới",
+        message: `Bạn được làm quản lý cho kênh "${name}".`,
+        // type: "TEAM",
+        metadata: {},
+      });
+    } else if (userIds.length > 1) {
+      await sendBulkNotification({
+        userIds,
+        title: "Bạn đã được gán quản lý kênh mới",
+        message: `Bạn được làm quản lý cho kênh "${name}".`,
+        // type: "TEAM",
+        metadata: {},
+      });
+    }
+
     res.json({
       success: true,
       message: "Gán kênh vào network thành công!",
@@ -379,6 +422,25 @@ const removeChannel = async (req, res, next) => {
 
     channel.network = null;
     await channel.save();
+
+    // 🔔 SEND NOTIFICATION
+    if (userIds.length === 1) {
+      await sendNotification({
+        userId: userIds[0],
+        title: "Bạn đã được gán quản lý kênh mới",
+        message: `Bạn được làm quản lý cho kênh "${name}".`,
+        // type: "TEAM",
+        metadata: {},
+      });
+    } else if (userIds.length > 1) {
+      await sendBulkNotification({
+        userIds,
+        title: "Bạn đã được gán quản lý kênh mới",
+        message: `Bạn được làm quản lý cho kênh "${name}".`,
+        // type: "TEAM",
+        metadata: {},
+      });
+    }
 
     res.json({
       success: true,
@@ -427,341 +489,6 @@ const getNetworkStats = async (req, res, next) => {
   }
 };
 
-// Import networks từ Excel
-const importNetworkExcel = async (req, res, next) => {
-  try {
-    if (!req.file) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Vui lòng upload file Excel!" });
-    }
-
-    const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
-    const sheetName = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[sheetName];
-    const data = XLSX.utils.sheet_to_json(worksheet);
-
-    if (data.length === 0) {
-      return res
-        .status(400)
-        .json({ success: false, message: "File Excel không có dữ liệu!" });
-    }
-
-    const session = await Network.startSession();
-    session.startTransaction();
-
-    const results = { success: [], errors: [], total: data.length };
-
-    for (let i = 0; i < data.length; i++) {
-      const row = data[i];
-      const rowNumber = i + 2;
-
-      try {
-        // Validate required fields
-        if (!row.profileAdsenseId || !row.emailAddress || !row.creationDate) {
-          results.errors.push({
-            row: rowNumber,
-            error: "Thiếu thông tin bắt buộc",
-            data: row,
-          });
-          continue;
-        }
-
-        // Kiểm tra profileAdsenseId đã tồn tại
-        const exist = await Network.findOne({
-          profileAdsenseId: row.profileAdsenseId,
-        }).session(session);
-
-        if (exist) {
-          results.errors.push({
-            row: rowNumber,
-            error: `Profile AdSense ID ${row.profileAdsenseId} đã tồn tại`,
-            data: row,
-          });
-          continue;
-        }
-
-        // Tìm user theo email
-        let userId = null;
-        if (row.employmentEmail) {
-          const user = await User.findOne({
-            personalEmail: row.employmentEmail.trim().toLowerCase(),
-          }).session(session);
-
-          if (!user) {
-            results.errors.push({
-              row: rowNumber,
-              error: `Không tìm thấy nhân viên với email ${row.employmentEmail}`,
-              data: row,
-            });
-            continue;
-          }
-          userId = user._id;
-        }
-
-        if (!userId) {
-          results.errors.push({
-            row: rowNumber,
-            error: "Thiếu thông tin nhân viên",
-            data: row,
-          });
-          continue;
-        }
-
-        const newNetwork = await Network.create(
-          [
-            {
-              assignedUser: userId,
-              reminderDate: row.reminder ? new Date(row.reminder) : null,
-              profileAdsenseId: row.profileAdsenseId,
-              emailAddress: row.emailAddress.trim().toLowerCase(),
-              recoveryEmail: row.recoveryEmail
-                ? row.recoveryEmail.trim().toLowerCase()
-                : "",
-              creationDate: new Date(row.creationDate),
-              taxName: row.taxName || "",
-              location: row.location?.toUpperCase() || "OFFICE",
-              linkedChannelUrl: row.linkedChannel || "",
-              emailChannel: row.emailChannel
-                ? row.emailChannel.trim().toLowerCase()
-                : "",
-              channelJoinDate: row.joinDate ? new Date(row.joinDate) : null,
-              country: row.country || "VN",
-              status: "ACTIVE",
-            },
-          ],
-          { session }
-        );
-
-        results.success.push({
-          row: rowNumber,
-          networkId: newNetwork[0]._id,
-          profileAdsenseId: newNetwork[0].profileAdsenseId,
-          emailAddress: newNetwork[0].emailAddress,
-        });
-      } catch (err) {
-        results.errors.push({ row: rowNumber, error: err.message, data: row });
-      }
-    }
-
-    await session.commitTransaction();
-    session.endSession();
-
-    return res.json({
-      success: true,
-      message: `Import hoàn tất: ${results.success.length}/${results.total} thành công`,
-      data: results,
-    });
-  } catch (err) {
-    return next(err);
-  }
-};
-
-// Export networks ra Excel
-const exportNetworkExcel = async (req, res, next) => {
-  try {
-    const { status, assignedUser, country } = req.query;
-
-    const filter = {};
-    if (status) filter.status = status;
-    if (assignedUser) filter.assignedUser = assignedUser;
-    if (country) filter.country = country;
-
-    const networks = await Network.find(filter)
-      .populate("assignedUser", "fullName personalEmail")
-      .populate("mainChannel", "name link")
-      .sort({ createdAt: -1 })
-      .lean();
-
-    const excelData = networks.map((network, index) => ({
-      STT: index + 1,
-      "Nhân viên": network.assignedUser?.fullName || "",
-      "Email nhân viên": network.assignedUser?.personalEmail || "",
-      "Profile AdSense ID": network.profileAdsenseId,
-      "Email Address": network.emailAddress,
-      "Recovery Email": network.recoveryEmail,
-      "Ngày tạo Email": network.creationDate
-        ? new Date(network.creationDate).toLocaleDateString("vi-VN")
-        : "",
-      "Tax Name": network.taxName,
-      "Vị trí": network.location,
-      "Linked Channel": network.linkedChannelUrl,
-      "Email Channel": network.emailChannel,
-      "Join Date": network.channelJoinDate
-        ? new Date(network.channelJoinDate).toLocaleDateString("vi-VN")
-        : "",
-      "Quốc gia": network.country,
-      "Trạng thái": network.status,
-      "Nhắc nhở": network.reminderDate
-        ? new Date(network.reminderDate).toLocaleDateString("vi-VN")
-        : "",
-      "Ghi chú": network.note,
-    }));
-
-    const worksheet = XLSX.utils.json_to_sheet(excelData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Networks");
-
-    const columnWidths = [
-      { wch: 5 }, // STT
-      { wch: 25 }, // Nhân viên
-      { wch: 30 }, // Email nhân viên
-      { wch: 20 }, // Profile AdSense ID
-      { wch: 30 }, // Email Address
-      { wch: 30 }, // Recovery Email
-      { wch: 15 }, // Ngày tạo Email
-      { wch: 25 }, // Tax Name
-      { wch: 15 }, // Vị trí
-      { wch: 50 }, // Linked Channel
-      { wch: 30 }, // Email Channel
-      { wch: 15 }, // Join Date
-      { wch: 10 }, // Quốc gia
-      { wch: 15 }, // Trạng thái
-      { wch: 15 }, // Nhắc nhở
-      { wch: 30 }, // Ghi chú
-    ];
-    worksheet["!cols"] = columnWidths;
-
-    const buffer = XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
-
-    const filename = `networks_${new Date().toISOString().split("T")[0]}.xlsx`;
-    res.setHeader(
-      "Content-Type",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    );
-    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
-
-    res.send(buffer);
-  } catch (err) {
-    next(err);
-  }
-};
-
-// Export template Excel
-const exportNetworkTemplate = async (req, res, next) => {
-  try {
-    const templateData = [
-      {
-        employmentEmail: "nguyenvana@gmail.com",
-        reminder: "2025-12-31",
-        profileAdsenseId: "pub-1234567890123456",
-        emailAddress: "adsense@gmail.com",
-        recoveryEmail: "recovery@gmail.com",
-        creationDate: "2024-01-01",
-        taxName: "NGUYEN VAN A",
-        location: "OFFICE",
-        linkedChannel: "https://youtube.com/@channelname",
-        emailChannel: "channel@gmail.com",
-        joinDate: "2024-01-15",
-        country: "VN",
-      },
-    ];
-
-    const worksheet = XLSX.utils.json_to_sheet(templateData);
-
-    const instructionData = [
-      {
-        Cột: "employmentEmail",
-        "Mô tả": "Email nhân viên (phải tồn tại trong hệ thống)",
-        "Bắt buộc": "Có",
-      },
-      {
-        Cột: "reminder",
-        "Mô tả": "Ngày nhắc nhở (YYYY-MM-DD)",
-        "Bắt buộc": "Không",
-      },
-      {
-        Cột: "profileAdsenseId",
-        "Mô tả": "Mã Profile AdSense (duy nhất)",
-        "Bắt buộc": "Có",
-      },
-      {
-        Cột: "emailAddress",
-        "Mô tả": "Email của Profile AdSense",
-        "Bắt buộc": "Có",
-      },
-      {
-        Cột: "recoveryEmail",
-        "Mô tả": "Email khôi phục",
-        "Bắt buộc": "Không",
-      },
-      {
-        Cột: "creationDate",
-        "Mô tả": "Ngày tạo email (YYYY-MM-DD)",
-        "Bắt buộc": "Có",
-      },
-      {
-        Cột: "taxName",
-        "Mô tả": "Tên thuế",
-        "Bắt buộc": "Không",
-      },
-      {
-        Cột: "location",
-        "Mô tả": "HOME / OFFICE / OTHER",
-        "Bắt buộc": "Không",
-      },
-      {
-        Cột: "linkedChannel",
-        "Mô tả": "URL kênh YouTube",
-        "Bắt buộc": "Không",
-      },
-      {
-        Cột: "emailChannel",
-        "Mô tả": "Email brand account của kênh",
-        "Bắt buộc": "Không",
-      },
-      {
-        Cột: "joinDate",
-        "Mô tả": "Ngày tạo kênh (YYYY-MM-DD)",
-        "Bắt buộc": "Không",
-      },
-      {
-        Cột: "country",
-        "Mô tả": "Mã quốc gia (VN, US, UK...)",
-        "Bắt buộc": "Không",
-      },
-    ];
-
-    const instructionSheet = XLSX.utils.json_to_sheet(instructionData);
-
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Template");
-    XLSX.utils.book_append_sheet(workbook, instructionSheet, "Hướng dẫn");
-
-    worksheet["!cols"] = [
-      { wch: 30 }, // employmentEmail
-      { wch: 15 }, // reminder
-      { wch: 25 }, // profileAdsenseId
-      { wch: 30 }, // emailAddress
-      { wch: 30 }, // recoveryEmail
-      { wch: 15 }, // creationDate
-      { wch: 25 }, // taxName
-      { wch: 15 }, // location
-      { wch: 50 }, // linkedChannel
-      { wch: 30 }, // emailChannel
-      { wch: 15 }, // joinDate
-      { wch: 10 }, // country
-    ];
-
-    instructionSheet["!cols"] = [{ wch: 20 }, { wch: 50 }, { wch: 15 }];
-
-    const buffer = XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
-
-    res.setHeader(
-      "Content-Type",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    );
-    res.setHeader(
-      "Content-Disposition",
-      'attachment; filename="network_import_template.xlsx"'
-    );
-
-    res.send(buffer);
-  } catch (err) {
-    next(err);
-  }
-};
-
 module.exports = {
   createNew,
   getAll,
@@ -771,7 +498,4 @@ module.exports = {
   assignChannel,
   removeChannel,
   getNetworkStats,
-  importNetworkExcel,
-  exportNetworkExcel,
-  exportNetworkTemplate,
 };

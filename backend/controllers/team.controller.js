@@ -64,7 +64,7 @@ const createNew = async (req, res, next) => {
         userId: userIds[0],
         title: "Bạn đã được thêm vào team mới",
         message: `Bạn đã được thêm vào team "${name}".`,
-        type: "TEAM",
+        // type: "TEAM",
         metadata: {
           teamId: newTeam._id,
           role: leader === userIds[0] ? "LEADER" : "MEMBER",
@@ -75,7 +75,7 @@ const createNew = async (req, res, next) => {
         userIds,
         title: "Bạn đã được thêm vào team mới",
         message: `Bạn đã được thêm vào team "${name}".`,
-        type: "TEAM",
+        // type: "TEAM",
         metadata: {
           teamId: newTeam._id,
         },

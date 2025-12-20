@@ -1,10 +1,14 @@
-// resource.controller.js
 const mongoose = require("mongoose");
 const db = require("../models");
 const Resource = db.Resource;
 const User = db.User;
 const Channel = db.Channel;
 const bcrypt = require("bcrypt");
+
+const {
+  sendNotification,
+  sendBulkNotification,
+} = require("../services/notification.service");
 
 // Tạo resource mới
 const createNew = async (req, res, next) => {
