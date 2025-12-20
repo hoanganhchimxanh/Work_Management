@@ -2,7 +2,7 @@ import React from "react";
 import { Row, Col, Form, Button } from "react-bootstrap";
 import { FileEarmarkSpreadsheet } from "react-bootstrap-icons";
 
-const NetworkFilters = ({ filters, onFilterChange, onExport, onImport }) => {
+const NetworkFilters = ({ filters, onFilterChange, onExport }) => {
   return (
     <Row className="mb-4 g-3">
       <Col md={4}>
@@ -51,10 +51,6 @@ const NetworkFilters = ({ filters, onFilterChange, onExport, onImport }) => {
         <Button variant="success" className="w-100" onClick={onExport}>
           <FileEarmarkSpreadsheet className="me-2" />
           Export Excel
-        </Button>
-        <Button variant="primary" className="w-100" onClick={onImport}>
-          <FileEarmarkSpreadsheet className="me-2" />
-          Import Excel
         </Button>
       </Col>
     </Row>

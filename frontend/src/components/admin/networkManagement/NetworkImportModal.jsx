@@ -5,7 +5,7 @@ import axios from "axios";
 
 import config from "../../../configs/api";
 
-function UserImportModal({ show, onHide, onSubmit }) {
+function NetworkImportModal({ show, onHide, onSubmit }) {
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState([]);
   const [error, setError] = useState("");
@@ -59,14 +59,14 @@ function UserImportModal({ show, onHide, onSubmit }) {
   const handleDownloadTemplate = async () => {
     try {
       const response = await axios.get(
-        `${config.backendBase}/excel/download-user-template`,
+        `${config.backendBase}/excel/download-network-template`,
         { responseType: "blob" }
       );
 
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", "user_import_template.xlsx");
+      link.setAttribute("download", "network_import_template.xlsx");
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -78,7 +78,7 @@ function UserImportModal({ show, onHide, onSubmit }) {
   return (
     <Modal show={show} onHide={handleClose} centered size="lg">
       <Modal.Header closeButton>
-        <Modal.Title>Import User từ Excel</Modal.Title>
+        <Modal.Title>Import Network từ Excel</Modal.Title>
       </Modal.Header>
 
       <Modal.Body>
@@ -130,7 +130,7 @@ function UserImportModal({ show, onHide, onSubmit }) {
           onClick={handleDownloadTemplate}
         >
           <i className="bi bi-download me-2"></i>
-          Tải file template User
+          Tải file template Network
         </Button>
       </Modal.Body>
 
@@ -147,4 +147,4 @@ function UserImportModal({ show, onHide, onSubmit }) {
   );
 }
 
-export default UserImportModal;
+export default NetworkImportModal;

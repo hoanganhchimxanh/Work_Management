@@ -11,6 +11,7 @@ import Unauthorized from "./pages/Unauthorized";
 import AdminLayout from "./layouts/AdminLayout";
 import Dashboard from "./pages/admin/Dashboard";
 import UserManagement from "./pages/admin/User_Management";
+import ResourceManagement from "./pages/admin/Resource_Management";
 import KPITaskManagement from "./pages/admin/KPI_Task_Management";
 import NetworkManagement from "./pages/admin/Network_Management";
 import ChannelManagement from "./pages/admin/Channel_Management";
@@ -66,6 +67,7 @@ function App() {
         >
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="users" element={<UserManagement />} />
+          <Route path="resources" element={<ResourceManagement />} />
           <Route path="kpi_tasks" element={<KPITaskManagement />} />
           <Route path="networks" element={<NetworkManagement />} />
           <Route path="channels" element={<ChannelManagement />} />
