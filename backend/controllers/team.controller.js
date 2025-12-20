@@ -4,6 +4,11 @@ const Account = db.Account;
 const Team = db.Team;
 const XLSX = require("xlsx");
 
+const {
+  sendNotification,
+  sendBulkNotification,
+} = require("../services/notification.service");
+
 // Tạo đội mới
 const createNew = async (req, res, next) => {
   try {
@@ -53,7 +58,31 @@ const createNew = async (req, res, next) => {
       await User.updateMany({ _id: { $in: userIds } }, { team: newTeam._id });
     }
 
-    res.status(201).json({
+    // 🔔 SEND NOTIFICATION
+    if (userIds.length === 1) {
+      await sendNotification({
+        userId: userIds[0],
+        title: "Bạn đã được thêm vào team mới",
+        message: `Bạn đã được thêm vào team "${name}".`,
+        type: "TEAM",
+        metadata: {
+          teamId: newTeam._id,
+          role: leader === userIds[0] ? "LEADER" : "MEMBER",
+        },
+      });
+    } else if (userIds.length > 1) {
+      await sendBulkNotification({
+        userIds,
+        title: "Bạn đã được thêm vào team mới",
+        message: `Bạn đã được thêm vào team "${name}".`,
+        type: "TEAM",
+        metadata: {
+          teamId: newTeam._id,
+        },
+      });
+    }
+
+    return res.status(201).json({
       success: true,
       data: newTeam,
     });

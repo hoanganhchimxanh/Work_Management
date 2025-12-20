@@ -8,6 +8,7 @@ const connectDB = require("./config/db");
 const errorHandler = require("./middlewares/errorHandler");
 const refreshYoutubeToken = require("./jobs/refreshYoutubeToken");
 const syncYoutubeAnalytics = require("./jobs/syncYoutubeAnalytics");
+const { initSocket } = require("./socket");
 
 // Express web server
 const app = express();
@@ -73,6 +74,7 @@ const startServer = async () => {
     syncYoutubeAnalytics();
     server.listen(PORT, HOST, () => {
       console.log(`Server running at http://${HOST}:${PORT}/`);
+      initSocket(server);
     });
   } catch (error) {
     console.error("Failed to connect to DB:", error);

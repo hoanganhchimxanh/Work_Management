@@ -1,3 +1,4 @@
+// resource.controller.js
 const mongoose = require("mongoose");
 const db = require("../models");
 const Resource = db.Resource;
@@ -12,7 +13,6 @@ const createNew = async (req, res, next) => {
       email,
       defaultPassword,
       recoveryEmail,
-      type,
       status,
       assignedUser,
       assignedChannel,
@@ -66,7 +66,6 @@ const createNew = async (req, res, next) => {
       email: email.toLowerCase().trim(),
       defaultPassword: hashedPassword,
       recoveryEmail: recoveryEmail.toLowerCase().trim(),
-      type: type || "CHANNEL_CREATION",
       status: status || "AVAILABLE",
       assignedUser: assignedUser || null,
       assignedChannel: assignedChannel || null,
@@ -92,11 +91,10 @@ const createNew = async (req, res, next) => {
 // Lấy tất cả resources
 const getAll = async (req, res, next) => {
   try {
-    const { type, status, assignedUser } = req.query;
+    const { status, assignedUser } = req.query;
 
-    // Build filter
+    // Build filter (đã bỏ type)
     const filter = {};
-    if (type) filter.type = type;
     if (status) filter.status = status;
     if (assignedUser) filter.assignedUser = assignedUser;
 
@@ -150,7 +148,6 @@ const updateResource = async (req, res, next) => {
       email,
       defaultPassword,
       recoveryEmail,
-      type,
       status,
       assignedUser,
       assignedChannel,
@@ -218,7 +215,6 @@ const updateResource = async (req, res, next) => {
     // Cập nhật các field khác
     if (recoveryEmail)
       resource.recoveryEmail = recoveryEmail.toLowerCase().trim();
-    if (type) resource.type = type;
     if (status) resource.status = status;
     if (note !== undefined) resource.note = note;
 
@@ -252,7 +248,7 @@ const deleteResource = async (req, res, next) => {
       });
     }
 
-    // Kiểm tra xem resource có đang được gán cho channel hoặc user không
+    // Kiểm tra xem resource có đang được gán không
     if (resource.status === "ASSIGNED") {
       return res.status(400).json({
         success: false,
@@ -303,7 +299,6 @@ const assignToUser = async (req, res, next) => {
       });
     }
 
-    // Kiểm tra resource có available không
     if (resource.status !== "AVAILABLE") {
       return res.status(400).json({
         success: false,
@@ -434,7 +429,7 @@ const getMyResources = async (req, res, next) => {
   }
 };
 
-// Thống kê resources
+// Thống kê resources (chỉ còn theo status)
 const getResourceStats = async (req, res, next) => {
   try {
     const stats = await Resource.aggregate([
@@ -446,36 +441,20 @@ const getResourceStats = async (req, res, next) => {
       },
     ]);
 
-    const typeStats = await Resource.aggregate([
-      {
-        $group: {
-          _id: "$type",
-          count: { $sum: 1 },
-        },
-      },
-    ]);
-
     const formattedStats = {
       byStatus: {
         AVAILABLE: 0,
         ASSIGNED: 0,
         DISABLED: 0,
       },
-      byType: {
-        CHANNEL_CREATION: 0,
-        CHANNEL_MANAGER: 0,
-        BACKUP: 0,
-      },
       total: 0,
     };
 
     stats.forEach((stat) => {
-      formattedStats.byStatus[stat._id] = stat.count;
+      if (formattedStats.byStatus.hasOwnProperty(stat._id)) {
+        formattedStats.byStatus[stat._id] = stat.count;
+      }
       formattedStats.total += stat.count;
-    });
-
-    typeStats.forEach((stat) => {
-      formattedStats.byType[stat._id] = stat.count;
     });
 
     res.json({
@@ -535,7 +514,6 @@ const enableResource = async (req, res, next) => {
       });
     }
 
-    // Nếu resource đang được gán thì để ASSIGNED, không thì AVAILABLE
     resource.status =
       resource.assignedUser || resource.assignedChannel
         ? "ASSIGNED"

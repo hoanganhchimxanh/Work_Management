@@ -7,6 +7,8 @@ const Task = require("./task.model");
 const KPI = require("./kpi.model");
 const YoutubeAuth = require("./youtubeAuth.model");
 const ChannelAnalytics = require("./channelAnalytics.model");
+const Resource = require("./resource.model");
+const Notification = require("./notification.model");
 
 module.exports = {
   User,
@@ -18,4 +20,6 @@ module.exports = {
   KPI,
   YoutubeAuth,
   ChannelAnalytics,
+  Resource,
+  Notification,
 };
