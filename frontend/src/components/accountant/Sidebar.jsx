@@ -42,10 +42,16 @@ const Sidebar = () => {
       setHasUnreadNotification(true);
     };
 
+    const onUnreadCountUpdate = (data) => {
+      setHasUnreadNotification(data.unreadCount > 0);
+    };
+
     socket.on("notification:new", onNewNotification);
+    socket.on("notification:unread-count", onUnreadCountUpdate);
 
     return () => {
       socket.off("notification:new", onNewNotification);
+      socket.off("notification:unread-count", onUnreadCountUpdate);
     };
   }, []);
 

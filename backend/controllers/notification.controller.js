@@ -1,5 +1,6 @@
 const db = require("../models");
 const Notification = db.Notification;
+const { getIO } = require("../socket");
 
 /**
  * GET /notification
@@ -70,8 +71,8 @@ const getUnreadCount = async (req, res) => {
  */
 const markAsRead = async (req, res) => {
   try {
-    const userId = req.user.userId;
     const { id } = req.params;
+    const userId = req.user.userId;
 
     const notification = await Notification.findOneAndUpdate(
       { _id: id, user: userId },
@@ -80,36 +81,42 @@ const markAsRead = async (req, res) => {
     );
 
     if (!notification) {
-      return res.status(404).json({
-        success: false,
-        message: "Thông báo không tồn tại",
-      });
+      return res.status(404).json({ success: false });
     }
 
-    return res.status(200).json({
-      success: true,
-      data: notification,
+    const unreadCount = await Notification.countDocuments({
+      user: userId,
+      isRead: false,
     });
+
+    const io = getIO();
+    io.to(userId.toString()).emit("notification:unread-count", { unreadCount });
+
+    res.status(200).json({ success: true });
   } catch (err) {
-    return res.status(500).json({
-      success: false,
-      message: "Không thể cập nhật thông báo",
-    });
+    res.status(500).json({ success: false });
   }
 };
 
 /**
  * PATCH /notification/read-all
- * Đánh dấu tất cả thông báo đã đọc
+ * Đánh dấu tất cả thông báo của user là đã đọc (realtime)
  */
 const markAllAsRead = async (req, res) => {
   try {
     const userId = req.user.userId;
 
+    // Update tất cả notification chưa đọc của user
     await Notification.updateMany(
       { user: userId, isRead: false },
       { isRead: true }
     );
+
+    // Emit socket: unreadCount = 0
+    const io = getIO();
+    io.to(userId.toString()).emit("notification:unread-count", {
+      unreadCount: 0,
+    });
 
     return res.status(200).json({
       success: true,
