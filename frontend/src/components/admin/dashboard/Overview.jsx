@@ -16,7 +16,6 @@ import {
   PeopleFill,
   BroadcastPin,
   Diagram3Fill,
-  CurrencyDollar,
 } from "react-bootstrap-icons";
 
 function Overview({
