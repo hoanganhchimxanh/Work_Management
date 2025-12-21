@@ -18,7 +18,13 @@ import {
   Diagram3Fill,
 } from "react-bootstrap-icons";
 
-function Overview({ stats, revenueData, formatShortCurrency, formatCurrency }) {
+function Overview({
+  stats,
+  revenueData,
+  formatShortCurrency,
+  formatCurrency,
+  dateRange,
+}) {
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
@@ -40,6 +46,40 @@ function Overview({ stats, revenueData, formatShortCurrency, formatCurrency }) {
     return null;
   };
 
+  const getChartTitle = () => {
+    switch (dateRange) {
+      case "7":
+        return "Tăng trưởng doanh thu 7 ngày gần nhất";
+      case "28":
+        return "Tăng trưởng doanh thu 28 ngày gần nhất";
+      case "90":
+        return "Tăng trưởng doanh thu theo tuần (90 ngày)";
+      case "365":
+        return "Tăng trưởng doanh thu theo tháng (365 ngày)";
+      case "lifetime":
+        return "Tăng trưởng doanh thu toàn thời gian";
+      default:
+        return "Tăng trưởng doanh thu";
+    }
+  };
+
+  const getPeriodLabel = () => {
+    switch (dateRange) {
+      case "7":
+        return "7 ngày qua";
+      case "28":
+        return "28 ngày qua";
+      case "90":
+        return "90 ngày qua";
+      case "365":
+        return "365 ngày qua";
+      case "lifetime":
+        return "Toàn thời gian";
+      default:
+        return "";
+    }
+  };
+
   return (
     <>
       {/* Stats Cards */}
@@ -49,7 +89,9 @@ function Overview({ stats, revenueData, formatShortCurrency, formatCurrency }) {
             <Card.Body>
               <div className="d-flex justify-content-between align-items-start">
                 <div>
-                  <p className="text-muted mb-1">Tổng doanh thu tháng</p>
+                  <p className="text-muted mb-1">
+                    Tổng doanh thu ({getPeriodLabel()})
+                  </p>
                   <h3 className="fw-bold mb-0">
                     {formatShortCurrency(stats.totalRevenue)}
                   </h3>
@@ -128,11 +170,17 @@ function Overview({ stats, revenueData, formatShortCurrency, formatCurrency }) {
         <Col xs={12}>
           <Card className="border-0 shadow-sm">
             <Card.Body>
-              <h5 className="fw-bold mb-4">Tăng trưởng doanh thu theo tháng</h5>
+              <h5 className="fw-bold mb-4">{getChartTitle()}</h5>
               <ResponsiveContainer width="100%" height={350}>
                 <LineChart data={revenueData}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
+                  <XAxis
+                    dataKey="date"
+                    angle={dateRange === "lifetime" ? -45 : 0}
+                    textAnchor={dateRange === "lifetime" ? "end" : "middle"}
+                    height={dateRange === "lifetime" ? 80 : 60}
+                    interval={dateRange === "lifetime" ? "preserveStartEnd" : 0}
+                  />
                   <YAxis tickFormatter={formatShortCurrency} />
                   <Tooltip content={<CustomTooltip />} />
                   <Legend />
@@ -142,7 +190,7 @@ function Overview({ stats, revenueData, formatShortCurrency, formatCurrency }) {
                     name="Doanh thu"
                     stroke="#0d6efd"
                     strokeWidth={2}
-                    dot={{ r: 4 }}
+                    dot={{ r: dateRange === "7" || dateRange === "28" ? 4 : 0 }}
                     activeDot={{ r: 6 }}
                   />
                 </LineChart>
