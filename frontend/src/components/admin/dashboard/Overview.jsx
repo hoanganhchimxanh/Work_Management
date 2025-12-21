@@ -16,6 +16,7 @@ import {
   PeopleFill,
   BroadcastPin,
   Diagram3Fill,
+  CurrencyDollar,
 } from "react-bootstrap-icons";
 
 function Overview({
@@ -49,17 +50,17 @@ function Overview({
   const getChartTitle = () => {
     switch (dateRange) {
       case "7":
-        return "Tăng trưởng doanh thu 7 ngày gần nhất";
+        return "Tăng trường doanh thu 7 ngày gần nhất";
       case "28":
-        return "Tăng trưởng doanh thu 28 ngày gần nhất";
+        return "Tăng trường doanh thu 28 ngày gần nhất";
       case "90":
-        return "Tăng trưởng doanh thu theo tuần (90 ngày)";
+        return "Tăng trường doanh thu theo tuần (90 ngày)";
       case "365":
-        return "Tăng trưởng doanh thu theo tháng (365 ngày)";
+        return "Tăng trường doanh thu theo tháng (365 ngày)";
       case "lifetime":
-        return "Tăng trưởng doanh thu toàn thời gian";
+        return "Tăng trường doanh thu toàn thời gian";
       default:
-        return "Tăng trưởng doanh thu";
+        return "Tăng trường doanh thu";
     }
   };
 
@@ -88,13 +89,15 @@ function Overview({
           <Card className="border-0 shadow-sm h-100">
             <Card.Body>
               <div className="d-flex justify-content-between align-items-start">
-                <div>
-                  <p className="text-muted mb-1">
+                <div className="flex-grow-1">
+                  <p className="text-muted mb-2 small">
                     Tổng doanh thu ({getPeriodLabel()})
                   </p>
-                  <h3 className="fw-bold mb-0">
-                    {formatShortCurrency(stats.totalRevenue)}
-                  </h3>
+                  <div className="d-flex align-items-center gap-2">
+                    <h3 className="fw-bold mb-0">
+                      {formatShortCurrency(stats.totalRevenue)}
+                    </h3>
+                  </div>
                 </div>
                 <div
                   className="bg-primary bg-opacity-10 p-3 rounded-3"
@@ -112,7 +115,7 @@ function Overview({
             <Card.Body>
               <div className="d-flex justify-content-between align-items-start">
                 <div>
-                  <p className="text-muted mb-1">Số nhân viên</p>
+                  <p className="text-muted mb-2 small">Số nhân viên</p>
                   <h3 className="fw-bold mb-0">{stats.totalEmployees}</h3>
                 </div>
                 <div
@@ -131,7 +134,7 @@ function Overview({
             <Card.Body>
               <div className="d-flex justify-content-between align-items-start">
                 <div>
-                  <p className="text-muted mb-1">Số kênh BKT</p>
+                  <p className="text-muted mb-2 small">Số kênh BKT</p>
                   <h3 className="fw-bold mb-0">{stats.totalChannels}</h3>
                 </div>
                 <div
@@ -150,7 +153,7 @@ function Overview({
             <Card.Body>
               <div className="d-flex justify-content-between align-items-start">
                 <div>
-                  <p className="text-muted mb-1">Network hoạt động</p>
+                  <p className="text-muted mb-2 small">Network hoạt động</p>
                   <h3 className="fw-bold mb-0">{stats.activeNetworks}</h3>
                 </div>
                 <div

@@ -15,8 +15,8 @@ import TopRanking from "../../components/admin/dashboard/TopRanking";
 import config from "../../configs/api";
 
 function Dashboard() {
-  // Date filter state
-  const [dateRange, setDateRange] = useState("30"); // 7, 28, 90, 365, lifetime
+  // Date filter state - CHANGED: Mặc định là 7 ngày
+  const [dateRange, setDateRange] = useState("7");
 
   const [stats, setStats] = useState({
     totalRevenue: 0,
@@ -43,7 +43,6 @@ function Dashboard() {
     let startDate;
 
     if (dateRange === "lifetime") {
-      // Lấy từ ngày đầu tiên có dữ liệu (hoặc 10 năm trước)
       startDate = new Date("2015-01-01");
     } else {
       const days = parseInt(dateRange);
@@ -101,7 +100,6 @@ function Dashboard() {
 
       const data = await response.json();
       if (data.success) {
-        // Format data for chart - group by week or month if data is too large
         const formattedData = formatRevenueData(data.data);
         setRevenueData(formattedData);
       }
@@ -113,7 +111,6 @@ function Dashboard() {
   // Format revenue data based on date range
   const formatRevenueData = (data) => {
     if (dateRange === "7" || dateRange === "28") {
-      // Show daily data
       return data.map((item) => ({
         date: new Date(item.date).toLocaleDateString("vi-VN", {
           day: "2-digit",
@@ -122,7 +119,6 @@ function Dashboard() {
         revenue: item.revenue || 0,
       }));
     } else if (dateRange === "90") {
-      // Group by week
       const weeklyData = {};
       data.forEach((item) => {
         const date = new Date(item.date);
@@ -144,7 +140,6 @@ function Dashboard() {
         revenue,
       }));
     } else {
-      // Group by month for 365 days and lifetime
       const monthlyData = {};
       data.forEach((item) => {
         const date = new Date(item.date);
@@ -276,17 +271,21 @@ function Dashboard() {
     loadDashboardData();
   }, [dateRange]);
 
-  const formatCurrency = (value) =>
-    new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
+  // CHANGED: Format với 2 số thập phân
+  const formatCurrency = (value) => {
+    const formatted = new Intl.NumberFormat("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     }).format(value);
+    return `$${formatted}`;
+  };
 
+  // CHANGED: Format short currency với 2 số thập phân
   const formatShortCurrency = (value) => {
-    if (value >= 1e9) return `${(value / 1e9).toFixed(1)}B`;
-    if (value >= 1e6) return `${(value / 1e6).toFixed(0)}M`;
-    if (value >= 1e3) return `${(value / 1e3).toFixed(0)}K`;
-    return value;
+    if (value >= 1e9) return `$${(value / 1e9).toFixed(2)}B`;
+    if (value >= 1e6) return `$${(value / 1e6).toFixed(2)}M`;
+    if (value >= 1e3) return `$${(value / 1e3).toFixed(2)}K`;
+    return `$${value.toFixed(2)}`;
   };
 
   if (loading) {
