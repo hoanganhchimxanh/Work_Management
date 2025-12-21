@@ -50,7 +50,7 @@ const NetworkFilters = ({ filters, onFilterChange, onExport }) => {
       <Col md={2}>
         <Button variant="success" className="w-100" onClick={onExport}>
           <FileEarmarkSpreadsheet className="me-2" />
-          Xuất Excel
+          Export Excel
         </Button>
       </Col>
     </Row>

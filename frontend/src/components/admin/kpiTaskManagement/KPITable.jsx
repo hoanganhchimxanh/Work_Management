@@ -12,6 +12,8 @@ import {
 } from "react-bootstrap";
 import axios from "axios";
 
+import config from "../../../configs/api";
+
 function KPITable({ kpis, loading, onEdit, onRefresh, onDeleted }) {
   const [deleting, setDeleting] = useState(null);
   const [filterStatus, setFilterStatus] = useState("ALL");
@@ -60,7 +62,7 @@ function KPITable({ kpis, loading, onEdit, onRefresh, onDeleted }) {
     try {
       setDeleting(kpiId);
       const token = localStorage.getItem("token");
-      await axios.delete(`http://localhost:9999/kpi/delete/${kpiId}`, {
+      await axios.delete(`${config.backendBase}/kpi/delete/${kpiId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

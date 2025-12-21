@@ -84,7 +84,7 @@ const NetworkManagement = () => {
       if (filters.country) queryParams.append("country", filters.country);
 
       const response = await fetch(
-        `${config.backendBase}/network/export-excel?${queryParams}`,
+        `${config.backendBase}/excel/export-network-excel?${queryParams}`,
         {
           headers: {
             Authorization: `Bearer ${getAuthToken()}`,

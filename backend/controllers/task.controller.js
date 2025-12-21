@@ -4,6 +4,11 @@ const User = db.User;
 const Team = db.Team;
 const Task = db.Task;
 
+const {
+  sendNotification,
+  sendBulkNotification,
+} = require("../services/notification.service");
+
 // Thêm công việc mới
 const createNew = async (req, res, next) => {
   try {
@@ -30,7 +35,9 @@ const createNew = async (req, res, next) => {
       });
     }
 
-    // Kiểm tra user có tồn tại không (nếu có)
+    let notifyUserIds = [];
+
+    // Kiểm tra user
     if (assignedToUser) {
       const user = await User.findById(assignedToUser);
       if (!user) {
@@ -39,19 +46,25 @@ const createNew = async (req, res, next) => {
           message: "Không tìm thấy user!",
         });
       }
+      notifyUserIds = [assignedToUser];
     }
 
-    // Kiểm tra team có tồn tại không (nếu có)
+    // Kiểm tra team
     if (assignedToTeam) {
-      const team = await Team.findById(assignedToTeam);
+      const team = await Team.findById(assignedToTeam).populate(
+        "members",
+        "_id"
+      );
       if (!team) {
         return res.status(404).json({
           success: false,
           message: "Không tìm thấy team!",
         });
       }
+      notifyUserIds = team.members.map((m) => m._id);
     }
 
+    // Tạo task
     const newTask = await Task.create({
       title,
       description: description || "",
@@ -66,7 +79,32 @@ const createNew = async (req, res, next) => {
       .populate("assignedToTeam", "name")
       .lean();
 
-    res.status(201).json({
+    // 🔔 SEND NOTIFICATION
+    if (notifyUserIds.length === 1) {
+      await sendNotification({
+        userId: notifyUserIds[0],
+        title: "Bạn được giao công việc mới",
+        message: `Công việc "${title}" vừa được giao cho bạn.`,
+        // type: "TASK",
+        metadata: {
+          taskId: newTask._id,
+          deadline,
+        },
+      });
+    } else if (notifyUserIds.length > 1) {
+      await sendBulkNotification({
+        userIds: notifyUserIds,
+        title: "Team bạn có công việc mới",
+        message: `Công việc "${title}" vừa được giao cho team của bạn.`,
+        // type: "TASK",
+        metadata: {
+          taskId: newTask._id,
+          deadline,
+        },
+      });
+    }
+
+    return res.status(201).json({
       success: true,
       message: "Tạo công việc thành công!",
       data: populatedTask,

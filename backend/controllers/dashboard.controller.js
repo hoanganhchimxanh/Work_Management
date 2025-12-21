@@ -10,6 +10,14 @@ const ChannelAnalytics = db.ChannelAnalytics;
 // Get Dashboard Statistics
 const getDashboardStats = async (req, res, next) => {
   try {
+    const { startDate, endDate } = req.query;
+
+    // Nếu không có startDate/endDate, mặc định lấy 30 ngày gần nhất
+    const end = endDate ? new Date(endDate) : new Date();
+    const start = startDate
+      ? new Date(startDate)
+      : new Date(end.getTime() - 30 * 24 * 60 * 60 * 1000);
+
     // Count total employees (excluding ADMIN)
     const totalEmployees = await User.countDocuments({
       role: { $ne: "ADMIN" },
@@ -26,17 +34,13 @@ const getDashboardStats = async (req, res, next) => {
       status: "ACTIVE",
     });
 
-    // Calculate total revenue for current month
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-
+    // Calculate total revenue for the period
     const revenueResult = await ChannelAnalytics.aggregate([
       {
         $match: {
           date: {
-            $gte: startOfMonth,
-            $lte: endOfMonth,
+            $gte: start,
+            $lte: end,
           },
         },
       },
@@ -58,6 +62,10 @@ const getDashboardStats = async (req, res, next) => {
         totalEmployees,
         totalChannels,
         activeNetworks,
+        period: {
+          startDate: start.toISOString(),
+          endDate: end.toISOString(),
+        },
       },
     });
   } catch (err) {
@@ -65,27 +73,35 @@ const getDashboardStats = async (req, res, next) => {
   }
 };
 
-// Get Revenue by Month
-const getRevenueByMonth = async (req, res, next) => {
+// Get Revenue by Day for a date range
+const getRevenueByDay = async (req, res, next) => {
   try {
-    const { year } = req.query;
-    const targetYear = year ? parseInt(year) : new Date().getFullYear();
+    const { startDate, endDate } = req.query;
 
-    const startDate = new Date(targetYear, 0, 1);
-    const endDate = new Date(targetYear, 11, 31, 23, 59, 59);
+    if (!startDate || !endDate) {
+      return res.status(400).json({
+        success: false,
+        message: "Thiếu startDate hoặc endDate!",
+      });
+    }
 
-    const revenueByMonth = await ChannelAnalytics.aggregate([
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    const revenueByDay = await ChannelAnalytics.aggregate([
       {
         $match: {
           date: {
-            $gte: startDate,
-            $lte: endDate,
+            $gte: start,
+            $lte: end,
           },
         },
       },
       {
         $group: {
-          _id: { $month: "$date" },
+          _id: {
+            $dateToString: { format: "%Y-%m-%d", date: "$date" },
+          },
           revenue: { $sum: "$estimatedRevenue" },
         },
       },
@@ -95,25 +111,31 @@ const getRevenueByMonth = async (req, res, next) => {
       {
         $project: {
           _id: 0,
-          month: "$_id",
+          date: "$_id",
           revenue: 1,
         },
       },
     ]);
 
-    // Fill missing months with 0
-    const allMonths = Array.from({ length: 12 }, (_, i) => ({
-      month: i + 1,
-      revenue: 0,
-    }));
+    // Fill missing dates with 0
+    const allDates = [];
+    const currentDate = new Date(start);
+    while (currentDate <= end) {
+      allDates.push(currentDate.toISOString().split("T")[0]);
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
 
-    revenueByMonth.forEach((item) => {
-      allMonths[item.month - 1].revenue = item.revenue;
+    const filledData = allDates.map((date) => {
+      const found = revenueByDay.find((item) => item.date === date);
+      return {
+        date,
+        revenue: found ? found.revenue : 0,
+      };
     });
 
     res.json({
       success: true,
-      data: allMonths,
+      data: filledData,
     });
   } catch (err) {
     next(err);
@@ -125,14 +147,15 @@ const getTopEmployees = async (req, res, next) => {
   try {
     const { limit = 5, startDate, endDate } = req.query;
 
-    // Default to current month if no date range provided
-    const now = new Date();
-    const start = startDate
-      ? new Date(startDate)
-      : new Date(now.getFullYear(), now.getMonth(), 1);
-    const end = endDate
-      ? new Date(endDate)
-      : new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    if (!startDate || !endDate) {
+      return res.status(400).json({
+        success: false,
+        message: "Thiếu startDate hoặc endDate!",
+      });
+    }
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
 
     const topEmployees = await ChannelAnalytics.aggregate([
       {
@@ -204,13 +227,15 @@ const getTopTeams = async (req, res, next) => {
   try {
     const { limit = 5, startDate, endDate } = req.query;
 
-    const now = new Date();
-    const start = startDate
-      ? new Date(startDate)
-      : new Date(now.getFullYear(), now.getMonth(), 1);
-    const end = endDate
-      ? new Date(endDate)
-      : new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    if (!startDate || !endDate) {
+      return res.status(400).json({
+        success: false,
+        message: "Thiếu startDate hoặc endDate!",
+      });
+    }
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
 
     const topTeams = await ChannelAnalytics.aggregate([
       {
@@ -294,13 +319,15 @@ const getTopChannels = async (req, res, next) => {
   try {
     const { limit = 5, startDate, endDate } = req.query;
 
-    const now = new Date();
-    const start = startDate
-      ? new Date(startDate)
-      : new Date(now.getFullYear(), now.getMonth(), 1);
-    const end = endDate
-      ? new Date(endDate)
-      : new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    if (!startDate || !endDate) {
+      return res.status(400).json({
+        success: false,
+        message: "Thiếu startDate hoặc endDate!",
+      });
+    }
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
 
     const topChannels = await ChannelAnalytics.aggregate([
       {
@@ -357,24 +384,32 @@ const getTopChannels = async (req, res, next) => {
 // Get Revenue Comparison (Current vs Previous Period)
 const getRevenueComparison = async (req, res, next) => {
   try {
-    const now = new Date();
-    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const currentMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    const { startDate, endDate } = req.query;
 
-    const previousMonthStart = new Date(
-      now.getFullYear(),
-      now.getMonth() - 1,
-      1
-    );
-    const previousMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+    if (!startDate || !endDate) {
+      return res.status(400).json({
+        success: false,
+        message: "Thiếu startDate hoặc endDate!",
+      });
+    }
 
-    // Current month revenue
+    const currentEnd = new Date(endDate);
+    const currentStart = new Date(startDate);
+
+    // Calculate the duration of the period
+    const duration = currentEnd - currentStart;
+
+    // Previous period: same duration, ending at currentStart
+    const previousEnd = new Date(currentStart.getTime() - 1);
+    const previousStart = new Date(previousEnd.getTime() - duration);
+
+    // Current period revenue
     const currentRevenue = await ChannelAnalytics.aggregate([
       {
         $match: {
           date: {
-            $gte: currentMonthStart,
-            $lte: currentMonthEnd,
+            $gte: currentStart,
+            $lte: currentEnd,
           },
         },
       },
@@ -386,13 +421,13 @@ const getRevenueComparison = async (req, res, next) => {
       },
     ]);
 
-    // Previous month revenue
+    // Previous period revenue
     const previousRevenue = await ChannelAnalytics.aggregate([
       {
         $match: {
           date: {
-            $gte: previousMonthStart,
-            $lte: previousMonthEnd,
+            $gte: previousStart,
+            $lte: previousEnd,
           },
         },
       },
@@ -413,8 +448,16 @@ const getRevenueComparison = async (req, res, next) => {
     res.json({
       success: true,
       data: {
-        currentMonth: current,
-        previousMonth: previous,
+        currentPeriod: {
+          revenue: current,
+          startDate: currentStart.toISOString(),
+          endDate: currentEnd.toISOString(),
+        },
+        previousPeriod: {
+          revenue: previous,
+          startDate: previousStart.toISOString(),
+          endDate: previousEnd.toISOString(),
+        },
         percentageChange: parseFloat(percentageChange.toFixed(2)),
         isIncrease: current > previous,
       },
@@ -426,7 +469,7 @@ const getRevenueComparison = async (req, res, next) => {
 
 module.exports = {
   getDashboardStats,
-  getRevenueByMonth,
+  getRevenueByDay,
   getTopEmployees,
   getTopTeams,
   getTopChannels,

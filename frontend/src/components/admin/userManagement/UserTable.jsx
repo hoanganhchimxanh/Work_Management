@@ -15,6 +15,8 @@ import { ThreeDotsVertical } from "react-bootstrap-icons";
 import axios from "axios";
 import SendResourcesModal from "./SendResourcesModal";
 
+import config from "../../../configs/api";
+
 function UserTable({ users, loading, onEdit, onRefresh, teams }) {
   const [filterStatus, setFilterStatus] = useState("ALL");
   const [filterSort, setFilterSort] = useState("NEWEST");
@@ -105,7 +107,7 @@ function UserTable({ users, loading, onEdit, onRefresh, teams }) {
       setApproving(true);
       const token = localStorage.getItem("token");
       await axios.post(
-        `http://localhost:9999/user/approve/${selectedUser.userId}`,
+        `${config.backendBase}/user/approve/${selectedUser.userId}`,
         {
           role: approveData.role,
           team: approveData.team || null,
@@ -139,7 +141,7 @@ function UserTable({ users, loading, onEdit, onRefresh, teams }) {
 
     try {
       const token = localStorage.getItem("token");
-      await axios.delete(`http://localhost:9999/user/reject/${userId}`, {
+      await axios.delete(`${config.backendBase}/user/reject/${userId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

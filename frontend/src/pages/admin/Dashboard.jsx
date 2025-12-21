@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { Container, Row, Col, Spinner, Alert } from "react-bootstrap";
+import {
+  Container,
+  Row,
+  Col,
+  Spinner,
+  Alert,
+  ButtonGroup,
+  Button,
+} from "react-bootstrap";
 
 import Overview from "../../components/admin/dashboard/Overview";
 import TopRanking from "../../components/admin/dashboard/TopRanking";
@@ -7,6 +15,9 @@ import TopRanking from "../../components/admin/dashboard/TopRanking";
 import config from "../../configs/api";
 
 function Dashboard() {
+  // Date filter state - CHANGED: Mặc định là 7 ngày
+  const [dateRange, setDateRange] = useState("7");
+
   const [stats, setStats] = useState({
     totalRevenue: 0,
     totalEmployees: 0,
@@ -26,15 +37,37 @@ function Dashboard() {
     return localStorage.getItem("token") || "";
   };
 
+  // Calculate date range based on selection
+  const getDateParams = () => {
+    const endDate = new Date();
+    let startDate;
+
+    if (dateRange === "lifetime") {
+      startDate = new Date("2015-01-01");
+    } else {
+      const days = parseInt(dateRange);
+      startDate = new Date(endDate.getTime() - days * 24 * 60 * 60 * 1000);
+    }
+
+    return {
+      startDate: startDate.toISOString().split("T")[0],
+      endDate: endDate.toISOString().split("T")[0],
+    };
+  };
+
   // Fetch Dashboard Statistics
   const fetchDashboardStats = async () => {
     try {
-      const response = await fetch(`${config.backendBase}/dashboard/stats`, {
-        headers: {
-          Authorization: `Bearer ${getAuthToken()}`,
-          "Content-Type": "application/json",
-        },
-      });
+      const { startDate, endDate } = getDateParams();
+      const response = await fetch(
+        `${config.backendBase}/dashboard/stats?startDate=${startDate}&endDate=${endDate}`,
+        {
+          headers: {
+            Authorization: `Bearer ${getAuthToken()}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       const data = await response.json();
       if (data.success) {
@@ -51,12 +84,12 @@ function Dashboard() {
     }
   };
 
-  // Fetch Monthly Revenue Data
+  // Fetch Daily Revenue Data
   const fetchRevenueData = async () => {
     try {
-      const currentYear = new Date().getFullYear();
+      const { startDate, endDate } = getDateParams();
       const response = await fetch(
-        `${config.backendBase}/dashboard/revenue-by-month?year=${currentYear}`,
+        `${config.backendBase}/dashboard/revenue-by-day?startDate=${startDate}&endDate=${endDate}`,
         {
           headers: {
             Authorization: `Bearer ${getAuthToken()}`,
@@ -67,11 +100,7 @@ function Dashboard() {
 
       const data = await response.json();
       if (data.success) {
-        // Format data for chart
-        const formattedData = data.data.map((item) => ({
-          month: `T${item.month}`,
-          revenue: item.revenue || 0,
-        }));
+        const formattedData = formatRevenueData(data.data);
         setRevenueData(formattedData);
       }
     } catch (error) {
@@ -79,11 +108,66 @@ function Dashboard() {
     }
   };
 
+  // Format revenue data based on date range
+  const formatRevenueData = (data) => {
+    if (dateRange === "7" || dateRange === "28") {
+      return data.map((item) => ({
+        date: new Date(item.date).toLocaleDateString("vi-VN", {
+          day: "2-digit",
+          month: "2-digit",
+        }),
+        revenue: item.revenue || 0,
+      }));
+    } else if (dateRange === "90") {
+      const weeklyData = {};
+      data.forEach((item) => {
+        const date = new Date(item.date);
+        const weekStart = new Date(date);
+        weekStart.setDate(date.getDate() - date.getDay());
+        const weekKey = weekStart.toISOString().split("T")[0];
+
+        if (!weeklyData[weekKey]) {
+          weeklyData[weekKey] = 0;
+        }
+        weeklyData[weekKey] += item.revenue || 0;
+      });
+
+      return Object.entries(weeklyData).map(([date, revenue]) => ({
+        date: new Date(date).toLocaleDateString("vi-VN", {
+          day: "2-digit",
+          month: "2-digit",
+        }),
+        revenue,
+      }));
+    } else {
+      const monthlyData = {};
+      data.forEach((item) => {
+        const date = new Date(item.date);
+        const monthKey = `${date.getFullYear()}-${String(
+          date.getMonth() + 1
+        ).padStart(2, "0")}`;
+
+        if (!monthlyData[monthKey]) {
+          monthlyData[monthKey] = 0;
+        }
+        monthlyData[monthKey] += item.revenue || 0;
+      });
+
+      return Object.entries(monthlyData)
+        .sort((a, b) => a[0].localeCompare(b[0]))
+        .map(([month, revenue]) => ({
+          date: `T${parseInt(month.split("-")[1])}/${month.split("-")[0]}`,
+          revenue,
+        }));
+    }
+  };
+
   // Fetch Top Employees
   const fetchTopEmployees = async () => {
     try {
+      const { startDate, endDate } = getDateParams();
       const response = await fetch(
-        `${config.backendBase}/dashboard/top-employees?limit=5`,
+        `${config.backendBase}/dashboard/top-employees?limit=5&startDate=${startDate}&endDate=${endDate}`,
         {
           headers: {
             Authorization: `Bearer ${getAuthToken()}`,
@@ -109,8 +193,9 @@ function Dashboard() {
   // Fetch Top Teams
   const fetchTopTeams = async () => {
     try {
+      const { startDate, endDate } = getDateParams();
       const response = await fetch(
-        `${config.backendBase}/dashboard/top-teams?limit=5`,
+        `${config.backendBase}/dashboard/top-teams?limit=5&startDate=${startDate}&endDate=${endDate}`,
         {
           headers: {
             Authorization: `Bearer ${getAuthToken()}`,
@@ -136,8 +221,9 @@ function Dashboard() {
   // Fetch Top Channels
   const fetchTopChannels = async () => {
     try {
+      const { startDate, endDate } = getDateParams();
       const response = await fetch(
-        `${config.backendBase}/dashboard/top-channels?limit=5`,
+        `${config.backendBase}/dashboard/top-channels?limit=5&startDate=${startDate}&endDate=${endDate}`,
         {
           headers: {
             Authorization: `Bearer ${getAuthToken()}`,
@@ -160,7 +246,7 @@ function Dashboard() {
     }
   };
 
-  // Load all data on mount
+  // Load all data when dateRange changes
   useEffect(() => {
     const loadDashboardData = async () => {
       setLoading(true);
@@ -183,19 +269,23 @@ function Dashboard() {
     };
 
     loadDashboardData();
-  }, []);
+  }, [dateRange]);
 
-  const formatCurrency = (value) =>
-    new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
+  // CHANGED: Format với 2 số thập phân
+  const formatCurrency = (value) => {
+    const formatted = new Intl.NumberFormat("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     }).format(value);
+    return `$${formatted}`;
+  };
 
+  // CHANGED: Format short currency với 2 số thập phân
   const formatShortCurrency = (value) => {
-    if (value >= 1e9) return `${(value / 1e9).toFixed(1)}B`;
-    if (value >= 1e6) return `${(value / 1e6).toFixed(0)}M`;
-    if (value >= 1e3) return `${(value / 1e3).toFixed(0)}K`;
-    return value;
+    if (value >= 1e9) return `$${(value / 1e9).toFixed(2)}B`;
+    if (value >= 1e6) return `$${(value / 1e6).toFixed(2)}M`;
+    if (value >= 1e3) return `$${(value / 1e3).toFixed(2)}K`;
+    return `$${value.toFixed(2)}`;
   };
 
   if (loading) {
@@ -222,6 +312,44 @@ function Dashboard() {
         </Col>
       </Row>
 
+      {/* Date Range Filter */}
+      <Row className="mb-4">
+        <Col>
+          <ButtonGroup>
+            <Button
+              variant={dateRange === "7" ? "primary" : "outline-primary"}
+              onClick={() => setDateRange("7")}
+            >
+              7 ngày
+            </Button>
+            <Button
+              variant={dateRange === "28" ? "primary" : "outline-primary"}
+              onClick={() => setDateRange("28")}
+            >
+              28 ngày
+            </Button>
+            <Button
+              variant={dateRange === "90" ? "primary" : "outline-primary"}
+              onClick={() => setDateRange("90")}
+            >
+              90 ngày
+            </Button>
+            <Button
+              variant={dateRange === "365" ? "primary" : "outline-primary"}
+              onClick={() => setDateRange("365")}
+            >
+              365 ngày
+            </Button>
+            <Button
+              variant={dateRange === "lifetime" ? "primary" : "outline-primary"}
+              onClick={() => setDateRange("lifetime")}
+            >
+              Toàn thời gian
+            </Button>
+          </ButtonGroup>
+        </Col>
+      </Row>
+
       {error && (
         <Alert variant="danger" dismissible onClose={() => setError(null)}>
           {error}
@@ -233,6 +361,7 @@ function Dashboard() {
         revenueData={revenueData}
         formatCurrency={formatCurrency}
         formatShortCurrency={formatShortCurrency}
+        dateRange={dateRange}
       />
 
       <TopRanking

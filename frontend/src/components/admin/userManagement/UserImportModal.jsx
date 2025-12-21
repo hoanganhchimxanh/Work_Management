@@ -3,6 +3,8 @@ import { Modal, Form, Button, Table, Alert } from "react-bootstrap";
 import * as XLSX from "xlsx";
 import axios from "axios";
 
+import config from "../../../configs/api";
+
 function UserImportModal({ show, onHide, onSubmit }) {
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState([]);
@@ -57,7 +59,7 @@ function UserImportModal({ show, onHide, onSubmit }) {
   const handleDownloadTemplate = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:9999/excel/download-user-template",
+        `${config.backendBase}/excel/download-user-template`,
         { responseType: "blob" }
       );
 
@@ -81,7 +83,7 @@ function UserImportModal({ show, onHide, onSubmit }) {
 
       <Modal.Body>
         <Form.Group className="mb-3">
-          <Form.Label>Chọn file Excel (.xlsx hoặc .xls)</Form.Label>
+          <Form.Label>Chọn file Excel (.xlsx, .xls hoặc .csv)</Form.Label>
           <Form.Control
             type="file"
             accept=".xlsx, .xls, .csv"

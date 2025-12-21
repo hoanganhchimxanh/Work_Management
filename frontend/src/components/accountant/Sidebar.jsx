@@ -1,21 +1,67 @@
-import React, { useState } from "react";
-import { NavLink } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { NavLink, useLocation } from "react-router-dom";
 import {
+  HouseDoorFill,
   CashStack,
   BoxArrowRight,
   List,
   BellFill,
-  HouseDoorFill,
 } from "react-bootstrap-icons";
 import { useContext } from "react";
 import { AuthContext } from "../../contexts/AuthContext";
 import { Button, Nav, OverlayTrigger, Tooltip } from "react-bootstrap";
+
+import { fetchUnreadCount } from "../../services/notification.service";
+import { socket } from "../../socket";
 
 const Sidebar = () => {
   const [isOpen, setIsOpen] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const { user, logout } = useContext(AuthContext);
+
+  const [hasUnreadNotification, setHasUnreadNotification] = useState(false);
+
+  const location = useLocation();
+
+  useEffect(() => {
+    const loadUnread = async () => {
+      try {
+        const res = await fetchUnreadCount();
+        setHasUnreadNotification(res.data.unreadCount > 0);
+      } catch (err) {
+        console.error("Fetch unread count failed", err);
+      }
+    };
+
+    loadUnread();
+  }, []);
+
+  useEffect(() => {
+    const onNewNotification = () => {
+      setHasUnreadNotification(true);
+    };
+
+    const onUnreadCountUpdate = (data) => {
+      setHasUnreadNotification(data.unreadCount > 0);
+    };
+
+    socket.on("notification:new", onNewNotification);
+    socket.on("notification:unread-count", onUnreadCountUpdate);
+
+    return () => {
+      socket.off("notification:new", onNewNotification);
+      socket.off("notification:unread-count", onUnreadCountUpdate);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (location.pathname === "/accountant/notifications") {
+      fetchUnreadCount().then((res) => {
+        setHasUnreadNotification(res.data.unreadCount > 0);
+      });
+    }
+  }, [location.pathname]);
 
   const toggleSidebar = () => {
     setIsTransitioning(true);
@@ -58,7 +104,23 @@ const Sidebar = () => {
         <span className="fs-5" style={{ minWidth: "24px" }}>
           {item.icon}
         </span>
-        {isOpen && <span className="ms-3">{item.label}</span>}
+        {isOpen && (
+          <span className="ms-3 d-flex align-items-center gap-2">
+            <span>{item.label}</span>
+
+            {item.to === "/admin/notifications" && hasUnreadNotification && (
+              <span
+                style={{
+                  width: "8px",
+                  height: "8px",
+                  backgroundColor: "#dc3545",
+                  borderRadius: "50%",
+                  display: "inline-block",
+                }}
+              />
+            )}
+          </span>
+        )}
       </NavLink>
     );
 
@@ -120,7 +182,7 @@ const Sidebar = () => {
             flexShrink: 0, // Thêm để đảm bảo header không bị co lại
           }}
         >
-          {isOpen && <h4 className="mb-0 fw-bold">Admin Panel</h4>}
+          {isOpen && <h4 className="mb-0 fw-bold">Accountant Panel</h4>}
           <Button
             variant="link"
             className="text-white p-0"

@@ -1,40 +1,146 @@
-import React, { useState } from "react";
-import { Container, ListGroup, Badge, Button, Row, Col } from "react-bootstrap";
+import React, { useEffect, useState, useCallback } from "react";
+import {
+  Container,
+  ListGroup,
+  Badge,
+  Button,
+  Row,
+  Col,
+  Spinner,
+} from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
+
+import {
+  fetchNotifications,
+  markNotificationRead,
+  markAllRead,
+} from "../../services/notification.service";
+
+import { socket } from "../../socket";
 
 function Notification_Page() {
-  const [notifications, setNotifications] = useState([
-    {
-      id: 1,
-      title: "Kênh bị STRIKE",
-      message: "Kênh ABC vừa bị YouTube strike bản quyền.",
-      type: "CHANNEL",
-      isRead: false,
-      createdAt: "2025-01-15 09:30",
-    },
-    {
-      id: 2,
-      title: "Import Excel thành công",
-      message: "Danh sách user đã được import thành công.",
-      type: "SYSTEM",
-      isRead: true,
-      createdAt: "2025-01-14 14:20",
-    },
-  ]);
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
-  const markAsRead = (id) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
-    );
+  /* =======================
+   * Load notifications (REST)
+   * ======================= */
+  const loadNotifications = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await fetchNotifications();
+      setNotifications(res.data.data || []);
+    } catch (err) {
+      console.error("Load notifications failed", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadNotifications();
+  }, [loadNotifications]);
+
+  /* =======================
+   * Socket realtime
+   * ======================= */
+  useEffect(() => {
+    const handler = (noti) => {
+      setNotifications((prev) => {
+        // Chống trùng notification
+        if (prev.some((n) => n._id === noti._id)) return prev;
+        return [noti, ...prev];
+      });
+    };
+
+    socket.on("notification:new", handler);
+
+    return () => {
+      socket.off("notification:new", handler);
+    };
+  }, []);
+
+  /* =======================
+   * Actions
+   * ======================= */
+  const handleMarkAsRead = async (id) => {
+    try {
+      await markNotificationRead(id);
+      setNotifications((prev) =>
+        prev.map((n) => (n._id === id ? { ...n, isRead: true } : n))
+      );
+    } catch (err) {
+      console.error("Mark read failed", err);
+    }
   };
 
+  const handleMarkAllRead = async () => {
+    try {
+      await markAllRead();
+      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+    } catch (err) {
+      console.error("Mark all read failed", err);
+    }
+  };
+
+  const handleClickNotification = (noti) => {
+    if (!noti.isRead) {
+      handleMarkAsRead(noti._id);
+    }
+
+    // Điều hướng theo loại notification
+    switch (noti.type) {
+      case "TASK":
+        if (noti.metadata?.taskId) {
+          navigate(`/tasks/${noti.metadata.taskId}`);
+        }
+        break;
+
+      case "TEAM":
+        if (noti.metadata?.teamId) {
+          navigate(`/teams/${noti.metadata.teamId}`);
+        }
+        break;
+
+      case "KPI":
+        navigate("/kpi");
+        break;
+
+      case "CHANNEL":
+        navigate("/channels");
+        break;
+
+      default:
+        break;
+    }
+  };
+
+  /* =======================
+   * UI helpers
+   * ======================= */
   const getTypeBadge = (type) => {
     const map = {
       SYSTEM: "secondary",
       CHANNEL: "danger",
       USER: "info",
+      TASK: "primary",
+      KPI: "success",
+      TEAM: "warning",
     };
     return <Badge bg={map[type] || "dark"}>{type}</Badge>;
   };
+
+  /* =======================
+   * Render
+   * ======================= */
+  if (loading) {
+    return (
+      <Container className="text-center mt-5">
+        <Spinner animation="border" />
+      </Container>
+    );
+  }
 
   return (
     <Container fluid className="mt-4">
@@ -46,11 +152,7 @@ function Notification_Page() {
           <Button
             size="sm"
             variant="outline-secondary"
-            onClick={() =>
-              setNotifications((prev) =>
-                prev.map((n) => ({ ...n, isRead: true }))
-              )
-            }
+            onClick={handleMarkAllRead}
           >
             Đánh dấu tất cả đã đọc
           </Button>
@@ -63,7 +165,9 @@ function Notification_Page() {
         ) : (
           notifications.map((noti) => (
             <ListGroup.Item
-              key={noti.id}
+              key={noti._id}
+              action
+              onClick={() => handleClickNotification(noti)}
               className={`d-flex justify-content-between align-items-start ${
                 !noti.isRead ? "fw-bold bg-light" : ""
               }`}
@@ -74,17 +178,15 @@ function Notification_Page() {
                   <span>{noti.title}</span>
                 </div>
                 <div className="text-muted small">{noti.message}</div>
-                <div className="text-muted small">{noti.createdAt}</div>
+                <div className="text-muted small">
+                  {new Date(noti.createdAt).toLocaleString()}
+                </div>
               </div>
 
               {!noti.isRead && (
-                <Button
-                  size="sm"
-                  variant="outline-primary"
-                  onClick={() => markAsRead(noti.id)}
-                >
-                  Đã đọc
-                </Button>
+                <Badge bg="danger" pill>
+                  Mới
+                </Badge>
               )}
             </ListGroup.Item>
           ))

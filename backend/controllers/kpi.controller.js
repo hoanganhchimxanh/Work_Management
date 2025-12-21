@@ -4,6 +4,11 @@ const User = db.User;
 const Team = db.Team;
 const KPI = db.KPI;
 
+const {
+  sendNotification,
+  sendBulkNotification,
+} = require("../services/notification.service");
+
 // Thêm KPI mới
 const createNew = async (req, res, next) => {
   try {
@@ -24,7 +29,6 @@ const createNew = async (req, res, next) => {
       });
     }
 
-    // Kiểm tra ngày kết thúc phải sau ngày bắt đầu
     if (new Date(endDate) <= new Date(startDate)) {
       return res.status(400).json({
         success: false,
@@ -32,7 +36,9 @@ const createNew = async (req, res, next) => {
       });
     }
 
-    // Kiểm tra user có tồn tại không (nếu có)
+    let teamUserIds = [];
+
+    // Kiểm tra user
     if (user) {
       const userDoc = await User.findById(user);
       if (!userDoc) {
@@ -41,19 +47,22 @@ const createNew = async (req, res, next) => {
           message: "Không tìm thấy user!",
         });
       }
+      teamUserIds = [user];
     }
 
-    // Kiểm tra team có tồn tại không (nếu có)
+    // Kiểm tra team
     if (team) {
-      const teamDoc = await Team.findById(team);
+      const teamDoc = await Team.findById(team).populate("members", "_id");
       if (!teamDoc) {
         return res.status(404).json({
           success: false,
           message: "Không tìm thấy team!",
         });
       }
+      teamUserIds = teamDoc.members.map((m) => m._id);
     }
 
+    // Tạo KPI
     const newKPI = await KPI.create({
       user: user || null,
       team: team || null,
@@ -68,7 +77,34 @@ const createNew = async (req, res, next) => {
       .populate("team", "name")
       .lean();
 
-    res.status(201).json({
+    // 🔔 SEND NOTIFICATION
+    if (teamUserIds.length === 1) {
+      await sendNotification({
+        userId: teamUserIds[0],
+        title: "Bạn được giao KPI mới",
+        message: "Một KPI mới vừa được tạo và gán cho bạn.",
+        // type: "KPI",
+        metadata: {
+          kpiId: newKPI._id,
+          startDate,
+          endDate,
+        },
+      });
+    } else if (teamUserIds.length > 1) {
+      await sendBulkNotification({
+        userIds: teamUserIds,
+        title: "Team bạn được giao KPI mới",
+        message: "Một KPI mới vừa được tạo cho team của bạn.",
+        // type: "KPI",
+        metadata: {
+          kpiId: newKPI._id,
+          startDate,
+          endDate,
+        },
+      });
+    }
+
+    return res.status(201).json({
       success: true,
       message: "Tạo KPI thành công!",
       data: populatedKPI,

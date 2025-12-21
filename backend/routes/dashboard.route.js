@@ -23,12 +23,12 @@ router.get(
   dashboardController.getDashboardStats
 );
 
-// Get revenue by month for a specific year
+// Get revenue by day for a date range
 router.get(
-  "/revenue-by-month",
+  "/revenue-by-day",
   authenticateJWT,
   authorizeRoles(["ADMIN", "ACCOUNTANT"]),
-  dashboardController.getRevenueByMonth
+  dashboardController.getRevenueByDay
 );
 
 // Get top employees by revenue
@@ -55,7 +55,7 @@ router.get(
   dashboardController.getTopChannels
 );
 
-// Get revenue comparison (current month vs previous month)
+// Get revenue comparison (current vs previous period)
 router.get(
   "/revenue-comparison",
   authenticateJWT,

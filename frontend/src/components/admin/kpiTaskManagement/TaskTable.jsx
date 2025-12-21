@@ -11,6 +11,8 @@ import {
 } from "react-bootstrap";
 import axios from "axios";
 
+import config from "../../../configs/api";
+
 function TaskTable({ tasks, loading, onEdit, onRefresh, onDeleted }) {
   const [deleting, setDeleting] = useState(null);
   const [updatingStatus, setUpdatingStatus] = useState(null);
@@ -46,7 +48,7 @@ function TaskTable({ tasks, loading, onEdit, onRefresh, onDeleted }) {
 
     try {
       setDeleting(taskId);
-      await axios.delete(`http://localhost:9999/task/delete/${taskId}`);
+      await axios.delete(`${config.backendBase}/task/delete/${taskId}`);
       onDeleted();
     } catch (err) {
       alert(
@@ -61,7 +63,7 @@ function TaskTable({ tasks, loading, onEdit, onRefresh, onDeleted }) {
   const handleStatusChange = async (taskId, newStatus) => {
     try {
       setUpdatingStatus(taskId);
-      await axios.patch(`http://localhost:9999/task/update-status/${taskId}`, {
+      await axios.patch(`${config.backendBase}/task/update-status/${taskId}`, {
         status: newStatus,
       });
       onRefresh();

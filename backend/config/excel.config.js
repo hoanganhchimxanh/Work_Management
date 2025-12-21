@@ -259,7 +259,7 @@ const excelConfigs = {
       },
       {
         column: "memberEmails",
-        description: "Email các thành viên, phân cách bằng dấu phấy",
+        description: "Email các thành viên, phân cách bằng dấu phẩy",
         required: "Không",
       },
       {
@@ -475,6 +475,266 @@ const excelConfigs = {
         data.status = "ASSIGNED";
       }
       return data;
+    },
+  },
+
+  // ==================== NETWORK CONFIG ====================
+  network: {
+    modelName: "Network",
+    sheetName: "Networks",
+    fileName: "networks",
+
+    columns: [
+      {
+        excelKey: "employmentEmail",
+        dbField: "assignedUser",
+        displayName: "Email nhân viên",
+        required: true,
+        width: 30,
+        isReference: true,
+        referenceModel: "User",
+        referenceField: "personalEmail",
+        referenceKey: "_id",
+      },
+      {
+        excelKey: "reminder",
+        dbField: "reminderDate",
+        displayName: "Ngày nhắc nhở",
+        required: false,
+        width: 15,
+        transform: (value) => (value ? new Date(value) : null),
+      },
+      {
+        excelKey: "profileAdsenseId",
+        dbField: "profileAdsenseId",
+        displayName: "Profile AdSense ID",
+        required: true,
+        width: 25,
+        transform: (value) => value.trim(),
+      },
+      {
+        excelKey: "emailAddress",
+        dbField: "emailAddress",
+        displayName: "Email Address",
+        required: true,
+        width: 30,
+        validate: (value) => {
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          return emailRegex.test(value);
+        },
+        transform: (value) => value.trim().toLowerCase(),
+      },
+      {
+        excelKey: "recoveryEmail",
+        dbField: "recoveryEmail",
+        displayName: "Recovery Email",
+        required: false,
+        width: 30,
+        validate: (value) => {
+          if (!value) return true;
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          return emailRegex.test(value);
+        },
+        transform: (value) => (value ? value.trim().toLowerCase() : ""),
+      },
+      {
+        excelKey: "creationDate",
+        dbField: "creationDate",
+        displayName: "Ngày tạo email",
+        required: true,
+        width: 15,
+        transform: (value) => new Date(value),
+      },
+      {
+        excelKey: "taxName",
+        dbField: "taxName",
+        displayName: "Tax Name",
+        required: false,
+        width: 25,
+        transform: (value) => value || "",
+      },
+      {
+        excelKey: "location",
+        dbField: "location",
+        displayName: "Vị trí",
+        required: false,
+        width: 15,
+        validate: (value) => {
+          const validLocations = ["HOME", "OFFICE", "OTHER"];
+          return !value || validLocations.includes(value.toUpperCase());
+        },
+        transform: (value) => value?.toUpperCase() || "OFFICE",
+      },
+      {
+        excelKey: "linkedChannel",
+        dbField: "linkedChannelUrl",
+        displayName: "Linked Channel",
+        required: false,
+        width: 50,
+        transform: (value) => value || "",
+      },
+      {
+        excelKey: "emailChannel",
+        dbField: "emailChannel",
+        displayName: "Email Channel",
+        required: false,
+        width: 30,
+        validate: (value) => {
+          if (!value) return true;
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          return emailRegex.test(value);
+        },
+        transform: (value) => (value ? value.trim().toLowerCase() : ""),
+      },
+      {
+        excelKey: "joinDate",
+        dbField: "channelJoinDate",
+        displayName: "Ngày tạo kênh",
+        required: false,
+        width: 15,
+        transform: (value) => (value ? new Date(value) : null),
+      },
+      {
+        excelKey: "country",
+        dbField: "country",
+        displayName: "Quốc gia",
+        required: false,
+        width: 10,
+        transform: (value) => value || "VN",
+      },
+    ],
+
+    exportColumns: [
+      { key: "stt", displayName: "STT", width: 5 },
+      { key: "assignedUserName", displayName: "Nhân viên", width: 25 },
+      { key: "assignedUserEmail", displayName: "Email nhân viên", width: 30 },
+      { key: "profileAdsenseId", displayName: "Profile AdSense ID", width: 20 },
+      { key: "emailAddress", displayName: "Email Address", width: 30 },
+      { key: "recoveryEmail", displayName: "Recovery Email", width: 30 },
+      { key: "creationDate", displayName: "Ngày tạo Email", width: 15 },
+      { key: "taxName", displayName: "Tax Name", width: 25 },
+      { key: "location", displayName: "Vị trí", width: 15 },
+      { key: "linkedChannelUrl", displayName: "Linked Channel", width: 50 },
+      { key: "emailChannel", displayName: "Email Channel", width: 30 },
+      { key: "channelJoinDate", displayName: "Join Date", width: 15 },
+      { key: "country", displayName: "Quốc gia", width: 10 },
+      { key: "status", displayName: "Trạng thái", width: 15 },
+      { key: "reminderDate", displayName: "Nhắc nhở", width: 15 },
+      { key: "note", displayName: "Ghi chú", width: 30 },
+    ],
+
+    templateData: [
+      {
+        employmentEmail: "nguyenvana@gmail.com",
+        reminder: "2025-12-31",
+        profileAdsenseId: "pub-1234567890123456",
+        emailAddress: "adsense@gmail.com",
+        recoveryEmail: "recovery@gmail.com",
+        creationDate: "2024-01-01",
+        taxName: "NGUYEN VAN A",
+        location: "OFFICE",
+        linkedChannel: "https://youtube.com/@channelname",
+        emailChannel: "channel@gmail.com",
+        joinDate: "2024-01-15",
+        country: "VN",
+      },
+    ],
+
+    instructions: [
+      {
+        column: "employmentEmail",
+        description: "Email nhân viên (phải tồn tại trong hệ thống)",
+        required: "Có",
+      },
+      {
+        column: "reminder",
+        description: "Ngày nhắc nhở (YYYY-MM-DD)",
+        required: "Không",
+      },
+      {
+        column: "profileAdsenseId",
+        description: "Mã Profile AdSense (duy nhất)",
+        required: "Có",
+      },
+      {
+        column: "emailAddress",
+        description: "Email của Profile AdSense",
+        required: "Có",
+      },
+      {
+        column: "recoveryEmail",
+        description: "Email khôi phục",
+        required: "Không",
+      },
+      {
+        column: "creationDate",
+        description: "Ngày tạo email (YYYY-MM-DD)",
+        required: "Có",
+      },
+      {
+        column: "taxName",
+        description: "Tên thuế",
+        required: "Không",
+      },
+      {
+        column: "location",
+        description: "HOME / OFFICE / OTHER",
+        required: "Không",
+      },
+      {
+        column: "linkedChannel",
+        description: "URL kênh YouTube",
+        required: "Không",
+      },
+      {
+        column: "emailChannel",
+        description: "Email brand account của kênh",
+        required: "Không",
+      },
+      {
+        column: "joinDate",
+        description: "Ngày tạo kênh (YYYY-MM-DD)",
+        required: "Không",
+      },
+      {
+        column: "country",
+        description: "Mã quốc gia (VN, US, UK...)",
+        required: "Không",
+      },
+    ],
+
+    prepareExportData: async (records) => {
+      return records.map((network, index) => ({
+        stt: index + 1,
+        assignedUserName: network.assignedUser?.fullName || "",
+        assignedUserEmail: network.assignedUser?.personalEmail || "",
+        profileAdsenseId: network.profileAdsenseId,
+        emailAddress: network.emailAddress,
+        recoveryEmail: network.recoveryEmail,
+        creationDate: network.creationDate
+          ? new Date(network.creationDate).toLocaleDateString("vi-VN")
+          : "",
+        taxName: network.taxName,
+        location: network.location,
+        linkedChannelUrl: network.linkedChannelUrl,
+        emailChannel: network.emailChannel,
+        channelJoinDate: network.channelJoinDate
+          ? new Date(network.channelJoinDate).toLocaleDateString("vi-VN")
+          : "",
+        country: network.country,
+        status: network.status,
+        reminderDate: network.reminderDate
+          ? new Date(network.reminderDate).toLocaleDateString("vi-VN")
+          : "",
+        note: network.note || "",
+      }));
+    },
+
+    defaults: {
+      status: "ACTIVE",
+      note: "",
+      location: "OFFICE",
+      country: "VN",
     },
   },
 };

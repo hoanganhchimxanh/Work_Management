@@ -5,7 +5,7 @@ import axios from "axios";
 
 import config from "../../../configs/api";
 
-function TeamImportModal({ show, onHide, onSubmit }) {
+function NetworkImportModal({ show, onHide, onSubmit }) {
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState([]);
   const [error, setError] = useState("");
@@ -59,14 +59,14 @@ function TeamImportModal({ show, onHide, onSubmit }) {
   const handleDownloadTemplate = async () => {
     try {
       const response = await axios.get(
-        `${config.backendBase}/excel/download-team-template`,
+        `${config.backendBase}/excel/download-network-template`,
         { responseType: "blob" }
       );
 
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", "team_import_template.xlsx");
+      link.setAttribute("download", "network_import_template.xlsx");
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -78,12 +78,12 @@ function TeamImportModal({ show, onHide, onSubmit }) {
   return (
     <Modal show={show} onHide={handleClose} centered size="lg">
       <Modal.Header closeButton>
-        <Modal.Title>Import Team từ Excel</Modal.Title>
+        <Modal.Title>Import Network từ Excel</Modal.Title>
       </Modal.Header>
 
       <Modal.Body>
         <Form.Group className="mb-3">
-          <Form.Label>Chọn file Excel (.xlsx,.xls hoặc .csv)</Form.Label>
+          <Form.Label>Chọn file Excel (.xlsx, .xls hoặc .csv)</Form.Label>
           <Form.Control
             type="file"
             accept=".xlsx, .xls, .csv"
@@ -130,7 +130,7 @@ function TeamImportModal({ show, onHide, onSubmit }) {
           onClick={handleDownloadTemplate}
         >
           <i className="bi bi-download me-2"></i>
-          Tải file template Team
+          Tải file template Network
         </Button>
       </Modal.Body>
 
@@ -147,4 +147,4 @@ function TeamImportModal({ show, onHide, onSubmit }) {
   );
 }
 
-export default TeamImportModal;
+export default NetworkImportModal;

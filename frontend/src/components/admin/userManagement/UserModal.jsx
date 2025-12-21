@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Modal, Form, Button, Alert } from "react-bootstrap";
 import axios from "axios";
 
+import config from "../../../configs/api";
+
 function UserModal({ show, onHide, user, teams, onSaved }) {
   const [formData, setFormData] = useState({
     fullName: "",
@@ -56,14 +58,14 @@ function UserModal({ show, onHide, user, teams, onSaved }) {
       if (user) {
         // Update existing user
         const response = await axios.put(
-          `http://localhost:9999/user/update/${user.userId}`,
+          `${config.backendBase}/user/update/${user.userId}`,
           payload
         );
         console.log("Update response:", response.data);
       } else {
         // Create new user (by admin)
         const response = await axios.post(
-          "http://localhost:9999/user/create-by-admin",
+          `${config.backendBase}/user/create-by-admin`,
           payload
         );
         console.log("Create response:", response.data);

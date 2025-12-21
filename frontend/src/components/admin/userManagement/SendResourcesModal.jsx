@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { Modal, Button, Form, Alert, Spinner } from "react-bootstrap";
 import { Upload, FileEarmark } from "react-bootstrap-icons";
 
+import config from "../../../configs/api";
+
 const SendResourcesModal = ({ show, user, onHide, onSent }) => {
   const [file, setFile] = useState(null);
   const [error, setError] = useState(null);
@@ -38,7 +40,7 @@ const SendResourcesModal = ({ show, user, onHide, onSent }) => {
 
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:9999/user/send-resources/${user.userId || user._id}`,
+        `${config.backendBase}/user/send-resources/${user.userId || user._id}`,
         {
           method: "POST",
           headers: {

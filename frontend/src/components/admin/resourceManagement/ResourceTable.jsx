@@ -1,0 +1,176 @@
+import React from "react";
+import { Table, Badge, Button, Dropdown } from "react-bootstrap";
+import {
+  PencilSquare,
+  Trash,
+  PersonPlus,
+  Archive,
+  ThreeDotsVertical,
+  Power,
+  XCircle,
+} from "react-bootstrap-icons";
+
+function ResourceTable({
+  resources,
+  onEdit,
+  onDelete,
+  onAssign,
+  onUnassign,
+  onDisable,
+  onEnable,
+}) {
+  const getStatusBadge = (status) => {
+    const statusConfig = {
+      AVAILABLE: { variant: "info", text: "Khả dụng" },
+      ASSIGNED: { variant: "success", text: "Đang sử dụng" },
+      DISABLED: { variant: "danger", text: "Vô hiệu hóa" },
+    };
+    return statusConfig[status] || { variant: "secondary", text: status };
+  };
+
+  if (!resources || resources.length === 0) {
+    return (
+      <div className="text-center py-5">
+        <Archive size={48} className="text-muted mb-3" />
+        <p className="text-muted">Chưa có resource nào</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="table-responsive">
+      <Table hover className="align-middle">
+        <thead className="table-light">
+          <tr>
+            <th>Email</th>
+            <th>Recovery Email</th>
+            <th>Trạng thái</th>
+            <th>Người quản lý</th>
+            <th>Kênh</th>
+            <th>Ghi chú</th>
+            <th className="text-end">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          {resources.map((resource) => {
+            const statusInfo = getStatusBadge(resource.status);
+            return (
+              <tr key={resource._id}>
+                <td>
+                  <div className="fw-medium">{resource.email}</div>
+                </td>
+                <td>
+                  <small className="text-muted">{resource.recoveryEmail}</small>
+                </td>
+                <td>
+                  <Badge bg={statusInfo.variant}>{statusInfo.text}</Badge>
+                </td>
+                <td>
+                  {resource.assignedUser ? (
+                    <div>
+                      <div className="fw-medium">
+                        {resource.assignedUser.fullName}
+                      </div>
+                      <small className="text-muted">
+                        {resource.assignedUser.personalEmail}
+                      </small>
+                    </div>
+                  ) : (
+                    <span className="text-muted">-</span>
+                  )}
+                </td>
+                <td>
+                  {resource.assignedChannel ? (
+                    <div>
+                      <div className="fw-medium">
+                        {resource.assignedChannel.name}
+                      </div>
+                      <small className="text-muted">
+                        {resource.assignedChannel.status}
+                      </small>
+                    </div>
+                  ) : (
+                    <span className="text-muted">-</span>
+                  )}
+                </td>
+                <td>
+                  <small className="text-muted">{resource.note || "-"}</small>
+                </td>
+                <td>
+                  <div className="d-flex justify-content-end gap-2">
+                    <Button
+                      variant="outline-primary"
+                      size="sm"
+                      onClick={() => onEdit(resource)}
+                    >
+                      <PencilSquare size={16} />
+                    </Button>
+
+                    <Dropdown align="end">
+                      <Dropdown.Toggle
+                        variant="outline-secondary"
+                        size="sm"
+                        id={`dropdown-${resource._id}`}
+                      >
+                        <ThreeDotsVertical size={16} />
+                      </Dropdown.Toggle>
+
+                      <Dropdown.Menu>
+                        {resource.status !== "ASSIGNED" && (
+                          <Dropdown.Item onClick={() => onAssign(resource)}>
+                            <PersonPlus size={16} className="me-2" />
+                            Gán Resource
+                          </Dropdown.Item>
+                        )}
+
+                        {resource.status === "ASSIGNED" && (
+                          <Dropdown.Item onClick={() => onUnassign(resource)}>
+                            <XCircle size={16} className="me-2" />
+                            Gỡ gán
+                          </Dropdown.Item>
+                        )}
+
+                        <Dropdown.Divider />
+
+                        {resource.status !== "DISABLED" ? (
+                          <Dropdown.Item
+                            className="text-warning"
+                            onClick={() => onDisable(resource)}
+                          >
+                            <Power size={16} className="me-2" />
+                            Vô hiệu hóa
+                          </Dropdown.Item>
+                        ) : (
+                          <Dropdown.Item
+                            className="text-success"
+                            onClick={() => onEnable(resource)}
+                          >
+                            <Power size={16} className="me-2" />
+                            Kích hoạt
+                          </Dropdown.Item>
+                        )}
+
+                        <Dropdown.Divider />
+
+                        <Dropdown.Item
+                          className="text-danger"
+                          onClick={() => onDelete(resource)}
+                          disabled={resource.status === "ASSIGNED"}
+                        >
+                          <Trash size={16} className="me-2" />
+                          Xóa
+                        </Dropdown.Item>
+                      </Dropdown.Menu>
+                    </Dropdown>
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </Table>
+    </div>
+  );
+}
+
+export default ResourceTable;

@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Modal, Form, Button, Alert, Badge } from "react-bootstrap";
 import axios from "axios";
 
+import config from "../../../configs/api";
+
 function TeamModal({ show, onHide, team, users, onSaved }) {
   const [formData, setFormData] = useState({
     name: "",
@@ -67,12 +69,12 @@ function TeamModal({ show, onHide, team, users, onSaved }) {
       if (team) {
         // Update team
         await axios.put(
-          `http://localhost:9999/team/edit-team-info/${team._id}`,
+          `${config.backendBase}/team/edit-team-info/${team._id}`,
           payload
         );
       } else {
         // Create new team
-        await axios.post("http://localhost:9999/team/create-new", payload);
+        await axios.post(`${config.backendBase}/team/create-new`, payload);
       }
 
       onSaved();
