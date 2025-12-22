@@ -103,14 +103,6 @@ const createNew = async (req, res, next) => {
         // type: "TEAM",
         metadata: {},
       });
-    } else if (userIds.length > 1) {
-      await sendBulkNotification({
-        userIds,
-        title: "Bạn đã được gán quản lý kênh mới",
-        message: `Bạn được làm quản lý cho kênh "${name}".`,
-        // type: "TEAM",
-        metadata: {},
-      });
     }
 
     res.status(201).json({
@@ -372,14 +364,6 @@ const assignChannel = async (req, res, next) => {
         // type: "TEAM",
         metadata: {},
       });
-    } else if (userIds.length > 1) {
-      await sendBulkNotification({
-        userIds,
-        title: "Bạn đã được gán quản lý kênh mới",
-        message: `Bạn được làm quản lý cho kênh "${name}".`,
-        // type: "TEAM",
-        metadata: {},
-      });
     }
 
     res.json({
@@ -427,14 +411,6 @@ const removeChannel = async (req, res, next) => {
     if (userIds.length === 1) {
       await sendNotification({
         userId: userIds[0],
-        title: "Bạn đã được gán quản lý kênh mới",
-        message: `Bạn được làm quản lý cho kênh "${name}".`,
-        // type: "TEAM",
-        metadata: {},
-      });
-    } else if (userIds.length > 1) {
-      await sendBulkNotification({
-        userIds,
         title: "Bạn đã được gán quản lý kênh mới",
         message: `Bạn được làm quản lý cho kênh "${name}".`,
         // type: "TEAM",

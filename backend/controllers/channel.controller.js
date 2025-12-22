@@ -3,10 +3,7 @@ const User = db.User;
 const Channel = db.Channel;
 const Network = db.Network;
 
-const {
-  sendNotification,
-  sendBulkNotification,
-} = require("../services/notification.service");
+const { sendNotification } = require("../services/notification.service");
 
 // Thêm kênh mới
 const addNew = async (req, res, next) => {
@@ -218,14 +215,6 @@ const assignOwner = async (req, res, next) => {
     if (userIds.length === 1) {
       await sendNotification({
         userId: userIds[0],
-        title: "Bạn đã được gán quản lý kênh mới",
-        message: `Bạn được làm quản lý cho kênh "${name}".`,
-        // type: "TEAM",
-        metadata: {},
-      });
-    } else if (userIds.length > 1) {
-      await sendBulkNotification({
-        userIds,
         title: "Bạn đã được gán quản lý kênh mới",
         message: `Bạn được làm quản lý cho kênh "${name}".`,
         // type: "TEAM",
