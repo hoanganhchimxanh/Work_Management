@@ -305,7 +305,7 @@ function ResourceManagement() {
       {/* Header */}
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
-          <h2 className="mb-1">Quản lý Resources</h2>
+          <h2 className="mb-1">Quản lý Tài nguyên</h2>
           <p className="text-muted mb-0">
             Quản lý tài nguyên email cho hệ thống
           </p>
@@ -400,30 +400,26 @@ function ResourceManagement() {
       </Card>
 
       {/* Table */}
-      <Card className="border-0 shadow-sm">
-        <Card.Body>
-          <div className="d-flex justify-content-between align-items-center mb-3">
-            <h5 className="mb-0">
-              Danh sách Resources ({filteredResources.length})
-            </h5>
-          </div>
-          <ResourceTable
-            resources={filteredResources}
-            onEdit={(resource) => {
-              setSelectedResource(resource);
-              setShowEditModal(true);
-            }}
-            onDelete={handleDelete}
-            onAssign={(resource) => {
-              setSelectedResource(resource);
-              setShowAssignModal(true);
-            }}
-            onUnassign={handleUnassign}
-            onDisable={handleDisable}
-            onEnable={handleEnable}
-          />
-        </Card.Body>
-      </Card>
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <h5 className="mb-0">
+          Danh sách Resources ({filteredResources.length})
+        </h5>
+      </div>
+      <ResourceTable
+        resources={filteredResources}
+        onEdit={(resource) => {
+          setSelectedResource(resource);
+          setShowEditModal(true);
+        }}
+        onDelete={handleDelete}
+        onAssign={(resource) => {
+          setSelectedResource(resource);
+          setShowAssignModal(true);
+        }}
+        onUnassign={handleUnassign}
+        onDisable={handleDisable}
+        onEnable={handleEnable}
+      />
 
       {/* Modals */}
       <CreateResourceModal
