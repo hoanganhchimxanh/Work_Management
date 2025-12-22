@@ -25,6 +25,7 @@ import ChannelDetail from "./pages/employee/ChannelDetail";
 import MyKPITasks from "./pages/employee/MyKPITasks";
 import EmployeeNotification from "./pages/employee/Notification_Page";
 import EmployeeDashboard from "./pages/employee/EmployeeDashboard";
+import EmployeeResourceManagement from "./pages/employee/Resource_Management";
 
 // Accountant pages
 import AccountantLayout from "./layouts/AccountantLayout";
@@ -103,6 +104,7 @@ function App() {
           <Route path="channels/:channelId" element={<ChannelDetail />} />
           <Route path="my_kpi_tasks" element={<MyKPITasks />} />
           <Route path="notifications" element={<EmployeeNotification />} />
+          <Route path="resources" element={<EmployeeResourceManagement />} />
         </Route>
       </Route>
     </Routes>
