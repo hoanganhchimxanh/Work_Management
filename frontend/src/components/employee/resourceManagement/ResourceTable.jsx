@@ -1,24 +1,8 @@
 import React from "react";
-import { Table, Badge, Button, Dropdown } from "react-bootstrap";
-import {
-  PencilSquare,
-  Trash,
-  PersonPlus,
-  Archive,
-  ThreeDotsVertical,
-  Power,
-  XCircle,
-} from "react-bootstrap-icons";
+import { Table, Badge, Button } from "react-bootstrap";
+import { Archive, BroadcastPin, XCircle } from "react-bootstrap-icons";
 
-function ResourceTable({
-  resources,
-  onEdit,
-  onDelete,
-  onAssign,
-  onUnassign,
-  onDisable,
-  onEnable,
-}) {
+function ResourceTable({ resources, onManageChannel, onRemoveChannel }) {
   const getStatusBadge = (status) => {
     const statusConfig = {
       AVAILABLE: { variant: "info", text: "Khả dụng" },
@@ -32,7 +16,10 @@ function ResourceTable({
     return (
       <div className="text-center py-5">
         <Archive size={48} className="text-muted mb-3" />
-        <p className="text-muted">Chưa có resource nào</p>
+        <p className="text-muted">Chưa có resource nào được gán cho bạn</p>
+        <small className="text-muted">
+          Liên hệ Admin để được cấp tài nguyên email
+        </small>
       </div>
     );
   }
@@ -45,10 +32,9 @@ function ResourceTable({
             <th>Email</th>
             <th>Recovery Email</th>
             <th>Trạng thái</th>
-            <th>Người quản lý</th>
             <th>Kênh</th>
             <th>Ghi chú</th>
-            <th className="text-end">Thao tác</th>
+            <th>Thao tác</th>
           </tr>
         </thead>
         <tbody>
@@ -58,26 +44,13 @@ function ResourceTable({
               <tr key={resource._id}>
                 <td>
                   <div className="fw-medium">{resource.email}</div>
+                  <small className="text-muted">Tài nguyên của bạn</small>
                 </td>
                 <td>
                   <small className="text-muted">{resource.recoveryEmail}</small>
                 </td>
                 <td>
                   <Badge bg={statusInfo.variant}>{statusInfo.text}</Badge>
-                </td>
-                <td>
-                  {resource.assignedUser ? (
-                    <div>
-                      <div className="fw-medium">
-                        {resource.assignedUser.fullName}
-                      </div>
-                      <small className="text-muted">
-                        {resource.assignedUser.personalEmail}
-                      </small>
-                    </div>
-                  ) : (
-                    <span className="text-muted">-</span>
-                  )}
                 </td>
                 <td>
                   {resource.assignedChannel ? (
@@ -90,78 +63,40 @@ function ResourceTable({
                       </small>
                     </div>
                   ) : (
-                    <span className="text-muted">-</span>
+                    <span className="text-muted fst-italic">Chưa gán kênh</span>
                   )}
                 </td>
                 <td>
                   <small className="text-muted">{resource.note || "-"}</small>
                 </td>
                 <td>
-                  <div className="d-flex justify-content-end gap-2">
-                    <Button
-                      variant="outline-primary"
-                      size="sm"
-                      onClick={() => onEdit(resource)}
-                    >
-                      <PencilSquare size={16} />
-                    </Button>
-
-                    <Dropdown align="end">
-                      <Dropdown.Toggle
-                        variant="outline-secondary"
-                        size="sm"
-                        id={`dropdown-${resource._id}`}
-                      >
-                        <ThreeDotsVertical size={16} />
-                      </Dropdown.Toggle>
-
-                      <Dropdown.Menu>
-                        {resource.status !== "ASSIGNED" && (
-                          <Dropdown.Item onClick={() => onAssign(resource)}>
-                            <PersonPlus size={16} className="me-2" />
-                            Gán Resource
-                          </Dropdown.Item>
-                        )}
-
-                        {resource.status === "ASSIGNED" && (
-                          <Dropdown.Item onClick={() => onUnassign(resource)}>
-                            <XCircle size={16} className="me-2" />
-                            Gỡ gán
-                          </Dropdown.Item>
-                        )}
-
-                        <Dropdown.Divider />
-
-                        {resource.status !== "DISABLED" ? (
-                          <Dropdown.Item
-                            className="text-warning"
-                            onClick={() => onDisable(resource)}
-                          >
-                            <Power size={16} className="me-2" />
-                            Vô hiệu hóa
-                          </Dropdown.Item>
-                        ) : (
-                          <Dropdown.Item
-                            className="text-success"
-                            onClick={() => onEnable(resource)}
-                          >
-                            <Power size={16} className="me-2" />
-                            Kích hoạt
-                          </Dropdown.Item>
-                        )}
-
-                        <Dropdown.Divider />
-
-                        <Dropdown.Item
-                          className="text-danger"
-                          onClick={() => onDelete(resource)}
-                          disabled={resource.status === "ASSIGNED"}
+                  <div className="d-flex gap-2">
+                    {resource.status !== "DISABLED" && (
+                      <>
+                        <Button
+                          variant="outline-primary"
+                          size="sm"
+                          onClick={() => onManageChannel(resource)}
                         >
-                          <Trash size={16} className="me-2" />
-                          Xóa
-                        </Dropdown.Item>
-                      </Dropdown.Menu>
-                    </Dropdown>
+                          <BroadcastPin size={16} className="me-1" />
+                          {resource.assignedChannel ? "Đổi kênh" : "Gán kênh"}
+                        </Button>
+
+                        {resource.assignedChannel && (
+                          <Button
+                            variant="outline-danger"
+                            size="sm"
+                            onClick={() => onRemoveChannel(resource._id)}
+                          >
+                            <XCircle size={16} className="me-1" />
+                            Bỏ kênh
+                          </Button>
+                        )}
+                      </>
+                    )}
+                    {resource.status === "DISABLED" && (
+                      <small className="text-muted">Đã vô hiệu hóa</small>
+                    )}
                   </div>
                 </td>
               </tr>

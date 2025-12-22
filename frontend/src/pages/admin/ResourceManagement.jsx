@@ -45,6 +45,7 @@ function ResourceManagement() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [selectedResource, setSelectedResource] = useState(null);
+  const [showResourceImportModal, setShowResourceImportModal] = useState(false);
 
   // Lấy token từ localStorage
   const getAuthConfig = () => {
@@ -291,6 +292,30 @@ function ResourceManagement() {
     return matchSearch;
   });
 
+  const handleResourceExport = async () => {
+    try {
+      const response = await axios.get(
+        `${config.backendBase}/excel/export-resource-excel`,
+        {
+          responseType: "blob",
+        }
+      );
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute(
+        "download",
+        `resources_${new Date().toISOString().split("T")[0]}.xlsx`
+      );
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      alert("Export thất bại: " + (err.response?.data?.message || err.message));
+    }
+  };
+
   if (loading) {
     return (
       <Container className="py-5 text-center">
@@ -310,14 +335,30 @@ function ResourceManagement() {
             Quản lý tài nguyên email cho hệ thống
           </p>
         </div>
-        <Button
-          variant="primary"
-          onClick={() => setShowCreateModal(true)}
-          className="d-flex align-items-center gap-2"
-        >
-          <PlusCircle size={20} />
-          Tạo Resource
-        </Button>
+
+        <div className="d-flex gap-2">
+          <Button variant="success" onClick={handleResourceExport}>
+            <i className="bi bi-download me-2"></i>
+            Export Excel
+          </Button>
+
+          <Button
+            variant="success"
+            onClick={() => setShowResourceImportModal(true)}
+          >
+            <i className="bi bi-upload me-2"></i>
+            Import Excel
+          </Button>
+
+          <Button
+            variant="primary"
+            onClick={() => setShowCreateModal(true)}
+            className="d-flex align-items-center gap-2"
+          >
+            <PlusCircle size={20} />
+            Tạo Resource
+          </Button>
+        </div>
       </div>
 
       {/* Alerts */}
