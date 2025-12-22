@@ -28,10 +28,10 @@ function Unauthorized() {
           navigate("/admin/dashboard"); // Trang admin
           break;
         case "ACCOUNTANT":
-          navigate("/accountant/page"); // Trang kế toán
+          navigate("/accountant/dashboard"); // Trang kế toán
           break;
         case "EMPLOYEE":
-          navigate("/employee/profile"); // Trang nhân viên
+          navigate("/employee/dashboard"); // Trang nhân viên
           break;
         default:
           navigate("/login"); // Quay về login nếu không xác định
@@ -45,7 +45,11 @@ function Unauthorized() {
   };
 
   useEffect(() => {
-    handleRedirectBasedOnRole();
+    const timer = setTimeout(() => {
+      handleRedirectBasedOnRole();
+    }, 3000); // 3s
+
+    return () => clearTimeout(timer); // cleanup khi unmount
   }, []);
 
   return (
@@ -68,7 +72,8 @@ function Unauthorized() {
 
               <Card.Text className="lead mb-4">
                 Quyền truy cập của bạn không được xác nhận. Hệ thống sẽ tự động
-                chuyển hướng bạn đến trang phù hợp với quyền của bạn.
+                chuyển hướng bạn đến trang phù hợp với quyền của bạn trong 3
+                giây.
               </Card.Text>
 
               <Button
