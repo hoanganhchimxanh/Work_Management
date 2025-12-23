@@ -11,6 +11,7 @@ function BugReport() {
 
   const [bugType, setBugType] = useState("");
   const [description, setDescription] = useState("");
+  const [pageUrl, setPageUrl] = useState("");
   const [image, setImage] = useState(null);
 
   const [submitting, setSubmitting] = useState(false);
@@ -66,7 +67,7 @@ function BugReport() {
       const formData = new FormData();
       formData.append("bugType", bugType);
       formData.append("description", description);
-      formData.append("page", window.location.pathname);
+      formData.append("page", pageUrl);
       if (image) formData.append("image", image);
 
       await axios.post(`${config.backendBase}/bug-report`, formData, {
@@ -127,6 +128,19 @@ function BugReport() {
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                 />
+              </Form.Group>
+
+              <Form.Group className="mb-3">
+                <Form.Label>Đường link trang xảy ra lỗi</Form.Label>
+                <Form.Control
+                  type="url"
+                  placeholder="https://example.com/admin/channels"
+                  value={pageUrl}
+                  onChange={(e) => setPageUrl(e.target.value)}
+                />
+                <Form.Text className="text-muted">
+                  Link trang bạn đang gặp lỗi (có thể copy từ thanh địa chỉ)
+                </Form.Text>
               </Form.Group>
 
               <Form.Group className="mb-4">
