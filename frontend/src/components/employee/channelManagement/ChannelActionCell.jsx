@@ -6,10 +6,12 @@ import {
   XCircleFill,
   ArrowRepeat,
   Trash,
+  PencilSquare,
 } from "react-bootstrap-icons";
 
 function ChannelActionCell({
   channelId,
+  onEdit,
   onGrantAuth,
   onCheckAuth,
   onRevokeAuth,
@@ -44,6 +46,16 @@ function ChannelActionCell({
             <EyeFill />
           </Button>
         </OverlayTrigger>
+
+        <OverlayTrigger placement="top" overlay={<Tooltip>Hủy quyền</Tooltip>}>
+          <Button
+            variant="warning"
+            size="sm"
+            onClick={() => onRevokeAuth(channelId)}
+          >
+            <XCircleFill />
+          </Button>
+        </OverlayTrigger>
       </div>
 
       <div className="d-flex gap-1">
@@ -56,13 +68,16 @@ function ChannelActionCell({
           </Button>
         </OverlayTrigger>
 
-        <OverlayTrigger placement="top" overlay={<Tooltip>Hủy quyền</Tooltip>}>
+        <OverlayTrigger
+          placement="top"
+          overlay={<Tooltip>Chỉnh sửa kênh</Tooltip>}
+        >
           <Button
-            variant="warning"
+            variant="secondary"
             size="sm"
-            onClick={() => onRevokeAuth(channelId)}
+            onClick={() => onEdit(channelId)}
           >
-            <XCircleFill />
+            <PencilSquare />
           </Button>
         </OverlayTrigger>
 
