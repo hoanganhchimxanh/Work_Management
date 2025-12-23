@@ -29,7 +29,7 @@ const NetworkTable = ({ networks, loading }) => {
   return (
     <div className="table-responsive">
       <Table striped bordered hover>
-        <thead className="table-dark">
+        <thead>
           <tr>
             <th style={{ width: "50px" }}>STT</th>
             <th>Profile AdSense ID</th>
