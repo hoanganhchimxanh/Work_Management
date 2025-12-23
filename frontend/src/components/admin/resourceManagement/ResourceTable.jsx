@@ -39,7 +39,7 @@ function ResourceTable({
 
   return (
     <div className="table-responsive">
-      <Table hover className="align-middle">
+      <Table hover className="align-middle" striped bordered>
         <thead className="table-light">
           <tr>
             <th>Email</th>

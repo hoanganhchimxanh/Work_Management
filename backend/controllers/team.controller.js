@@ -2,7 +2,6 @@ const db = require("../models");
 const User = db.User;
 const Account = db.Account;
 const Team = db.Team;
-const XLSX = require("xlsx");
 
 const {
   sendNotification,

@@ -20,22 +20,6 @@ function TaskTable({ tasks, loading, onEdit, onRefresh, onDeleted }) {
   const [filterSort, setFilterSort] = useState("NEWEST");
   const [searchTerm, setSearchTerm] = useState("");
 
-  const getStatusBadge = (status) => {
-    const variants = {
-      PENDING: "warning",
-      IN_PROGRESS: "primary",
-      COMPLETED: "success",
-      WAITING: "secondary",
-    };
-    const labels = {
-      PENDING: "Chờ xử lý",
-      IN_PROGRESS: "Đang làm",
-      COMPLETED: "Hoàn thành",
-      WAITING: "Đang chờ",
-    };
-    return <Badge bg={variants[status] || "secondary"}>{labels[status]}</Badge>;
-  };
-
   const formatDate = (dateString) => {
     if (!dateString) return "Không có";
     return new Date(dateString).toLocaleDateString("vi-VN");

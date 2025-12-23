@@ -10,26 +10,27 @@ import Unauthorized from "./pages/Unauthorized";
 // Admin pages
 import AdminLayout from "./layouts/AdminLayout";
 import Dashboard from "./pages/admin/Dashboard";
-import UserManagement from "./pages/admin/User_Management";
-import ResourceManagement from "./pages/admin/Resource_Management";
-import KPITaskManagement from "./pages/admin/KPI_Task_Management";
-import NetworkManagement from "./pages/admin/Network_Management";
-import ChannelManagement from "./pages/admin/Channel_Management";
-import AdminNotification from "./pages/admin/Notification_Page";
+import UserManagement from "./pages/admin/UserManagement";
+import ResourceManagement from "./pages/admin/ResourceManagement";
+import KPITaskManagement from "./pages/admin/KPITaskManagement";
+import NetworkManagement from "./pages/admin/NetworkManagement";
+import ChannelManagement from "./pages/admin/ChannelManagement";
+import AdminNotification from "./pages/admin/NotificationPage";
 
 // Employee pages
 import EmployeeLayout from "./layouts/EmployeeLayout";
 import Profile from "./pages/employee/Profile";
-import EmployeeChannelManagement from "./pages/employee/Channel_Management";
+import EmployeeChannelManagement from "./pages/employee/ChannelManagement";
 import ChannelDetail from "./pages/employee/ChannelDetail";
 import MyKPITasks from "./pages/employee/MyKPITasks";
-import EmployeeNotification from "./pages/employee/Notification_Page";
+import EmployeeNotification from "./pages/employee/NotificationPage";
 import EmployeeDashboard from "./pages/employee/EmployeeDashboard";
+import EmployeeResourceManagement from "./pages/employee/ResourceManagement";
 
 // Accountant pages
 import AccountantLayout from "./layouts/AccountantLayout";
-import AccountantNetworkManagement from "./pages/accountant/Network_Management";
-import AccountantNotification from "./pages/accountant/Notification_Page";
+import AccountantNetworkManagement from "./pages/accountant/NetworkManagement";
+import AccountantNotification from "./pages/accountant/NotificationPage";
 import AccountantDashboard from "./pages/accountant/AccountantDashboard";
 
 // Protected route
@@ -40,13 +41,14 @@ import PublicRoute from "./components/PublicRoute";
 function App() {
   return (
     <Routes>
+      <Route path="/unauthorized" element={<Unauthorized />} />
+
       {/* PUBLIC ROUTES - Ai cũng truy cập được */}
       <Route element={<PublicRoute />}>
         <Route path="/" element={<Login />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/unauthorized" element={<Unauthorized />} />
       </Route>
 
       {/* PROTECTED ROUTES - Chỉ cho người đã đăng nhập */}
@@ -103,6 +105,7 @@ function App() {
           <Route path="channels/:channelId" element={<ChannelDetail />} />
           <Route path="my_kpi_tasks" element={<MyKPITasks />} />
           <Route path="notifications" element={<EmployeeNotification />} />
+          <Route path="resources" element={<EmployeeResourceManagement />} />
         </Route>
       </Route>
     </Routes>

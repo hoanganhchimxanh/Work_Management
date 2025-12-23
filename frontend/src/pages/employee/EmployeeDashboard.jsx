@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Container,
   Row,
@@ -6,6 +6,8 @@ import {
   Card,
   ButtonGroup,
   Button,
+  Spinner,
+  Alert,
 } from "react-bootstrap";
 import {
   CashStack,
@@ -21,77 +23,262 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import axios from "axios";
+import { jwtDecode } from "jwt-decode";
+
+import config from "../../configs/api";
 
 function EmployeeDashboard() {
-  const [timeFilter, setTimeFilter] = useState("lifetime");
+  const [timeFilter, setTimeFilter] = useState("28days");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [stats, setStats] = useState({
+    totalRevenue: 0,
+    ownedChannels: 0,
+    completedTasks: 0,
+    completedKPI: 0,
+  });
+  const [chartData, setChartData] = useState([]);
 
-  // Fake data theo các khoảng thời gian (USD)
-  const dataByPeriod = {
-    "7days": [
-      { date: "12/13", revenue: 8500 },
-      { date: "12/14", revenue: 9200 },
-      { date: "12/15", revenue: 7800 },
-      { date: "12/16", revenue: 11000 },
-      { date: "12/17", revenue: 9500 },
-      { date: "12/18", revenue: 10200 },
-      { date: "12/19", revenue: 11800 },
-    ],
-    "28days": [
-      { date: "11/22", revenue: 7800 },
-      { date: "11/29", revenue: 9200 },
-      { date: "12/06", revenue: 10500 },
-      { date: "12/13", revenue: 11800 },
-      { date: "12/19", revenue: 12200 },
-    ],
-    "90days": [
-      { date: "Sep", revenue: 28500 },
-      { date: "Oct", revenue: 31200 },
-      { date: "Nov", revenue: 29800 },
-      { date: "Dec", revenue: 33500 },
-    ],
-    "365days": [
-      { month: "Jan", revenue: 9500 },
-      { month: "Feb", revenue: 8800 },
-      { month: "Mar", revenue: 10200 },
-      { month: "Apr", revenue: 11500 },
-      { month: "May", revenue: 10800 },
-      { month: "Jun", revenue: 12500 },
-      { month: "Jul", revenue: 13200 },
-      { month: "Aug", revenue: 13800 },
-      { month: "Sep", revenue: 14200 },
-      { month: "Oct", revenue: 14500 },
-      { month: "Nov", revenue: 13800 },
-      { month: "Dec", revenue: 14200 },
-    ],
-    lifetime: [
-      { month: "2021", revenue: 5200 },
-      { month: "2022", revenue: 8800 },
-      { month: "2023", revenue: 11200 },
-      { month: "2024", revenue: 12800 },
-      { month: "2025", revenue: 14200 },
-    ],
+  // Get token from localStorage
+  const token = localStorage.getItem("token");
+  let userId = null;
+
+  if (token) {
+    try {
+      const decoded = jwtDecode(token);
+      userId = decoded.userId;
+    } catch {}
+  }
+
+  // Configure axios with auth header
+  const axiosConfig = {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
   };
 
-  const currentData = dataByPeriod[timeFilter];
+  // Calculate date ranges based on filter
+  const getDateRange = (filter) => {
+    const endDate = new Date();
+    let startDate = new Date();
 
-  // Doanh thu tháng hiện tại (USD) - thay đổi theo filter
-  const revenueThisPeriod =
-    timeFilter === "7days"
-      ? 77000
-      : timeFilter === "28days"
-      ? 315000
-      : timeFilter === "90days"
-      ? 1230000
-      : timeFilter === "365days"
-      ? 1420000
-      : 1420000; // lifetime
+    switch (filter) {
+      case "7days":
+        startDate.setDate(endDate.getDate() - 7);
+        break;
+      case "28days":
+        startDate.setDate(endDate.getDate() - 28);
+        break;
+      case "90days":
+        startDate.setDate(endDate.getDate() - 90);
+        break;
+      case "365days":
+        startDate.setDate(endDate.getDate() - 365);
+        break;
+      case "lifetime":
+        startDate = new Date("2020-01-01");
+        break;
+      default:
+        startDate.setDate(endDate.getDate() - 28);
+    }
 
-  const stats = {
-    totalRevenueThisPeriod: revenueThisPeriod,
-    ownedChannels: 8,
-    completedTasks: timeFilter === "lifetime" ? 528 : 42,
-    completedKPI: timeFilter === "lifetime" ? 92 : 87,
+    return {
+      startDate: startDate.toISOString().split("T")[0],
+      endDate: endDate.toISOString().split("T")[0],
+    };
   };
+
+  // Format date for display
+  const formatDateForChart = (dateString, filter) => {
+    const date = new Date(dateString);
+
+    if (filter === "365days" || filter === "lifetime") {
+      return date.toLocaleDateString("en-US", {
+        month: "short",
+        year: "numeric",
+      });
+    } else if (filter === "90days") {
+      return date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      });
+    } else {
+      return date.toLocaleDateString("en-US", {
+        month: "numeric",
+        day: "numeric",
+      });
+    }
+  };
+
+  // Aggregate data by period
+  const aggregateDataByPeriod = (analytics, filter) => {
+    if (!analytics || analytics.length === 0) return [];
+
+    // Sort by date
+    const sorted = [...analytics].sort(
+      (a, b) => new Date(a.date) - new Date(b.date)
+    );
+
+    /** =========================
+     * DAILY (7days, 28days)
+     * ========================= */
+    if (filter === "7days" || filter === "28days") {
+      // Bước 1: Gộp revenue theo ngày
+      const dailyData = {};
+      sorted.forEach((item) => {
+        const dateKey = new Date(item.date).toISOString().split("T")[0];
+        if (!dailyData[dateKey]) {
+          dailyData[dateKey] = 0;
+        }
+        dailyData[dateKey] += item.estimatedRevenue || 0;
+      });
+
+      // Bước 2: Convert sang array cho chart
+      return Object.entries(dailyData).map(([date, revenue]) => ({
+        date: formatDateForChart(date, filter),
+        revenue,
+      }));
+    }
+
+    /** =========================
+     * WEEKLY (90days)
+     * ========================= */
+    if (filter === "90days") {
+      const weeklyData = {};
+
+      sorted.forEach((item) => {
+        const date = new Date(item.date);
+        const weekStart = new Date(date);
+        weekStart.setDate(date.getDate() - date.getDay()); // Chủ nhật
+        const weekKey = weekStart.toISOString().split("T")[0];
+
+        if (!weeklyData[weekKey]) {
+          weeklyData[weekKey] = 0;
+        }
+        weeklyData[weekKey] += item.estimatedRevenue || 0;
+      });
+
+      return Object.entries(weeklyData).map(([date, revenue]) => ({
+        date: formatDateForChart(date, filter),
+        revenue,
+      }));
+    }
+
+    /** =========================
+     * MONTHLY (365days, lifetime)
+     * ========================= */
+    const monthlyData = {};
+
+    sorted.forEach((item) => {
+      const date = new Date(item.date);
+      const monthKey = `${date.getFullYear()}-${String(
+        date.getMonth() + 1
+      ).padStart(2, "0")}`;
+
+      if (!monthlyData[monthKey]) {
+        monthlyData[monthKey] = 0;
+      }
+      monthlyData[monthKey] += item.estimatedRevenue || 0;
+    });
+
+    return Object.entries(monthlyData).map(([month, revenue]) => ({
+      date: formatDateForChart(`${month}-01`, filter),
+      revenue,
+    }));
+  };
+
+  // Fetch all data
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const { startDate, endDate } = getDateRange(timeFilter);
+
+      // Fetch user's channels
+      const userResponse = await axios.get(
+        `${config.backendBase}/user/get-one/${userId}`,
+        axiosConfig
+      );
+      const userChannels = userResponse.data.data.channels || [];
+      const ownedChannels = userChannels.length;
+
+      // Fetch analytics for all user's channels
+      let totalRevenue = 0;
+      let allAnalytics = [];
+
+      for (const channel of userChannels) {
+        try {
+          const analyticsResponse = await axios.get(
+            `${config.backendBase}/youtube-analytics/get-analytics/${channel.channelId}`,
+            {
+              ...axiosConfig,
+              params: { startDate, endDate },
+            }
+          );
+
+          const channelAnalytics = analyticsResponse.data.data;
+          totalRevenue += channelAnalytics.totals?.totalRevenue || 0;
+          allAnalytics.push(...(channelAnalytics.analytics || []));
+        } catch (err) {
+          console.error(
+            `Failed to fetch analytics for channel ${channel.channelId}:`,
+            err
+          );
+        }
+      }
+
+      // Fetch user's tasks
+      const tasksResponse = await axios.get(
+        `${config.backendBase}/task/my-tasks`,
+        axiosConfig
+      );
+      const completedTasks = tasksResponse.data.data.filter(
+        (task) => task.status === "COMPLETED"
+      ).length;
+
+      // Fetch user's KPIs
+      const kpiResponse = await axios.get(
+        `${config.backendBase}/kpi/get-all-with-progress`,
+        axiosConfig
+      );
+      const userKPIs = kpiResponse.data.data;
+      const completedKPIs = userKPIs.filter(
+        (kpi) => kpi.status === "completed"
+      );
+      const avgKPICompletion =
+        userKPIs.length > 0
+          ? Math.round(
+              userKPIs.reduce((sum, kpi) => {
+                const revenueProgress = kpi.revenueProgress || 0;
+                const bktProgress = kpi.bktProgress || 0;
+                return sum + (revenueProgress + bktProgress) / 2;
+              }, 0) / userKPIs.length
+            )
+          : 0;
+
+      // Aggregate chart data
+      const aggregatedData = aggregateDataByPeriod(allAnalytics, timeFilter);
+
+      setStats({
+        totalRevenue: Number(totalRevenue.toFixed(2)),
+        ownedChannels,
+        completedTasks,
+        completedKPI: avgKPICompletion,
+      });
+      setChartData(aggregatedData);
+    } catch (err) {
+      console.error("Error fetching dashboard data:", err);
+      setError(err.response?.data?.message || "Failed to load dashboard data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [timeFilter]);
 
   const formatCurrency = (value) =>
     new Intl.NumberFormat("en-US", {
@@ -103,8 +290,8 @@ function EmployeeDashboard() {
 
   const formatShortCurrency = (value) => {
     if (value >= 1e9) return `$${(value / 1e9).toFixed(1)}B`;
-    if (value >= 1e6) return `$${(value / 1e6).toFixed(0)}M`;
-    if (value >= 1e3) return `$${(value / 1e3).toFixed(0)}K`;
+    if (value >= 1e6) return `$${(value / 1e6).toFixed(1)}M`;
+    if (value >= 1e3) return `$${(value / 1e3).toFixed(1)}K`;
     return `$${value}`;
   };
 
@@ -128,6 +315,49 @@ function EmployeeDashboard() {
     }
     return null;
   };
+
+  const getTimeFilterLabel = () => {
+    switch (timeFilter) {
+      case "7days":
+        return "7 ngày qua";
+      case "28days":
+        return "28 ngày qua";
+      case "90days":
+        return "90 ngày qua";
+      case "365days":
+        return "365 ngày qua";
+      case "lifetime":
+        return "Toàn thời gian";
+      default:
+        return "";
+    }
+  };
+
+  if (loading) {
+    return (
+      <Container
+        fluid
+        className="p-4 d-flex justify-content-center align-items-center"
+        style={{ minHeight: "400px" }}
+      >
+        <Spinner animation="border" variant="primary" />
+      </Container>
+    );
+  }
+
+  if (error) {
+    return (
+      <Container fluid className="p-4">
+        <Alert variant="danger">
+          <Alert.Heading>Error Loading Dashboard</Alert.Heading>
+          <p>{error}</p>
+          <Button variant="outline-danger" onClick={fetchDashboardData}>
+            Retry
+          </Button>
+        </Alert>
+      </Container>
+    );
+  }
 
   return (
     <Container fluid className="p-4">
@@ -183,7 +413,7 @@ function EmployeeDashboard() {
                 <div>
                   <p className="text-muted mb-1">Doanh thu kỳ này</p>
                   <h3 className="fw-bold mb-0">
-                    {formatShortCurrency(stats.totalRevenueThisPeriod)}
+                    {formatShortCurrency(stats.totalRevenue)}
                   </h3>
                 </div>
                 <div
@@ -261,39 +491,31 @@ function EmployeeDashboard() {
           <Card className="border-0 shadow-sm">
             <Card.Body>
               <h5 className="fw-bold mb-4">
-                Doanh thu cá nhân (
-                {timeFilter === "lifetime"
-                  ? "Toàn thời gian"
-                  : timeFilter === "365days"
-                  ? "Năm 2025"
-                  : "Gần đây"}
-                )
+                Doanh thu cá nhân ({getTimeFilterLabel()})
               </h5>
-              <ResponsiveContainer width="100%" height={400}>
-                <LineChart data={currentData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis
-                    dataKey={
-                      timeFilter === "7days"
-                        ? "date"
-                        : timeFilter === "28days"
-                        ? "date"
-                        : "month"
-                    }
-                  />
-                  <YAxis tickFormatter={formatShortCurrency} />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Line
-                    type="monotone"
-                    dataKey="revenue"
-                    name="Doanh thu"
-                    stroke="#0d6efd"
-                    strokeWidth={3}
-                    dot={{ r: 5 }}
-                    activeDot={{ r: 8 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+              {chartData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={400}>
+                  <LineChart data={chartData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" />
+                    <YAxis tickFormatter={formatShortCurrency} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Line
+                      type="monotone"
+                      dataKey="revenue"
+                      name="Doanh thu"
+                      stroke="#0d6efd"
+                      strokeWidth={3}
+                      dot={{ r: 5 }}
+                      activeDot={{ r: 8 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="text-center text-muted py-5">
+                  <p>Không có dữ liệu doanh thu trong khoảng thời gian này</p>
+                </div>
+              )}
             </Card.Body>
           </Card>
         </Col>

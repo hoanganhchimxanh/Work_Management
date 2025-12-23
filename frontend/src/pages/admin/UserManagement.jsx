@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Container, Row, Col, Button, Alert } from "react-bootstrap";
 import axios from "axios";
 import UserTable from "../../components/admin/userManagement/UserTable";
@@ -31,18 +31,21 @@ function User_Management() {
   // Error handling
   const [error, setError] = useState(null);
 
-  // Fetch users
-  const fetchUsers = async () => {
+  const getAuthConfig = useCallback(
+    () => ({
+      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+    }),
+    []
+  );
+
+  const fetchUsers = useCallback(async () => {
     try {
       setLoadingUsers(true);
-      const response = await axios.get(`${config.backendBase}/user/get-all`);
-
-      const normalizedUsers = response.data.data.map((user) => ({
-        ...user,
-        _id: user.userId,
-      }));
-
-      setUsers(normalizedUsers);
+      const response = await axios.get(
+        `${config.backendBase}/user/get-all`,
+        getAuthConfig()
+      );
+      setUsers(response.data.data);
       setError(null);
     } catch (err) {
       setError("Không thể tải danh sách người dùng");
@@ -50,14 +53,14 @@ function User_Management() {
     } finally {
       setLoadingUsers(false);
     }
-  };
+  }, [getAuthConfig]);
 
-  // Fetch teams
-  const fetchTeams = async () => {
+  const fetchTeams = useCallback(async () => {
     try {
       setLoadingTeams(true);
       const response = await axios.get(
-        `${config.backendBase}/team/get-all-team`
+        `${config.backendBase}/team/get-all-team`,
+        getAuthConfig()
       );
       setTeams(response.data.data);
       setError(null);
@@ -67,12 +70,15 @@ function User_Management() {
     } finally {
       setLoadingTeams(false);
     }
-  };
+  }, [getAuthConfig]);
 
+  // ✅ Parallel loading
   useEffect(() => {
-    fetchUsers();
-    fetchTeams();
-  }, []);
+    const loadData = async () => {
+      await Promise.all([fetchUsers(), fetchTeams()]);
+    };
+    loadData();
+  }, [fetchUsers, fetchTeams]);
 
   // User handlers
   const handleCreateUser = () => {

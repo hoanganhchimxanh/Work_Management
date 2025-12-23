@@ -5,10 +5,7 @@ const User = db.User;
 const Channel = db.Channel;
 const bcrypt = require("bcrypt");
 
-const {
-  sendNotification,
-  sendBulkNotification,
-} = require("../services/notification.service");
+const { sendNotification } = require("../services/notification.service");
 
 // Tạo resource mới
 const createNew = async (req, res, next) => {
@@ -81,6 +78,18 @@ const createNew = async (req, res, next) => {
       .populate("assignedUser", "fullName personalEmail role")
       .populate("assignedChannel", "name link status")
       .lean();
+
+    // 🔔 SEND NOTIFICATION
+    if (assignedUser) {
+      await sendNotification({
+        userId: assignedUser,
+        title: "Bạn được giao tài khoản tài nguyên mới",
+        message: `Bạn vừa được giao tài khoản tài nguyên: ${email}. Vui lòng kiểm tra và sử dụng đúng mục đích.`,
+        metadata: {
+          resourceId: newResource._id,
+        },
+      });
+    }
 
     res.status(201).json({
       success: true,
@@ -229,6 +238,18 @@ const updateResource = async (req, res, next) => {
       .populate("assignedChannel", "name link status")
       .lean();
 
+    // 🔔 SEND NOTIFICATION
+    if (assignedUser) {
+      await sendNotification({
+        userId: assignedUser,
+        title: "Admin đã chỉnh sửa tài nguyên của bạn",
+        message: `Thông tin tài nguyên ${resource.email} đã được admin cập nhật. Vui lòng kiểm tra lại.`,
+        metadata: {
+          resourceId: resourceId,
+        },
+      });
+    }
+
     res.json({
       success: true,
       message: "Cập nhật resource thành công!",
@@ -261,6 +282,20 @@ const deleteResource = async (req, res, next) => {
     }
 
     await Resource.findByIdAndDelete(resourceId);
+
+    const assignedUserId = resource.assignedUser;
+
+    // 🔔 SEND NOTIFICATION
+    if (assignedUserId) {
+      await sendNotification({
+        userId: assignedUserId,
+        title: "Admin đã xóa tài nguyên của bạn",
+        message: `Tài nguyên ${resource.email} đã bị admin xóa khỏi hệ thống.`,
+        metadata: {
+          resourceId: resourceId,
+        },
+      });
+    }
 
     res.json({
       success: true,
@@ -318,6 +353,18 @@ const assignToUser = async (req, res, next) => {
       .populate("assignedUser", "fullName personalEmail role")
       .populate("assignedChannel", "name link status")
       .lean();
+
+    // 🔔 SEND NOTIFICATION
+    if (userId) {
+      await sendNotification({
+        userId: userId,
+        title: "Admin đã giao tài nguyên cho bạn",
+        message: `Admin đã giao cho bạn tài nguyên ${resource.email}.`,
+        metadata: {
+          resourceId: resourceId,
+        },
+      });
+    }
 
     res.json({
       success: true,
@@ -393,6 +440,8 @@ const unassign = async (req, res, next) => {
       });
     }
 
+    const previousUserId = resource.assignedUser;
+
     resource.assignedUser = null;
     resource.assignedChannel = null;
     resource.status = "AVAILABLE";
@@ -402,6 +451,18 @@ const unassign = async (req, res, next) => {
       .populate("assignedUser", "fullName personalEmail role")
       .populate("assignedChannel", "name link status")
       .lean();
+
+    // 🔔 SEND NOTIFICATION
+    if (previousUserId) {
+      await sendNotification({
+        userId: previousUserId,
+        title: "Admin đã gỡ tài nguyên cho bạn",
+        message: `Tài nguyên ${resource.email} đã được thu hồi và không còn thuộc quyền sử dụng của bạn.`,
+        metadata: {
+          resourceId: resourceId,
+        },
+      });
+    }
 
     res.json({
       success: true,
@@ -528,6 +589,18 @@ const enableResource = async (req, res, next) => {
       .populate("assignedUser", "fullName personalEmail role")
       .populate("assignedChannel", "name link status")
       .lean();
+
+    // 🔔 SEND NOTIFICATION
+    if (resource.assignedUser) {
+      await sendNotification({
+        userId: notifyUserIds[0],
+        title: "Admin đã kích hoạt lại tài nguyên",
+        message: `Tài nguyên ${resource.email} đã được admin kích hoạt lại.`,
+        metadata: {
+          resourceId: resourceId,
+        },
+      });
+    }
 
     res.json({
       success: true,

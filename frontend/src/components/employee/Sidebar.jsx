@@ -8,6 +8,7 @@ import {
   BoxArrowRight,
   List,
   BellFill,
+  FileRuledFill,
 } from "react-bootstrap-icons";
 import { useContext } from "react";
 import { AuthContext } from "../../contexts/AuthContext";
@@ -81,6 +82,11 @@ const Sidebar = () => {
       to: "/employee/profile",
       icon: <PeopleFill />,
       label: "Thông tin nhân viên",
+    },
+    {
+      to: "/employee/resources",
+      icon: <FileRuledFill />,
+      label: "Quản lý tài nguyên",
     },
     { to: "/employee/channels", icon: <FileSlides />, label: "Quản lý kênh" },
     {

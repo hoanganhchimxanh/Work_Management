@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Container, Row, Col, Card, Button } from "react-bootstrap";
 import { ExclamationTriangleFill } from "react-bootstrap-icons";
 import { useNavigate } from "react-router-dom";
@@ -6,47 +6,54 @@ import { jwtDecode } from "jwt-decode";
 
 function Unauthorized() {
   const navigate = useNavigate();
+  const [countdown, setCountdown] = useState(5); // Bắt đầu từ 3 giây
 
   // Hàm xử lý chuyển hướng theo quyền
   const handleRedirectBasedOnRole = () => {
     const token = localStorage.getItem("token");
 
     if (!token) {
-      // Nếu không có token, chuyển hướng đến trang đăng nhập
       navigate("/login");
       return;
     }
 
     try {
-      // Giải mã JWT để lấy thông tin role
       const decoded = jwtDecode(token);
       const userRole = decoded.role;
 
-      // Thực hiện chuyển hướng dựa trên vai trò
       switch (userRole) {
         case "ADMIN":
-          navigate("/admin/dashboard"); // Trang admin
+          navigate("/admin/dashboard");
           break;
         case "ACCOUNTANT":
-          navigate("/accountant/page"); // Trang kế toán
+          navigate("/accountant/dashboard");
           break;
         case "EMPLOYEE":
-          navigate("/employee/profile"); // Trang nhân viên
+          navigate("/employee/dashboard");
           break;
         default:
-          navigate("/login"); // Quay về login nếu không xác định
+          navigate("/login");
           break;
       }
     } catch (err) {
       console.error("Lỗi giải mã token:", err);
-      // Nếu lỗi khi giải mã token, quay về trang login
       navigate("/login");
     }
   };
 
   useEffect(() => {
-    handleRedirectBasedOnRole();
-  }, []);
+    // Nếu countdown về 0 thì tự động chuyển hướng
+    if (countdown === 0) {
+      handleRedirectBasedOnRole();
+      return;
+    }
+
+    const timer = setInterval(() => {
+      setCountdown((prev) => prev - 1);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [countdown]);
 
   return (
     <Container
@@ -68,7 +75,8 @@ function Unauthorized() {
 
               <Card.Text className="lead mb-4">
                 Quyền truy cập của bạn không được xác nhận. Hệ thống sẽ tự động
-                chuyển hướng bạn đến trang phù hợp với quyền của bạn.
+                chuyển hướng bạn đến trang phù hợp với quyền của bạn trong{" "}
+                <strong className="text-primary">{countdown}</strong> giây.
               </Card.Text>
 
               <Button

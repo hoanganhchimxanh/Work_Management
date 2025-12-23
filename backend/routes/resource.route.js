@@ -68,7 +68,7 @@ router.post(
 router.post(
   "/assign-to-channel/:id",
   authenticateJWT,
-  authorizeRoles("ADMIN"),
+  authorizeRoles(["EMPLOYEE", "ADMIN"]),
   resourceController.assignToChannel
 );
 
@@ -100,7 +100,7 @@ router.patch(
 router.get(
   "/stats",
   authenticateJWT,
-  authorizeRoles("ADMIN"),
+  authorizeRoles(["EMPLOYEE", "ADMIN"]),
   resourceController.getResourceStats
 );
 

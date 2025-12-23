@@ -169,7 +169,10 @@ function CreateResourceModal({ show, onHide, onCreate, users, channels }) {
             >
               <option value="">-- Chọn nhân viên --</option>
               {users?.map((user) => (
-                <option key={user._id} value={user._id}>
+                <option
+                  key={user.userId || user._id}
+                  value={user.userId || user._id}
+                >
                   {user.fullName} ({user.personalEmail})
                 </option>
               ))}
