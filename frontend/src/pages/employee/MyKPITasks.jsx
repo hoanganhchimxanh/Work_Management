@@ -20,16 +20,19 @@ function MyKPITasks() {
   // Active tab
   const [activeTab, setActiveTab] = useState("kpi");
 
-  // Fetch KPIs
+  // Fetch KPIs with progress
   const fetchKPIs = async () => {
     try {
       setLoadingKPIs(true);
       const token = localStorage.getItem("token");
-      const response = await axios.get(`${config.backendBase}/kpi/my-kpis`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await axios.get(
+        `${config.backendBase}/kpi/my-kpis-with-progress`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
       setKPIs(response.data.data);
       setError(null);
     } catch (err) {

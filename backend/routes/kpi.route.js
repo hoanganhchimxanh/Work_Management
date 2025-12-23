@@ -59,4 +59,11 @@ router.get(
   kpiController.getAllWithProgress
 );
 
+router.get(
+  "/my-kpis-with-progress",
+  authenticateJWT,
+  authorizeRoles("EMPLOYEE"),
+  kpiController.getMyKPIsWithProgress
+);
+
 module.exports = router;

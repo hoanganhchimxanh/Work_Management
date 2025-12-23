@@ -1,5 +1,14 @@
 import React, { useState } from "react";
-import { Table, Badge, Button, Spinner, Form, Row, Col } from "react-bootstrap";
+import {
+  Table,
+  Badge,
+  Button,
+  Spinner,
+  Form,
+  Row,
+  Col,
+  ProgressBar,
+} from "react-bootstrap";
 
 function EmployeeKPITable({ kpis, loading, onRefresh }) {
   const [filterStatus, setFilterStatus] = useState("ALL");
@@ -24,10 +33,19 @@ function EmployeeKPITable({ kpis, loading, onRefresh }) {
   };
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("vi-VN", {
+    return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: "VND",
+      currency: "USD",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     }).format(amount);
+  };
+
+  const getProgressVariant = (progress) => {
+    if (progress >= 100) return "success";
+    if (progress >= 75) return "info";
+    if (progress >= 50) return "warning";
+    return "danger";
   };
 
   const getFilteredAndSortedKPIs = () => {
@@ -46,6 +64,10 @@ function EmployeeKPITable({ kpis, loading, onRefresh }) {
         return b.revenueTarget - a.revenueTarget;
       } else if (filterSort === "REVENUE_ASC") {
         return a.revenueTarget - b.revenueTarget;
+      } else if (filterSort === "PROGRESS_DESC") {
+        return (b.revenueProgress || 0) - (a.revenueProgress || 0);
+      } else if (filterSort === "PROGRESS_ASC") {
+        return (a.revenueProgress || 0) - (b.revenueProgress || 0);
       }
       return 0;
     });
@@ -94,6 +116,8 @@ function EmployeeKPITable({ kpis, loading, onRefresh }) {
               <option value="OLDEST">Cũ nhất</option>
               <option value="REVENUE_DESC">Doanh thu cao nhất</option>
               <option value="REVENUE_ASC">Doanh thu thấp nhất</option>
+              <option value="PROGRESS_DESC">Tiến độ cao nhất</option>
+              <option value="PROGRESS_ASC">Tiến độ thấp nhất</option>
             </Form.Select>
           </Form.Group>
         </Col>
@@ -142,12 +166,52 @@ function EmployeeKPITable({ kpis, loading, onRefresh }) {
                     )}
                   </td>
                   <td>
-                    <div>
-                      <strong>{formatCurrency(kpi.revenueTarget)}</strong>
+                    <div className="mb-2">
+                      <strong>Mục tiêu:</strong>{" "}
+                      {formatCurrency(kpi.revenueTarget)}
                     </div>
+                    {kpi.status === "upcoming" ? (
+                      <div className="text-muted small">
+                        <i className="bi bi-info-circle me-1"></i>
+                        Chưa bắt đầu
+                      </div>
+                    ) : (
+                      <>
+                        <div className="mb-1">
+                          <strong>Thực tế:</strong>{" "}
+                          {formatCurrency(kpi.actualRevenue || 0)}
+                        </div>
+                        <ProgressBar
+                          now={kpi.revenueProgress || 0}
+                          variant={getProgressVariant(kpi.revenueProgress || 0)}
+                          label={`${kpi.revenueProgress || 0}%`}
+                          style={{ height: "25px" }}
+                        />
+                      </>
+                    )}
                   </td>
                   <td>
-                    <strong>{kpi.bktTarget}</strong> kênh
+                    <div className="mb-2">
+                      <strong>Mục tiêu:</strong> {kpi.bktTarget} kênh
+                    </div>
+                    {kpi.status === "upcoming" ? (
+                      <div className="text-muted small">
+                        <i className="bi bi-info-circle me-1"></i>
+                        Chưa bắt đầu
+                      </div>
+                    ) : (
+                      <>
+                        <div className="mb-1">
+                          <strong>Thực tế:</strong> {kpi.actualBkt || 0} kênh
+                        </div>
+                        <ProgressBar
+                          now={kpi.bktProgress || 0}
+                          variant={getProgressVariant(kpi.bktProgress || 0)}
+                          label={`${kpi.bktProgress || 0}%`}
+                          style={{ height: "25px" }}
+                        />
+                      </>
+                    )}
                   </td>
                   <td>
                     <div className="small">
