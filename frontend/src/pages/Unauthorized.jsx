@@ -6,7 +6,7 @@ import { jwtDecode } from "jwt-decode";
 
 function Unauthorized() {
   const navigate = useNavigate();
-  const [countdown, setCountdown] = useState(5); // Bắt đầu từ 3 giây
+  const [countdown, setCountdown] = useState(5);
 
   // Hàm xử lý chuyển hướng theo quyền
   const handleRedirectBasedOnRole = () => {
