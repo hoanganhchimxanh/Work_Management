@@ -38,6 +38,7 @@ const dashboardRouter = require("./routes/dashboard.route");
 const excelRouter = require("./routes/excel.route");
 const notificationRouter = require("./routes/notification.route");
 const resourceRouter = require("./routes/resource.route");
+const bugReportRouter = require("./routes/bugReport.route");
 
 app.use("/user", userRouter);
 app.use("/account", accountRouter);
@@ -52,6 +53,7 @@ app.use("/dashboard", dashboardRouter);
 app.use("/excel", excelRouter);
 app.use("/notification", notificationRouter);
 app.use("/resource", resourceRouter);
+app.use("/bug-report", bugReportRouter);
 
 // --- Xử lý lỗi ---
 

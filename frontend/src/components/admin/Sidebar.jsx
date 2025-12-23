@@ -10,6 +10,7 @@ import {
   List,
   BellFill,
   FileRuledFill,
+  BugFill,
 } from "react-bootstrap-icons";
 import { useContext } from "react";
 import { AuthContext } from "../../contexts/AuthContext";
@@ -91,6 +92,11 @@ const Sidebar = () => {
       to: "/admin/kpi_tasks",
       icon: <FileEarmarkTextFill />,
       label: "Quản lý KPI & Công việc",
+    },
+    {
+      to: "/bug-report",
+      icon: <BugFill />,
+      label: "Báo cáo lỗi",
     },
   ];
 
