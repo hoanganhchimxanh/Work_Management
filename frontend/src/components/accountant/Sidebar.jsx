@@ -6,6 +6,7 @@ import {
   BoxArrowRight,
   List,
   BellFill,
+  BugFill,
 } from "react-bootstrap-icons";
 import { useContext } from "react";
 import { AuthContext } from "../../contexts/AuthContext";
@@ -83,6 +84,11 @@ const Sidebar = () => {
       to: "/accountant/networks",
       icon: <CashStack />,
       label: "Quản lý Network",
+    },
+    {
+      to: "/bug-report",
+      icon: <BugFill />,
+      label: "Báo cáo lỗi",
     },
   ];
 

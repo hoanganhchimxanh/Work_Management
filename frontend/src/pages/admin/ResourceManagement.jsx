@@ -22,6 +22,7 @@ import ResourceTable from "../../components/admin/resourceManagement/ResourceTab
 import CreateResourceModal from "../../components/admin/resourceManagement/CreateResourceModal";
 import EditResourceModal from "../../components/admin/resourceManagement/EditResourceModal";
 import AssignResourceModal from "../../components/admin/resourceManagement/AssignResourceModal";
+import ResourceImportModal from "../../components/admin/resourceManagement/ResourceImportModal";
 
 import config from "../../configs/api";
 
@@ -316,6 +317,33 @@ function ResourceManagement() {
     }
   };
 
+  // Import resource from Excel
+  const handleImportResource = async (file) => {
+    try {
+      setError("");
+      const formData = new FormData();
+      formData.append("file", file);
+
+      await axios.post(
+        `${config.backendBase}/excel/import-resource-excel`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+      setSuccess("Import resource từ Excel thành công!");
+      fetchData();
+      setTimeout(() => setSuccess(""), 3000);
+    } catch (err) {
+      setError(err.response?.data?.message || "Có lỗi xảy ra khi import Excel");
+      console.error("Error importing resource:", err);
+    }
+  };
+
   if (loading) {
     return (
       <Container className="py-5 text-center">
@@ -494,6 +522,12 @@ function ResourceManagement() {
         resource={selectedResource}
         users={users}
         channels={channels}
+      />
+
+      <ResourceImportModal
+        show={showResourceImportModal}
+        onHide={() => setShowResourceImportModal(false)}
+        onSubmit={handleImportResource}
       />
     </Container>
   );

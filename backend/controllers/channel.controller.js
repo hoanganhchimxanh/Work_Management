@@ -8,8 +8,15 @@ const { sendNotification } = require("../services/notification.service");
 // Thêm kênh mới
 const addNew = async (req, res, next) => {
   try {
-    const { name, link, assignedUser, network, status, bktEnabled, bktDay } =
-      req.body;
+    const {
+      name,
+      link,
+      assignedUser,
+      network,
+      status,
+      isMonetized,
+      monetizeDate,
+    } = req.body;
 
     if (!name || !link || !assignedUser) {
       return res.status(400).json({
@@ -44,8 +51,8 @@ const addNew = async (req, res, next) => {
       assignedUser: assignedUser || null,
       network: network || null,
       status: status || "ACTIVE",
-      bktEnabled: bktEnabled || false,
-      bktDay: bktDay || null,
+      isMonetized: isMonetized || false,
+      monetizeDate: monetizeDate || null,
     });
 
     const populatedChannel = await Channel.findById(newChannel._id)
@@ -110,8 +117,15 @@ const getById = async (req, res, next) => {
 const editChannelInfo = async (req, res, next) => {
   try {
     const channelId = req.params.id;
-    const { name, link, assignedUser, network, status, bktEnabled, bktDay } =
-      req.body;
+    const {
+      name,
+      link,
+      assignedUser,
+      network,
+      status,
+      isMonetized,
+      monetizeDate,
+    } = req.body;
 
     const channel = await Channel.findById(channelId);
     if (!channel) {
@@ -127,8 +141,8 @@ const editChannelInfo = async (req, res, next) => {
     if (assignedUser !== undefined) channel.assignedUser = assignedUser;
     if (network !== undefined) channel.network = network;
     if (status) channel.status = status;
-    if (bktEnabled !== undefined) channel.bktEnabled = bktEnabled;
-    if (bktDay !== undefined) channel.bktDay = bktDay;
+    if (isMonetized !== undefined) channel.isMonetized = isMonetized;
+    if (monetizeDate !== undefined) channel.monetizeDate = monetizeDate;
 
     await channel.save();
 

@@ -1,7 +1,62 @@
 import React from "react";
+import { Table, Badge } from "react-bootstrap";
 
-function ChannelTable() {
-  return <div>ChannelTable</div>;
+function ChannelTable({ channels }) {
+  const getStatusBadge = (status) => {
+    const variants = {
+      ACTIVE: "success",
+      HIDDEN: "warning",
+      LOCKED: "danger",
+      STRIKED: "dark",
+    };
+    return <Badge bg={variants[status] || "secondary"}>{status}</Badge>;
+  };
+
+  return (
+    <Table striped bordered hover responsive>
+      <thead>
+        <tr>
+          <th>STT</th>
+          <th>Tên kênh</th>
+          <th>Trạng thái kênh</th>
+          <th>Nhân viên</th>
+          <th>Network</th>
+          <th>Tổng số người đăng ký</th>
+          <th>Doanh thu ước tính</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {channels.length === 0 ? (
+          <tr>
+            <td colSpan="7" className="text-center">
+              Không có dữ liệu
+            </td>
+          </tr>
+        ) : (
+          channels.map((channel, index) => (
+            <tr key={channel._id}>
+              <td>{index + 1}</td>
+              <td>
+                <a
+                  href={channel.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {channel.name}
+                </a>
+              </td>
+              <td>{getStatusBadge(channel.status)}</td>
+              <td>{channel.assignedUser?.fullName || "Chưa gán"}</td>
+              <td>{channel.network?.profileAdsenseId || "Chưa có network"}</td>
+              <td>{channel.totalSubscribers.toLocaleString()}</td>
+              <td>${channel.totalRevenue.toFixed(2)}</td>
+            </tr>
+          ))
+        )}
+      </tbody>
+    </Table>
+  );
 }
 
 export default ChannelTable;

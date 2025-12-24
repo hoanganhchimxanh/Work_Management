@@ -5,6 +5,7 @@ import { AuthContext } from "../../contexts/AuthContext";
 import ChannelActionButtons from "../../components/employee/channelManagement/ChannelActionButtons";
 import ChannelTable from "../../components/employee/channelManagement/ChannelTable";
 import AddChannelModal from "../../components/employee/channelManagement/AddChannelModal";
+import EditChannelModal from "../../components/employee/channelManagement/EditChannelModal";
 
 import config from "../../configs/api";
 
@@ -15,6 +16,8 @@ function EmployeeChannelManagement() {
   const [error, setError] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedChannel, setSelectedChannel] = useState(null);
 
   // Fetch channels assigned to current user
   const fetchMyChannels = async () => {
@@ -206,6 +209,34 @@ function EmployeeChannelManagement() {
     }
   };
 
+  const handleEditChannel = (channel) => {
+    setSelectedChannel(channel);
+    setShowEditModal(true);
+  };
+
+  const handleUpdateChannel = async (channelId, data) => {
+    try {
+      const response = await axios.put(
+        `${config.backendBase}/channel/update/${channelId}`,
+        data,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      if (response.data.success) {
+        alert("Cập nhật kênh thành công!");
+        setShowEditModal(false);
+        fetchMyChannels();
+      }
+    } catch (err) {
+      console.error("Error updating channel:", err);
+      alert(err.response?.data?.message || "Không thể cập nhật kênh");
+    }
+  };
+
   useEffect(() => {
     if (user && user.userId) {
       fetchMyChannels();
@@ -258,6 +289,7 @@ function EmployeeChannelManagement() {
 
       <ChannelTable
         channels={channels}
+        onEdit={handleEditChannel}
         onGrantAuth={handleGetAuthUrl}
         onCheckAuth={handleCheckAuthStatus}
         onRevokeAuth={handleRevokeAuth}
@@ -269,6 +301,16 @@ function EmployeeChannelManagement() {
         show={showAddModal}
         onHide={() => setShowAddModal(false)}
         onSubmit={handleAddChannel}
+      />
+
+      <EditChannelModal
+        show={showEditModal}
+        channel={selectedChannel}
+        onHide={() => {
+          setShowEditModal(false);
+          setSelectedChannel(null);
+        }}
+        onSubmit={handleUpdateChannel}
       />
     </Container>
   );

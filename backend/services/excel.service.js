@@ -29,8 +29,6 @@ class ExcelService {
     }
 
     const Model = this.db[config.modelName];
-    const session = await Model.startSession();
-    session.startTransaction();
 
     const results = {
       success: [],
@@ -38,86 +36,80 @@ class ExcelService {
       total: data.length,
     };
 
-    try {
-      for (let i = 0; i < data.length; i++) {
-        const row = data[i];
-        const rowNumber = i + 2;
+    // Xử lý từng row một cách độc lập (không dùng transaction)
+    for (let i = 0; i < data.length; i++) {
+      const row = data[i];
+      const rowNumber = i + 2;
 
-        try {
-          // Validate và transform data
-          const processedData = await this._processRowData(
-            row,
-            config,
-            session
-          );
+      try {
+        // Validate và transform data
+        const processedData = await this._processRowData(row, config, null);
 
-          if (processedData.error) {
-            results.errors.push({
-              row: rowNumber,
-              error: processedData.error,
-              data: row,
-            });
-            continue;
-          }
-
-          // Kiểm tra duplicate
-          const duplicateCheck = await this._checkDuplicate(
-            Model,
-            processedData.data,
-            config,
-            session
-          );
-
-          if (duplicateCheck) {
-            results.errors.push({
-              row: rowNumber,
-              error: duplicateCheck,
-              data: row,
-            });
-            continue;
-          }
-
-          // Apply defaults
-          const finalData = {
-            ...config.defaults,
-            ...processedData.data,
-          };
-
-          // beforeCreate hook
-          const dataToCreate = config.beforeCreate
-            ? config.beforeCreate(finalData)
-            : finalData;
-
-          // Tạo record
-          const [newRecord] = await Model.create([dataToCreate], { session });
-
-          // afterImport hook
-          let extraData = {};
-          if (config.afterImport) {
-            extraData = await config.afterImport(newRecord, session, this.db);
-          }
-
-          results.success.push({
-            row: rowNumber,
-            id: newRecord._id,
-            ...this._getSuccessInfo(newRecord, config),
-            ...extraData,
-          });
-        } catch (err) {
+        if (processedData.error) {
           results.errors.push({
             row: rowNumber,
-            error: err.message,
+            error: processedData.error,
             data: row,
           });
+          continue;
         }
-      }
 
-      await session.commitTransaction();
-    } catch (err) {
-      await session.abortTransaction();
-      throw err;
-    } finally {
-      session.endSession();
+        // Kiểm tra duplicate
+        const duplicateCheck = await this._checkDuplicate(
+          Model,
+          processedData.data,
+          config,
+          null
+        );
+
+        if (duplicateCheck) {
+          results.errors.push({
+            row: rowNumber,
+            error: duplicateCheck,
+            data: row,
+          });
+          continue;
+        }
+
+        // Apply defaults
+        const finalData = {
+          ...config.defaults,
+          ...processedData.data,
+        };
+
+        // beforeCreate hook
+        const dataToCreate = config.beforeCreate
+          ? config.beforeCreate(finalData)
+          : finalData;
+
+        // Tạo record
+        const newRecord = await Model.create(dataToCreate);
+
+        // afterImport hook
+        let extraData = {};
+        if (config.afterImport) {
+          extraData = await config.afterImport(newRecord, null, this.db);
+        }
+
+        results.success.push({
+          row: rowNumber,
+          id: newRecord._id,
+          ...this._getSuccessInfo(newRecord, config),
+          ...extraData,
+        });
+      } catch (err) {
+        results.errors.push({
+          row: rowNumber,
+          error: err.message,
+          data: row,
+        });
+      }
+    }
+
+    if (results.success.length === 0) {
+      console.error("IMPORT FAILED - ALL ROWS INVALID");
+      console.error("ERROR DETAILS:", JSON.stringify(results.errors, null, 2));
+      throw new Error("Không có bản ghi hợp lệ để import");
     }
 
     return results;
@@ -279,14 +271,14 @@ class ExcelService {
       const query = {};
       query[col.referenceField] = { $in: values };
 
-      const refs = await RefModel.find(query).session(session).lean();
+      const refs = await RefModel.find(query).lean();
       return refs.map((ref) => ref[col.referenceKey]);
     } else {
       // Handle single reference
       const query = {};
       query[col.referenceField] = value;
 
-      const ref = await RefModel.findOne(query).session(session).lean();
+      const ref = await RefModel.findOne(query).lean();
       return ref ? ref[col.referenceKey] : null;
     }
   }
@@ -305,7 +297,7 @@ class ExcelService {
     const query = {};
     query[uniqueField.dbField] = data[uniqueField.dbField];
 
-    const existing = await Model.findOne(query).session(session);
+    const existing = await Model.findOne(query);
     if (existing) {
       return `${uniqueField.displayName} đã tồn tại: ${
         data[uniqueField.dbField]

@@ -23,6 +23,10 @@ const channelSchema = new mongoose.Schema(
     },
 
     isBrandAccount: { type: Boolean, default: false },
+
+    // Trạng thái và ngày kênh bật kiếm tiền
+    isMonetized: { type: Boolean, default: false },
+    monetizeDate: { type: Date, default: null },
   },
   { timestamps: true }
 );

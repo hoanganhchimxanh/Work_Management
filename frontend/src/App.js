@@ -6,6 +6,7 @@ import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
 import ChangePassword from "./pages/ChangePassword";
 import Unauthorized from "./pages/Unauthorized";
+import BugReport from "./pages/BugReport";
 
 // Admin pages
 import AdminLayout from "./layouts/AdminLayout";
@@ -53,6 +54,8 @@ function App() {
 
       {/* PROTECTED ROUTES - Chỉ cho người đã đăng nhập */}
       <Route element={<ProtectedRoute />}>
+        <Route path="/bug-report" element={<BugReport />} />
+
         <Route
           path="/change-password/:accountId"
           element={<ChangePassword />}

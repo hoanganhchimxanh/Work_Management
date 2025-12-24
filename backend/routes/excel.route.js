@@ -30,6 +30,7 @@ const upload = multer({
     const allowedMimes = [
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", // .xlsx
       "application/vnd.ms-excel", // .xls
+      "text/csv", //.csv
     ];
 
     if (allowedMimes.includes(file.mimetype)) {

@@ -347,18 +347,6 @@ const excelConfigs = {
         transform: (value) => value.trim().toLowerCase(),
       },
       {
-        excelKey: "type",
-        dbField: "type",
-        displayName: "Loại",
-        required: false,
-        width: 20,
-        validate: (value) => {
-          const validTypes = ["CHANNEL_CREATION", "CHANNEL_MANAGER", "BACKUP"];
-          return !value || validTypes.includes(value.toUpperCase());
-        },
-        transform: (value) => value?.toUpperCase() || "CHANNEL_CREATION",
-      },
-      {
         excelKey: "assignedUserEmail",
         dbField: "assignedUser",
         displayName: "User được gán",
@@ -382,7 +370,6 @@ const excelConfigs = {
       { key: "stt", displayName: "STT", width: 5 },
       { key: "email", displayName: "Email", width: 35 },
       { key: "recoveryEmail", displayName: "Recovery Email", width: 35 },
-      { key: "type", displayName: "Loại", width: 20 },
       { key: "status", displayName: "Trạng thái", width: 15 },
       { key: "assignedUserName", displayName: "User được gán", width: 25 },
       { key: "assignedUserEmail", displayName: "Email User", width: 35 },
@@ -401,7 +388,6 @@ const excelConfigs = {
         email: "resource1@gmail.com",
         password: "YourPassword123",
         recoveryEmail: "recovery1@gmail.com",
-        type: "CHANNEL_CREATION",
         assignedUserEmail: "nguyenvana@gmail.com",
         note: "Resource dùng để tạo kênh",
       },
@@ -409,7 +395,6 @@ const excelConfigs = {
         email: "resource2@gmail.com",
         password: "YourPassword456",
         recoveryEmail: "recovery2@gmail.com",
-        type: "CHANNEL_MANAGER",
         assignedUserEmail: "",
         note: "Resource quản lý kênh",
       },
@@ -432,11 +417,6 @@ const excelConfigs = {
         required: "Có",
       },
       {
-        column: "type",
-        description: "CHANNEL_CREATION / CHANNEL_MANAGER / BACKUP",
-        required: "Không (mặc định CHANNEL_CREATION)",
-      },
-      {
         column: "assignedUserEmail",
         description: "Email của user được gán (phải tồn tại trong hệ thống)",
         required: "Không",
@@ -453,7 +433,6 @@ const excelConfigs = {
         stt: index + 1,
         email: resource.email,
         recoveryEmail: resource.recoveryEmail,
-        type: resource.type,
         status: resource.status,
         assignedUserName: resource.assignedUser?.fullName || "",
         assignedUserEmail: resource.assignedUser?.personalEmail || "",
