@@ -78,7 +78,7 @@ function ResourceImportModal({ show, onHide, onSubmit }) {
   return (
     <Modal show={show} onHide={handleClose} centered size="lg">
       <Modal.Header closeButton>
-        <Modal.Title>Import Network từ Excel</Modal.Title>
+        <Modal.Title>Import Resource từ Excel</Modal.Title>
       </Modal.Header>
 
       <Modal.Body>
@@ -130,7 +130,7 @@ function ResourceImportModal({ show, onHide, onSubmit }) {
           onClick={handleDownloadTemplate}
         >
           <i className="bi bi-download me-2"></i>
-          Tải file template Network
+          Tải file template Resource
         </Button>
       </Modal.Body>
 
