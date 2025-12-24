@@ -306,7 +306,10 @@ function EmployeeChannelManagement() {
       <EditChannelModal
         show={showEditModal}
         channel={selectedChannel}
-        onHide={() => setShowEditModal(false)}
+        onHide={() => {
+          setShowEditModal(false);
+          setSelectedChannel(null);
+        }}
         onSubmit={handleUpdateChannel}
       />
     </Container>

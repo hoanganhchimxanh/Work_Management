@@ -25,6 +25,7 @@ function ChannelTable({
   };
 
   const formatDate = (dateString) => {
+    if (!dateString) return "-";
     return new Date(dateString).toLocaleDateString("vi-VN");
   };
 
@@ -38,7 +39,7 @@ function ChannelTable({
 
   return (
     <Table striped bordered hover responsive>
-      <thead className="table-dark">
+      <thead>
         <tr>
           <th>STT</th>
           <th>Tên kênh</th>
@@ -82,7 +83,7 @@ function ChannelTable({
             <td className="text-center">{formatDate(channel.monetizeDate)}</td>
             <td>
               <ChannelActionCell
-                channelId={channel._id}
+                channel={channel}
                 onEdit={onEdit}
                 onGrantAuth={onGrantAuth}
                 onCheckAuth={onCheckAuth}

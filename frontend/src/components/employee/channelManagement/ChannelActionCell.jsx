@@ -10,7 +10,7 @@ import {
 } from "react-bootstrap-icons";
 
 function ChannelActionCell({
-  channelId,
+  channel,
   onEdit,
   onGrantAuth,
   onCheckAuth,
@@ -28,7 +28,7 @@ function ChannelActionCell({
           <Button
             variant="success"
             size="sm"
-            onClick={() => onGrantAuth(channelId)}
+            onClick={() => onGrantAuth(channel._id)}
           >
             <KeyFill />
           </Button>
@@ -41,7 +41,7 @@ function ChannelActionCell({
           <Button
             variant="primary"
             size="sm"
-            onClick={() => onCheckAuth(channelId)}
+            onClick={() => onCheckAuth(channel._id)}
           >
             <EyeFill />
           </Button>
@@ -51,7 +51,7 @@ function ChannelActionCell({
           <Button
             variant="warning"
             size="sm"
-            onClick={() => onRevokeAuth(channelId)}
+            onClick={() => onRevokeAuth(channel._id)}
           >
             <XCircleFill />
           </Button>
@@ -63,7 +63,7 @@ function ChannelActionCell({
           placement="top"
           overlay={<Tooltip>Đồng bộ Analytics</Tooltip>}
         >
-          <Button variant="info" size="sm" onClick={() => onSync(channelId)}>
+          <Button variant="info" size="sm" onClick={() => onSync(channel._id)}>
             <ArrowRepeat />
           </Button>
         </OverlayTrigger>
@@ -72,11 +72,7 @@ function ChannelActionCell({
           placement="top"
           overlay={<Tooltip>Chỉnh sửa kênh</Tooltip>}
         >
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => onEdit(channelId)}
-          >
+          <Button variant="secondary" size="sm" onClick={() => onEdit(channel)}>
             <PencilSquare />
           </Button>
         </OverlayTrigger>
@@ -85,7 +81,7 @@ function ChannelActionCell({
           <Button
             variant="danger"
             size="sm"
-            onClick={() => onDelete(channelId)}
+            onClick={() => onDelete(channel._id)}
           >
             <Trash />
           </Button>

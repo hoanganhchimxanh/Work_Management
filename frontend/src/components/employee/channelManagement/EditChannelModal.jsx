@@ -14,19 +14,19 @@ function EditChannelModal({ show, onHide, onSubmit, channel }) {
 
   // Load channel data when modal opens
   useEffect(() => {
-    if (show && channel) {
-      setFormData({
-        name: channel.name || "",
-        link: channel.link || "",
-        status: channel.status || "ACTIVE",
-        isBrandAccount: channel.isBrandAccount || false,
-        isMonetized: channel.isMonetized || false,
-        monetizeDate: channel.monetizeDate
-          ? new Date(channel.monetizeDate).toISOString().split("T")[0]
-          : "",
-      });
-    }
-  }, [show, channel]);
+    if (!channel) return;
+
+    setFormData({
+      name: channel.name ?? "",
+      link: channel.link ?? "",
+      status: channel.status ?? "ACTIVE",
+      isBrandAccount: Boolean(channel.isBrandAccount),
+      isMonetized: Boolean(channel.isMonetized),
+      monetizeDate: channel.monetizeDate
+        ? new Date(channel.monetizeDate).toISOString().split("T")[0]
+        : "",
+    });
+  }, [channel]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
