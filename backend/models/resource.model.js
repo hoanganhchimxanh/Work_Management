@@ -15,7 +15,7 @@ const resourceSchema = new mongoose.Schema(
     },
 
     /**
-     * Mật khẩu ban đầu (đã hash)
+     * Mật khẩu ban đầu
      * Chỉ dùng khi bàn giao cho nhân viên
      */
     defaultPassword: {
