@@ -8,12 +8,21 @@ import {
   Row,
   Col,
   InputGroup,
+  Dropdown,
+  ButtonGroup,
 } from "react-bootstrap";
+import {
+  CheckCircleFill,
+  XCircleFill,
+  PlayCircleFill,
+  PauseCircleFill,
+} from "react-bootstrap-icons";
 
-function EmployeeTaskTable({ tasks, loading, onRefresh }) {
+function EmployeeTaskTable({ tasks, loading, onRefresh, onUpdateStatus }) {
   const [filterStatus, setFilterStatus] = useState("ALL");
   const [filterSort, setFilterSort] = useState("NEWEST");
   const [searchTerm, setSearchTerm] = useState("");
+  const [updatingTaskId, setUpdatingTaskId] = useState(null);
 
   const getStatusBadge = (status) => {
     const variants = {
@@ -34,6 +43,15 @@ function EmployeeTaskTable({ tasks, loading, onRefresh }) {
   const formatDate = (dateString) => {
     if (!dateString) return "Không có";
     return new Date(dateString).toLocaleDateString("vi-VN");
+  };
+
+  const handleStatusUpdate = async (taskId, newStatus) => {
+    try {
+      setUpdatingTaskId(taskId);
+      await onUpdateStatus(taskId, newStatus);
+    } finally {
+      setUpdatingTaskId(null);
+    }
   };
 
   const getFilteredAndSortedTasks = () => {
@@ -73,6 +91,90 @@ function EmployeeTaskTable({ tasks, loading, onRefresh }) {
   };
 
   const filteredTasks = getFilteredAndSortedTasks();
+
+  // Render action buttons based on current status
+  const renderActionButtons = (task) => {
+    const isUpdating = updatingTaskId === task._id;
+
+    if (isUpdating) {
+      return (
+        <Spinner animation="border" size="sm" variant="primary">
+          <span className="visually-hidden">Đang cập nhật...</span>
+        </Spinner>
+      );
+    }
+
+    switch (task.status) {
+      case "PENDING":
+        return (
+          <ButtonGroup size="sm">
+            <Button
+              variant="success"
+              onClick={() => handleStatusUpdate(task._id, "IN_PROGRESS")}
+              title="Chấp nhận và bắt đầu"
+            >
+              <CheckCircleFill className="me-1" />
+              Chấp nhận
+            </Button>
+            <Button
+              variant="danger"
+              onClick={() => handleStatusUpdate(task._id, "WAITING")}
+              title="Từ chối / Đang chờ"
+            >
+              <XCircleFill className="me-1" />
+              Từ chối
+            </Button>
+          </ButtonGroup>
+        );
+
+      case "IN_PROGRESS":
+        return (
+          <Dropdown as={ButtonGroup} size="sm">
+            <Button
+              variant="success"
+              onClick={() => handleStatusUpdate(task._id, "COMPLETED")}
+              title="Đánh dấu hoàn thành"
+            >
+              <CheckCircleFill className="me-1" />
+              Hoàn thành
+            </Button>
+            <Dropdown.Toggle split variant="success" />
+            <Dropdown.Menu>
+              <Dropdown.Item
+                onClick={() => handleStatusUpdate(task._id, "WAITING")}
+              >
+                <PauseCircleFill className="me-2" />
+                Tạm dừng
+              </Dropdown.Item>
+            </Dropdown.Menu>
+          </Dropdown>
+        );
+
+      case "WAITING":
+        return (
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => handleStatusUpdate(task._id, "IN_PROGRESS")}
+            title="Tiếp tục làm việc"
+          >
+            <PlayCircleFill className="me-1" />
+            Tiếp tục
+          </Button>
+        );
+
+      case "COMPLETED":
+        return (
+          <Badge bg="success" className="px-3 py-2">
+            <CheckCircleFill className="me-1" />
+            Đã hoàn thành
+          </Badge>
+        );
+
+      default:
+        return null;
+    }
+  };
 
   if (loading) {
     return (
@@ -152,12 +254,13 @@ function EmployeeTaskTable({ tasks, loading, onRefresh }) {
               <th>Trạng thái</th>
               <th>Deadline</th>
               <th>Người giao</th>
+              <th className="text-center">Hành động</th>
             </tr>
           </thead>
           <tbody>
             {filteredTasks.length === 0 ? (
               <tr>
-                <td colSpan="5" className="text-center">
+                <td colSpan="6" className="text-center">
                   {searchTerm || filterStatus !== "ALL"
                     ? "Không tìm thấy công việc phù hợp"
                     : "Chưa có công việc nào"}
@@ -202,6 +305,7 @@ function EmployeeTaskTable({ tasks, loading, onRefresh }) {
                       <span className="text-muted">Admin</span>
                     )}
                   </td>
+                  <td className="text-center">{renderActionButtons(task)}</td>
                 </tr>
               ))
             )}

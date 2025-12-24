@@ -1,5 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { Container, Row, Col, Alert, Tabs, Tab } from "react-bootstrap";
+import {
+  Container,
+  Row,
+  Col,
+  Alert,
+  Tabs,
+  Tab,
+  Toast,
+  ToastContainer,
+} from "react-bootstrap";
 import axios from "axios";
 import EmployeeKPITable from "../../components/employee/kpiTaskManagement/EmpolyeeKPITable";
 import EmployeeTaskTable from "../../components/employee/kpiTaskManagement/EmployeeTaskTable";
@@ -19,6 +28,18 @@ function MyKPITasks() {
 
   // Active tab
   const [activeTab, setActiveTab] = useState("kpi");
+
+  // Toast notification
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+  const [toastVariant, setToastVariant] = useState("success");
+
+  // Show toast notification
+  const showNotification = (message, variant = "success") => {
+    setToastMessage(message);
+    setToastVariant(variant);
+    setShowToast(true);
+  };
 
   // Fetch KPIs with progress
   const fetchKPIs = async () => {
@@ -60,6 +81,50 @@ function MyKPITasks() {
       console.error(err);
     } finally {
       setLoadingTasks(false);
+    }
+  };
+
+  // Update task status
+  const handleUpdateTaskStatus = async (taskId, newStatus) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.patch(
+        `${config.backendBase}/task/update-status/${taskId}`,
+        { status: newStatus },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.data.success) {
+        // Update local state
+        setTasks((prevTasks) =>
+          prevTasks.map((task) =>
+            task._id === taskId ? { ...task, status: newStatus } : task
+          )
+        );
+
+        // Show success notification
+        const statusLabels = {
+          PENDING: "Chờ xử lý",
+          IN_PROGRESS: "Đang làm",
+          COMPLETED: "Hoàn thành",
+          WAITING: "Đang chờ",
+        };
+        showNotification(
+          `Đã cập nhật trạng thái thành: ${statusLabels[newStatus]}`,
+          "success"
+        );
+      }
+    } catch (err) {
+      console.error("Error updating task status:", err);
+      showNotification(
+        err.response?.data?.message ||
+          "Không thể cập nhật trạng thái công việc",
+        "danger"
+      );
     }
   };
 
@@ -109,11 +174,30 @@ function MyKPITasks() {
                 tasks={tasks}
                 loading={loadingTasks}
                 onRefresh={fetchTasks}
+                onUpdateStatus={handleUpdateTaskStatus}
               />
             </Col>
           </Row>
         </Tab>
       </Tabs>
+
+      {/* Toast Notification */}
+      <ToastContainer position="top-end" className="p-3">
+        <Toast
+          show={showToast}
+          onClose={() => setShowToast(false)}
+          delay={3000}
+          autohide
+          bg={toastVariant}
+        >
+          <Toast.Header>
+            <strong className="me-auto">
+              {toastVariant === "success" ? "Thành công" : "Lỗi"}
+            </strong>
+          </Toast.Header>
+          <Toast.Body className="text-white">{toastMessage}</Toast.Body>
+        </Toast>
+      </ToastContainer>
     </Container>
   );
 }
