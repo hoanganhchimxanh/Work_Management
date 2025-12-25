@@ -1,0 +1,44 @@
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: work-mgmt-db
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - work-network
+
+  backend:
+    build:
+      context: ./backend
+    container_name: work-mgmt-backend
+    ports:
+      - "9999:9999"
+    env_file:
+      - ./backend/.env
+    depends_on:
+      - mongodb
+    networks:
+      - work-network
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: work-mgmt-frontend
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./frontend/.env
+    stdin_open: true
+    depends_on:
+      - backend
+    networks:
+      - work-network
+
+networks:
+  work-network:
+    driver: bridge
+
+volumes:
+  mongo-data:

@@ -157,6 +157,9 @@ const getTopEmployees = async (req, res, next) => {
     const start = new Date(startDate);
     const end = new Date(endDate);
 
+    // ✅ FIX: lấy hết ngày endDate
+    end.setHours(23, 59, 59, 999);
+
     const topEmployees = await ChannelAnalytics.aggregate([
       {
         $match: {
@@ -236,6 +239,9 @@ const getTopTeams = async (req, res, next) => {
 
     const start = new Date(startDate);
     const end = new Date(endDate);
+
+    // ✅ FIX: lấy hết ngày endDate
+    end.setHours(23, 59, 59, 999);
 
     const topTeams = await ChannelAnalytics.aggregate([
       {
@@ -328,6 +334,9 @@ const getTopChannels = async (req, res, next) => {
 
     const start = new Date(startDate);
     const end = new Date(endDate);
+
+    // ✅ FIX: lấy hết ngày endDate
+    end.setHours(23, 59, 59, 999);
 
     const topChannels = await ChannelAnalytics.aggregate([
       {
