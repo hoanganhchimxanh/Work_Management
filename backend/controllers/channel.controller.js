@@ -123,6 +123,7 @@ const editChannelInfo = async (req, res, next) => {
       assignedUser,
       network,
       status,
+      isBrandAccount,
       isMonetized,
       monetizeDate,
     } = req.body;
@@ -141,6 +142,7 @@ const editChannelInfo = async (req, res, next) => {
     if (assignedUser !== undefined) channel.assignedUser = assignedUser;
     if (network !== undefined) channel.network = network;
     if (status) channel.status = status;
+    if (isBrandAccount !== undefined) channel.isBrandAccount = isBrandAccount;
     if (isMonetized !== undefined) channel.isMonetized = isMonetized;
     if (monetizeDate !== undefined) channel.monetizeDate = monetizeDate;
 
