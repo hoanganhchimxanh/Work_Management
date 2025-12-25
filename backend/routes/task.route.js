@@ -34,7 +34,7 @@ router.put(
 router.patch(
   "/update-status/:id",
   authenticateJWT,
-  authorizeRoles("ADMIN"),
+  authorizeRoles(["ADMIN", "EMPLOYEE"]),
   taskController.updateStatus
 );
 router.delete(

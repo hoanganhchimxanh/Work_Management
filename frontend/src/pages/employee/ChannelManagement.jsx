@@ -217,7 +217,7 @@ function EmployeeChannelManagement() {
   const handleUpdateChannel = async (channelId, data) => {
     try {
       const response = await axios.put(
-        `${config.backendBase}/channel/update/${channelId}`,
+        `${config.backendBase}/channel/edit/${channelId}`,
         data,
         {
           headers: {

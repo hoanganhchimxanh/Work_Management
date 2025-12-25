@@ -66,7 +66,7 @@ app.use((req, res, next) => {
 app.use(errorHandler);
 
 // --- Server Startup ---
-const HOST = process.env.HOST_NAME || "localhost";
+const HOST = process.env.HOST_NAME || "0.0.0.0";
 const PORT = process.env.PORT || 9999;
 
 const startServer = async () => {

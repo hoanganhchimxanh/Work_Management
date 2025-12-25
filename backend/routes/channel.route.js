@@ -42,7 +42,7 @@ router.get(
 router.put(
   "/edit/:id",
   authenticateJWT,
-  authorizeRoles("ADMIN"),
+  authorizeRoles("EMPLOYEE"),
   channelController.editChannelInfo
 );
 
