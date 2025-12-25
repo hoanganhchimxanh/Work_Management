@@ -35,9 +35,7 @@ const createNew = async (req, res, next) => {
       });
     }
 
-    let notifyUserIds = [];
-
-    // Kiểm tra user
+    // Kiểm tra user có tồn tại không (nếu có)
     if (assignedToUser) {
       const user = await User.findById(assignedToUser);
       if (!user) {
@@ -46,25 +44,19 @@ const createNew = async (req, res, next) => {
           message: "Không tìm thấy user!",
         });
       }
-      notifyUserIds = [assignedToUser];
     }
 
-    // Kiểm tra team
+    // Kiểm tra team có tồn tại không (nếu có)
     if (assignedToTeam) {
-      const team = await Team.findById(assignedToTeam).populate(
-        "members",
-        "_id"
-      );
+      const team = await Team.findById(assignedToTeam);
       if (!team) {
         return res.status(404).json({
           success: false,
           message: "Không tìm thấy team!",
         });
       }
-      notifyUserIds = team.members.map((m) => m._id);
     }
 
-    // Tạo task
     const newTask = await Task.create({
       title,
       description: description || "",
@@ -80,31 +72,48 @@ const createNew = async (req, res, next) => {
       .lean();
 
     // 🔔 SEND NOTIFICATION
-    if (notifyUserIds.length === 1) {
+    let userIds = [];
+
+    if (assignedToUser) {
+      userIds = [assignedToUser];
+    } else if (assignedToTeam) {
+      const teamMembers = await User.find({ team: assignedToTeam }).select(
+        "_id"
+      );
+      userIds = teamMembers.map((m) => m._id);
+    }
+
+    const deadlineText = deadline
+      ? ` - Deadline: ${new Date(deadline).toLocaleDateString("vi-VN")}`
+      : "";
+
+    if (userIds.length === 1) {
       await sendNotification({
-        userId: notifyUserIds[0],
-        title: "Bạn được giao công việc mới",
-        message: `Công việc "${title}" vừa được giao cho bạn.`,
-        // type: "TASK",
+        userId: userIds[0],
+        title: "Bạn được gán công việc mới",
+        message: `Bạn đã được gán công việc: "${title}"${deadlineText}`,
+        // type: "TASK_ASSIGNED",
         metadata: {
           taskId: newTask._id,
-          deadline,
+          taskTitle: title,
+          deadline: deadline || null,
         },
       });
-    } else if (notifyUserIds.length > 1) {
+    } else if (userIds.length > 1) {
       await sendBulkNotification({
-        userIds: notifyUserIds,
-        title: "Team bạn có công việc mới",
-        message: `Công việc "${title}" vừa được giao cho team của bạn.`,
-        // type: "TASK",
+        userIds,
+        title: "Team của bạn được gán công việc mới",
+        message: `Team của bạn đã được gán công việc: "${title}"${deadlineText}`,
+        // type: "TASK_ASSIGNED",
         metadata: {
           taskId: newTask._id,
-          deadline,
+          taskTitle: title,
+          deadline: deadline || null,
         },
       });
     }
 
-    return res.status(201).json({
+    res.status(201).json({
       success: true,
       message: "Tạo công việc thành công!",
       data: populatedTask,
@@ -180,6 +189,11 @@ const updateTask = async (req, res, next) => {
       });
     }
 
+    // Lưu giá trị cũ để so sánh
+    const oldTitle = task.title;
+    const oldStatus = task.status;
+    const oldDeadline = task.deadline;
+
     // Cập nhật các field
     if (title) task.title = title;
     if (description !== undefined) task.description = description;
@@ -192,6 +206,74 @@ const updateTask = async (req, res, next) => {
       .populate("assignedToUser", "fullName personalEmail role")
       .populate("assignedToTeam", "name")
       .lean();
+
+    // 🔔 SEND NOTIFICATION nếu có thay đổi quan trọng
+    let hasImportantChange = false;
+    let changeDetails = [];
+
+    if (title && title !== oldTitle) {
+      hasImportantChange = true;
+      changeDetails.push(`Tiêu đề: "${oldTitle}" → "${title}"`);
+    }
+
+    if (status && status !== oldStatus) {
+      hasImportantChange = true;
+      changeDetails.push(`Trạng thái: ${oldStatus} → ${status}`);
+    }
+
+    if (deadline !== undefined && deadline !== oldDeadline) {
+      hasImportantChange = true;
+      const oldDeadlineText = oldDeadline
+        ? new Date(oldDeadline).toLocaleDateString("vi-VN")
+        : "Không có";
+      const newDeadlineText = deadline
+        ? new Date(deadline).toLocaleDateString("vi-VN")
+        : "Không có";
+      changeDetails.push(`Deadline: ${oldDeadlineText} → ${newDeadlineText}`);
+    }
+
+    if (hasImportantChange) {
+      let userIds = [];
+
+      if (task.assignedToUser) {
+        userIds = [task.assignedToUser];
+      } else if (task.assignedToTeam) {
+        const teamMembers = await User.find({
+          team: task.assignedToTeam,
+        }).select("_id");
+        userIds = teamMembers.map((m) => m._id);
+      }
+
+      const notificationMessage = `Công việc "${
+        title || oldTitle
+      }" đã được cập nhật:\n${changeDetails.join("\n")}`;
+
+      if (userIds.length === 1) {
+        await sendNotification({
+          userId: userIds[0],
+          title: "Công việc được cập nhật",
+          message: notificationMessage,
+          // type: "TASK_UPDATED",
+          metadata: {
+            taskId: task._id,
+            taskTitle: title || oldTitle,
+            changes: changeDetails,
+          },
+        });
+      } else if (userIds.length > 1) {
+        await sendBulkNotification({
+          userIds,
+          title: "Công việc của team được cập nhật",
+          message: notificationMessage,
+          // type: "TASK_UPDATED",
+          metadata: {
+            taskId: task._id,
+            taskTitle: title || oldTitle,
+            changes: changeDetails,
+          },
+        });
+      }
+    }
 
     res.json({
       success: true,
@@ -232,6 +314,8 @@ const updateStatus = async (req, res, next) => {
       });
     }
 
+    const oldStatus = task.status;
+
     task.status = status;
     await task.save();
 
@@ -239,6 +323,57 @@ const updateStatus = async (req, res, next) => {
       .populate("assignedToUser", "fullName personalEmail role")
       .populate("assignedToTeam", "name")
       .lean();
+
+    // 🔔 SEND NOTIFICATION khi thay đổi trạng thái
+    if (oldStatus !== status) {
+      let userIds = [];
+
+      if (task.assignedToUser) {
+        userIds = [task.assignedToUser];
+      } else if (task.assignedToTeam) {
+        const teamMembers = await User.find({
+          team: task.assignedToTeam,
+        }).select("_id");
+        userIds = teamMembers.map((m) => m._id);
+      }
+
+      const statusNames = {
+        PENDING: "Chờ xử lý",
+        IN_PROGRESS: "Đang thực hiện",
+        COMPLETED: "Hoàn thành",
+        WAITING: "Đang chờ",
+      };
+
+      const notificationMessage = `Trạng thái công việc "${task.title}" đã thay đổi: ${statusNames[oldStatus]} → ${statusNames[status]}`;
+
+      if (userIds.length === 1) {
+        await sendNotification({
+          userId: userIds[0],
+          title: "Trạng thái công việc đã thay đổi",
+          message: notificationMessage,
+          // type: "TASK_UPDATED",
+          metadata: {
+            taskId: task._id,
+            taskTitle: task.title,
+            oldStatus,
+            newStatus: status,
+          },
+        });
+      } else if (userIds.length > 1) {
+        await sendBulkNotification({
+          userIds,
+          title: "Trạng thái công việc của team đã thay đổi",
+          message: notificationMessage,
+          // type: "TASK_UPDATED",
+          metadata: {
+            taskId: task._id,
+            taskTitle: task.title,
+            oldStatus,
+            newStatus: status,
+          },
+        });
+      }
+    }
 
     res.json({
       success: true,
@@ -263,7 +398,48 @@ const deleteTask = async (req, res, next) => {
       });
     }
 
+    // Lưu thông tin trước khi xóa để gửi notification
+    const taskTitle = task.title;
+    const assignedToUser = task.assignedToUser;
+    const assignedToTeam = task.assignedToTeam;
+
     await Task.findByIdAndDelete(taskId);
+
+    // 🔔 SEND NOTIFICATION khi xóa task
+    let userIds = [];
+
+    if (assignedToUser) {
+      userIds = [assignedToUser];
+    } else if (assignedToTeam) {
+      const teamMembers = await User.find({ team: assignedToTeam }).select(
+        "_id"
+      );
+      userIds = teamMembers.map((m) => m._id);
+    }
+
+    if (userIds.length === 1) {
+      await sendNotification({
+        userId: userIds[0],
+        title: "Công việc đã bị xóa",
+        message: `Công việc "${taskTitle}" đã bị xóa khỏi hệ thống.`,
+        // type: "TASK_UPDATED",
+        metadata: {
+          taskTitle,
+          action: "deleted",
+        },
+      });
+    } else if (userIds.length > 1) {
+      await sendBulkNotification({
+        userIds,
+        title: "Công việc của team đã bị xóa",
+        message: `Công việc "${taskTitle}" đã bị xóa khỏi hệ thống.`,
+        // type: "TASK_UPDATED",
+        metadata: {
+          taskTitle,
+          action: "deleted",
+        },
+      });
+    }
 
     res.json({
       success: true,
