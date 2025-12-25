@@ -5,6 +5,7 @@ import axios from "axios";
 import NetworkFilters from "../../components/admin/networkManagement/NetworkFilters";
 import NetworkTable from "../../components/admin/networkManagement/NetworkTable";
 import NetworkImportModal from "../../components/admin/networkManagement/NetworkImportModal";
+import EditNetworkModal from "../../components/admin/networkManagement/EditNetworkModal";
 
 import config from "../../configs/api";
 
@@ -19,6 +20,8 @@ const NetworkManagement = () => {
   });
   const [alert, setAlert] = useState(null);
   const [showImportModal, setShowImportModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedNetwork, setSelectedNetwork] = useState(null);
 
   /* ======================
      Helpers
@@ -101,7 +104,7 @@ const NetworkManagement = () => {
       if (filters.country) params.country = filters.country;
 
       const response = await axios.get(
-        `${config.backendBase}/excel/export-network-excel`,
+        `${config.backendBase}/network/export-excel`,
         {
           params,
           headers: getAuthHeaders(),
@@ -139,23 +142,65 @@ const NetworkManagement = () => {
       const formData = new FormData();
       formData.append("file", file);
 
-      await axios.post(
-        `${config.backendBase}/excel/import-network-excel`,
-        formData,
-        {
-          headers: {
-            ...getAuthHeaders(),
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
+      await axios.post(`${config.backendBase}/network/import-excel`, formData, {
+        headers: {
+          ...getAuthHeaders(),
+          "Content-Type": "multipart/form-data",
+        },
+      });
 
       showAlert("Import network thành công!");
       setShowImportModal(false);
-      fetchNetworks(); // reload list
+      fetchNetworks();
     } catch (error) {
       console.error("Import error:", error);
       showAlert("Lỗi khi import network", "danger");
+    }
+  };
+
+  /* ======================
+     Edit Network
+  ====================== */
+
+  const handleEdit = (network) => {
+    setSelectedNetwork(network);
+    setShowEditModal(true);
+  };
+
+  const handleEditSuccess = () => {
+    showAlert("Cập nhật network thành công!");
+    fetchNetworks();
+  };
+
+  /* ======================
+     Delete Network
+  ====================== */
+
+  const handleDelete = async (network) => {
+    const confirmDelete = window.confirm(
+      `Bạn có chắc chắn muốn xóa network "${network.profileAdsenseId}"?\n\nLưu ý: Không thể xóa network nếu còn kênh đang thuộc network này!`
+    );
+
+    if (!confirmDelete) return;
+
+    try {
+      const { data } = await axios.delete(
+        `${config.backendBase}/network/delete/${network._id}`,
+        {
+          headers: getAuthHeaders(),
+        }
+      );
+
+      if (data.success) {
+        showAlert("Xóa network thành công!");
+        fetchNetworks();
+      } else {
+        showAlert(data.message || "Xóa thất bại!", "danger");
+      }
+    } catch (error) {
+      console.error("Delete error:", error);
+      const errorMsg = error.response?.data?.message || "Lỗi khi xóa network!";
+      showAlert(errorMsg, "danger");
     }
   };
 
@@ -192,11 +237,23 @@ const NetworkManagement = () => {
         onSubmit={handleImportSubmit}
       />
 
+      <EditNetworkModal
+        show={showEditModal}
+        onHide={() => setShowEditModal(false)}
+        network={selectedNetwork}
+        onSuccess={handleEditSuccess}
+      />
+
       <div className="mb-3">
         <strong>Tổng số network:</strong> {filteredNetworks.length}
       </div>
 
-      <NetworkTable networks={filteredNetworks} loading={loading} />
+      <NetworkTable
+        networks={filteredNetworks}
+        loading={loading}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+      />
     </Container>
   );
 };
