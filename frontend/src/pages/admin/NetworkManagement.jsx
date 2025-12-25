@@ -139,12 +139,16 @@ const NetworkManagement = () => {
       const formData = new FormData();
       formData.append("file", file);
 
-      await axios.post(`${config.backendBase}/network/import`, formData, {
-        headers: {
-          ...getAuthHeaders(),
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      await axios.post(
+        `${config.backendBase}/excel/import-network-excel`,
+        formData,
+        {
+          headers: {
+            ...getAuthHeaders(),
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
 
       showAlert("Import network thành công!");
       setShowImportModal(false);
