@@ -1,9 +1,10 @@
 import React, { useContext } from "react";
 import { AuthContext } from "../contexts/AuthContext";
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
 
 const ProtectedRoute = () => {
   const { user, loading } = useContext(AuthContext);
+  const location = useLocation();
 
   if (loading) {
     return (
@@ -25,10 +26,15 @@ const ProtectedRoute = () => {
     return <Navigate to="/login" replace />;
   }
 
+  // ✅ QUAN TRỌNG: Cho phép truy cập trang đổi mật khẩu mà không kiểm tra isFirstLogin
+  const isChangePasswordRoute =
+    location.pathname.startsWith("/change-password/");
+
   // Nếu đã đăng nhập
   if (user && user.role) {
-    // Kiểm tra nếu là lần đăng nhập đầu tiên -> bắt buộc đổi mật khẩu
-    if (user.isFirstLogin) {
+    // Kiểm tra nếu là lần đăng nhập đầu tiên
+    // NHƯNG chỉ redirect nếu KHÔNG PHẢI đang ở trang change-password
+    if (user.isFirstLogin && !isChangePasswordRoute) {
       return <Navigate to={`/change-password/${user.accountId}`} replace />;
     }
 

@@ -120,6 +120,7 @@ const login = async (req, res, next) => {
 };
 
 // Đổi mật khẩu
+// Đổi mật khẩu
 const changePassword = async (req, res, next) => {
   try {
     const account = await Account.findById(req.params.id).populate("user");
@@ -153,13 +154,28 @@ const changePassword = async (req, res, next) => {
     const hashedPw = await bcrypt.hash(newPassword, 10);
 
     account.password = hashedPw;
-    account.isActive = true; // Kích hoạt tài khoản sau khi đổi mật khẩu
     await account.save();
 
     user.isFirstLogin = false;
     await user.save();
 
-    res.json({ message: "Đổi mật khẩu thành công!" });
+    // ✅ TẠO TOKEN MỚI với isFirstLogin = false
+    const newToken = jwt.sign(
+      {
+        accountId: account._id,
+        userId: user._id,
+        role: user.role,
+        isActive: account.isActive,
+        isFirstLogin: false, // Đã đổi mật khẩu
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    res.json({
+      message: "Đổi mật khẩu thành công!",
+      token: newToken, // Trả token mới về frontend
+    });
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "Lỗi server!" });
