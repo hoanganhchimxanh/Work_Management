@@ -142,14 +142,15 @@ const createByAdmin = async (req, res, next) => {
 
     const hashedPassword = await bcrypt.hash(tempPassword, 10);
 
-    const newAccount = await Account.create({
+    // Tạo account - không cần lưu vào biến nếu không dùng
+    await Account.create({
       email: loginEmail,
       password: hashedPassword,
       user: newUser._id,
-      isActive: false, // INACTIVE cho đến khi user đổi mật khẩu
+      isActive: true, // ✅ Đã sửa thành true
     });
 
-    //Gửi mail về cho người dùng
+    // Gửi mail về cho người dùng
     try {
       await sendEmail({
         to: newUser.personalEmail,
@@ -226,14 +227,15 @@ const approveUser = async (req, res, next) => {
 
     const hashedPassword = await bcrypt.hash(tempPassword, 10);
 
-    const newAccount = await Account.create({
+    // Tạo account - không cần lưu vào biến nếu không dùng
+    await Account.create({
       email: loginEmail,
       password: hashedPassword,
       user: user._id,
-      isActive: false, // INACTIVE cho đến khi user đổi mật khẩu
+      isActive: true, // ✅ Đã sửa thành true
     });
 
-    // TODO: Gửi email cho user
+    // Gửi email cho user
     try {
       await sendEmail({
         to: user.personalEmail,
@@ -258,7 +260,6 @@ const approveUser = async (req, res, next) => {
         user: populatedUser,
         account: {
           email: loginEmail,
-          tempPassword, // Chỉ để testing
         },
       },
     });
