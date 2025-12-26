@@ -9,6 +9,7 @@ const errorHandler = require("./middlewares/errorHandler");
 const refreshYoutubeToken = require("./jobs/refreshYoutubeToken");
 const syncYoutubeAnalytics = require("./jobs/syncYoutubeAnalytics");
 const { initSocket } = require("./socket");
+const seedAdmin = require("./seed/admin.seed");
 
 // Express web server
 const app = express();
@@ -72,6 +73,10 @@ const PORT = process.env.PORT || 9999;
 const startServer = async () => {
   try {
     await connectDB();
+
+    // Create new admin (if the backend data didn't have)
+    await seedAdmin();
+
     refreshYoutubeToken();
     syncYoutubeAnalytics();
     server.listen(PORT, HOST, () => {

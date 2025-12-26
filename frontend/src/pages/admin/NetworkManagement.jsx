@@ -253,6 +253,7 @@ const NetworkManagement = () => {
         loading={loading}
         onEdit={handleEdit}
         onDelete={handleDelete}
+        onRefresh={filteredNetworks}
       />
     </Container>
   );

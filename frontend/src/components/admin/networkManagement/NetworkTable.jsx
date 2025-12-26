@@ -2,7 +2,7 @@ import React from "react";
 import { Table, Button, Badge, Spinner } from "react-bootstrap";
 import { Pencil, Trash } from "react-bootstrap-icons";
 
-const NetworkTable = ({ networks, loading, onEdit, onDelete }) => {
+const NetworkTable = ({ networks, loading, onEdit, onDelete, onRefresh }) => {
   const getStatusBadge = (status) => {
     const variants = {
       ACTIVE: "success",
@@ -112,6 +112,10 @@ const NetworkTable = ({ networks, loading, onEdit, onDelete }) => {
           )}
         </tbody>
       </Table>
+      <Button variant="outline-secondary" size="sm" onClick={onRefresh}>
+        <i className="bi bi-arrow-clockwise me-1"></i>
+        Làm mới
+      </Button>
     </div>
   );
 };
