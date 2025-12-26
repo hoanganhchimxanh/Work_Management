@@ -202,7 +202,7 @@ const register = async (req, res, next) => {
       email,
       password: hashedPassword,
       user: userId,
-      isActive: isActive !== undefined ? isActive : false, // Mặc định INACTIVE
+      isActive: isActive !== undefined ? isActive : true, // Mặc định INACTIVE
     });
 
     const populatedAccount = await Account.findById(newAccount._id)

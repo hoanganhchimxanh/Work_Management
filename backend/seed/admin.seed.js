@@ -53,7 +53,7 @@ async function seedAdmin() {
         personalEmail: "admin@gmail.com",
         role: "ADMIN",
         status: "ACTIVE",
-        isFirstLogin: true,
+        isFirstLogin: false, // Không cần đổi mật khẩu lần đầu
         team: null,
       });
       console.log(`✓ Admin user created with ID: ${adminUser._id}`);
