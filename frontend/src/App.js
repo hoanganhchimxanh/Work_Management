@@ -7,6 +7,8 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ChangePassword from "./pages/ChangePassword";
 import Unauthorized from "./pages/Unauthorized";
 import BugReport from "./pages/BugReport";
+import TestPage from "./pages/TestPage";
+import NotFound from "./pages/NotFound";
 
 // Admin pages
 import AdminLayout from "./layouts/AdminLayout";
@@ -43,6 +45,8 @@ function App() {
   return (
     <Routes>
       <Route path="/unauthorized" element={<Unauthorized />} />
+      <Route path="/test" element={<TestPage />} />
+      <Route path="*" element={<NotFound />} />
 
       {/* PUBLIC ROUTES - Ai cũng truy cập được */}
       <Route element={<PublicRoute />}>
