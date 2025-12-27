@@ -27,6 +27,8 @@ import EditResourceModal from "../../components/admin/resourceManagement/EditRes
 import AssignResourceModal from "../../components/admin/resourceManagement/AssignResourceModal";
 import ResourceImportModal from "../../components/admin/resourceManagement/ResourceImportModal";
 import BulkAssignUserModal from "../../components/admin/resourceManagement/BulkAssignUserModal";
+import TablePagination from "../../components/common/TablePagination";
+import ItemsPerPageSelector from "../../components/common/ItemsPerPageSelector";
 
 import config from "../../configs/api";
 
@@ -56,6 +58,10 @@ function ResourceManagement() {
   const [bulkAssignMode, setBulkAssignMode] = useState(false);
   const [selectedResources, setSelectedResources] = useState([]);
   const [showBulkAssignUserModal, setShowBulkAssignUserModal] = useState(false);
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   // Lấy token từ localStorage
   const getAuthConfig = () => {
@@ -99,6 +105,10 @@ function ResourceManagement() {
   useEffect(() => {
     fetchData();
   }, [statusFilter, userFilter]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter, userFilter, searchQuery, itemsPerPage]);
 
   // Create resource
   const handleCreate = async (data) => {
@@ -358,6 +368,14 @@ function ResourceManagement() {
     return matchSearch;
   });
 
+  const totalItems = filteredResources.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+  const paginatedResources = filteredResources.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   const handleResourceExport = async () => {
     try {
       const response = await axios.get(
@@ -569,12 +587,14 @@ function ResourceManagement() {
 
       {/* Table */}
       <div className="d-flex justify-content-between align-items-center mb-3">
-        <h5 className="mb-0">
-          Danh sách Resources ({filteredResources.length})
-        </h5>
+        <h5 className="mb-0">Danh sách Resources ({totalItems})</h5>
+
+        <ItemsPerPageSelector value={itemsPerPage} onChange={setItemsPerPage} />
       </div>
+
       <ResourceTable
-        resources={filteredResources}
+        // resources={filteredResources}
+        resources={paginatedResources}
         onEdit={(resource) => {
           setSelectedResource(resource);
           setShowEditModal(true);
@@ -591,6 +611,12 @@ function ResourceManagement() {
         selectedResources={selectedResources}
         onSelectResource={handleSelectResource}
         onSelectAll={handleSelectAll}
+      />
+
+      <TablePagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
       />
 
       {/* Modals */}
