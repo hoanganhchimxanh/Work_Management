@@ -85,6 +85,10 @@ function BugReport() {
     }
   };
 
+  const handleGoBack = () => {
+    navigate(-1);
+  };
+
   return (
     <Container
       fluid
@@ -156,14 +160,19 @@ function BugReport() {
 
           <div className="d-flex justify-content-end gap-2">
             {!success ? (
-              <Button
-                variant="primary"
-                onClick={handleSubmit}
-                disabled={submitting}
-                className="w-100"
-              >
-                {submitting ? "Đang gửi..." : "Gửi báo cáo"}
-              </Button>
+              <>
+                <Button
+                  variant="primary"
+                  onClick={handleSubmit}
+                  disabled={submitting}
+                  className="w-100"
+                >
+                  {submitting ? "Đang gửi..." : "Gửi báo cáo"}
+                </Button>
+                <Button variant="secondary" onClick={handleGoBack}>
+                  ← Quay lại
+                </Button>
+              </>
             ) : (
               <Button
                 variant="secondary"
