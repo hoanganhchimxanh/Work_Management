@@ -312,8 +312,10 @@ const excelConfigs = {
     fileName: "resources",
 
     columns: [
+      // Hỗ trợ cả 2 format: Google Workspace export và template tự tạo
       {
-        excelKey: "email",
+        excelKey: "Email Address [Required]", // Google Workspace format
+        altExcelKey: "email", // Template format
         dbField: "email",
         displayName: "Email",
         required: true,
@@ -325,7 +327,8 @@ const excelConfigs = {
         transform: (value) => value.trim().toLowerCase(),
       },
       {
-        excelKey: "password",
+        excelKey: "Password [Required]", // Google Workspace format
+        altExcelKey: "password", // Template format
         dbField: "defaultPassword",
         displayName: "Password",
         required: true,
@@ -335,7 +338,8 @@ const excelConfigs = {
         },
       },
       {
-        excelKey: "recoveryEmail",
+        excelKey: "Recovery Email", // Google Workspace format
+        altExcelKey: "recoveryEmail", // Template format
         dbField: "recoveryEmail",
         displayName: "Recovery Email",
         required: true,

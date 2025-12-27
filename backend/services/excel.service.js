@@ -210,6 +210,7 @@ class ExcelService {
 
   /**
    * Xử lý và validate data từ một row
+   * Hỗ trợ đọc từ nhiều định dạng Excel khác nhau
    */
   async _processRowData(row, config, session) {
     const processedData = {};
@@ -217,7 +218,13 @@ class ExcelService {
 
     // Kiểm tra required fields
     for (const col of config.columns) {
-      const value = row[col.excelKey];
+      // Thử đọc từ excelKey chính
+      let value = row[col.excelKey];
+
+      // Nếu không có, thử đọc từ altExcelKey (alternative key)
+      if (value === undefined && col.altExcelKey) {
+        value = row[col.altExcelKey];
+      }
 
       // Check required
       if (col.required && !value) {
