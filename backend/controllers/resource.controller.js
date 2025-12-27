@@ -427,6 +427,92 @@ const assignToChannel = async (req, res, next) => {
   }
 };
 
+// Gán nhiều resources cho một user
+const bulkAssignToUser = async (req, res, next) => {
+  try {
+    const { resourceIds, userId } = req.body;
+
+    if (
+      !resourceIds ||
+      !Array.isArray(resourceIds) ||
+      resourceIds.length === 0
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Vui lòng chọn ít nhất một resource!",
+      });
+    }
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: "Thiếu userId!",
+      });
+    }
+
+    // Kiểm tra user tồn tại
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy user!",
+      });
+    }
+
+    // Kiểm tra tất cả resources
+    const resources = await Resource.find({
+      _id: { $in: resourceIds },
+    });
+
+    if (resources.length !== resourceIds.length) {
+      return res.status(404).json({
+        success: false,
+        message: "Một số resource không tồn tại!",
+      });
+    }
+
+    // Kiểm tra trạng thái resources
+    const unavailableResources = resources.filter(
+      (r) => r.status !== "AVAILABLE"
+    );
+
+    if (unavailableResources.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: `${unavailableResources.length} resource không khả dụng để gán!`,
+        unavailableResources: unavailableResources.map((r) => ({
+          email: r.email,
+          status: r.status,
+        })),
+      });
+    }
+
+    // Cập nhật tất cả resources
+    await Resource.updateMany(
+      { _id: { $in: resourceIds } },
+      {
+        assignedUser: userId,
+        status: "ASSIGNED",
+      }
+    );
+
+    // Lấy lại resources đã cập nhật
+    const updatedResources = await Resource.find({
+      _id: { $in: resourceIds },
+    })
+      .populate("assignedUser", "fullName personalEmail role")
+      .lean();
+
+    res.json({
+      success: true,
+      message: `Đã gán ${updatedResources.length} resources cho ${user.fullName}!`,
+      data: updatedResources,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // Gỡ gán resource
 const unassign = async (req, res, next) => {
   try {
@@ -620,6 +706,7 @@ module.exports = {
   deleteResource,
   assignToUser,
   assignToChannel,
+  bulkAssignToUser,
   unassign,
   getMyResources,
   getResourceStats,

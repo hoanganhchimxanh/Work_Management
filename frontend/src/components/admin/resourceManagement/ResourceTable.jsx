@@ -1,5 +1,5 @@
 import React from "react";
-import { Table, Badge, Button, Dropdown } from "react-bootstrap";
+import { Table, Badge, Button, Dropdown, Form } from "react-bootstrap";
 import {
   PencilSquare,
   Trash,
@@ -18,6 +18,10 @@ function ResourceTable({
   onUnassign,
   onDisable,
   onEnable,
+  selectedResources = [],
+  onSelectResource,
+  onSelectAll,
+  bulkAssignMode = false,
 }) {
   const getStatusBadge = (status) => {
     const statusConfig = {
@@ -37,25 +41,55 @@ function ResourceTable({
     );
   }
 
+  // Chỉ cho phép chọn resources có status AVAILABLE
+  const availableResources = resources.filter((r) => r.status === "AVAILABLE");
+  const allAvailableSelected =
+    availableResources.length > 0 &&
+    availableResources.every((r) => selectedResources.includes(r._id));
+
   return (
     <div className="table-responsive">
       <Table hover className="align-middle" striped bordered>
         <thead className="table-light">
           <tr>
+            {bulkAssignMode && (
+              <th style={{ width: "50px" }}>
+                <Form.Check
+                  type="checkbox"
+                  checked={allAvailableSelected}
+                  onChange={(e) => onSelectAll(e.target.checked)}
+                  disabled={availableResources.length === 0}
+                />
+              </th>
+            )}
             <th>Email</th>
             <th>Recovery Email</th>
             <th>Trạng thái</th>
             <th>Người quản lý</th>
             <th>Kênh</th>
             <th>Ghi chú</th>
-            <th className="text-end">Thao tác</th>
+            {!bulkAssignMode && <th className="text-end">Thao tác</th>}
           </tr>
         </thead>
         <tbody>
           {resources.map((resource) => {
             const statusInfo = getStatusBadge(resource.status);
+            const isSelectable = resource.status === "AVAILABLE";
+
             return (
               <tr key={resource._id}>
+                {bulkAssignMode && (
+                  <td>
+                    <Form.Check
+                      type="checkbox"
+                      checked={selectedResources.includes(resource._id)}
+                      onChange={(e) =>
+                        onSelectResource(resource._id, e.target.checked)
+                      }
+                      disabled={!isSelectable}
+                    />
+                  </td>
+                )}
                 <td>
                   <div className="fw-medium">{resource.email}</div>
                 </td>
@@ -96,74 +130,76 @@ function ResourceTable({
                 <td>
                   <small className="text-muted">{resource.note || "-"}</small>
                 </td>
-                <td>
-                  <div className="d-flex justify-content-end gap-2">
-                    <Button
-                      variant="outline-primary"
-                      size="sm"
-                      onClick={() => onEdit(resource)}
-                    >
-                      <PencilSquare size={16} />
-                    </Button>
-
-                    <Dropdown align="end">
-                      <Dropdown.Toggle
-                        variant="outline-secondary"
+                {!bulkAssignMode && (
+                  <td>
+                    <div className="d-flex justify-content-end gap-2">
+                      <Button
+                        variant="outline-primary"
                         size="sm"
-                        id={`dropdown-${resource._id}`}
+                        onClick={() => onEdit(resource)}
                       >
-                        <ThreeDotsVertical size={16} />
-                      </Dropdown.Toggle>
+                        <PencilSquare size={16} />
+                      </Button>
 
-                      <Dropdown.Menu>
-                        {resource.status !== "ASSIGNED" && (
-                          <Dropdown.Item onClick={() => onAssign(resource)}>
-                            <PersonPlus size={16} className="me-2" />
-                            Gán Resource
-                          </Dropdown.Item>
-                        )}
-
-                        {resource.status === "ASSIGNED" && (
-                          <Dropdown.Item onClick={() => onUnassign(resource)}>
-                            <XCircle size={16} className="me-2" />
-                            Gỡ gán
-                          </Dropdown.Item>
-                        )}
-
-                        <Dropdown.Divider />
-
-                        {resource.status !== "DISABLED" ? (
-                          <Dropdown.Item
-                            className="text-warning"
-                            onClick={() => onDisable(resource)}
-                          >
-                            <Power size={16} className="me-2" />
-                            Vô hiệu hóa
-                          </Dropdown.Item>
-                        ) : (
-                          <Dropdown.Item
-                            className="text-success"
-                            onClick={() => onEnable(resource)}
-                          >
-                            <Power size={16} className="me-2" />
-                            Kích hoạt
-                          </Dropdown.Item>
-                        )}
-
-                        <Dropdown.Divider />
-
-                        <Dropdown.Item
-                          className="text-danger"
-                          onClick={() => onDelete(resource)}
-                          disabled={resource.status === "ASSIGNED"}
+                      <Dropdown align="end">
+                        <Dropdown.Toggle
+                          variant="outline-secondary"
+                          size="sm"
+                          id={`dropdown-${resource._id}`}
                         >
-                          <Trash size={16} className="me-2" />
-                          Xóa
-                        </Dropdown.Item>
-                      </Dropdown.Menu>
-                    </Dropdown>
-                  </div>
-                </td>
+                          <ThreeDotsVertical size={16} />
+                        </Dropdown.Toggle>
+
+                        <Dropdown.Menu>
+                          {resource.status !== "ASSIGNED" && (
+                            <Dropdown.Item onClick={() => onAssign(resource)}>
+                              <PersonPlus size={16} className="me-2" />
+                              Gán Resource
+                            </Dropdown.Item>
+                          )}
+
+                          {resource.status === "ASSIGNED" && (
+                            <Dropdown.Item onClick={() => onUnassign(resource)}>
+                              <XCircle size={16} className="me-2" />
+                              Gỡ gán
+                            </Dropdown.Item>
+                          )}
+
+                          <Dropdown.Divider />
+
+                          {resource.status !== "DISABLED" ? (
+                            <Dropdown.Item
+                              className="text-warning"
+                              onClick={() => onDisable(resource)}
+                            >
+                              <Power size={16} className="me-2" />
+                              Vô hiệu hóa
+                            </Dropdown.Item>
+                          ) : (
+                            <Dropdown.Item
+                              className="text-success"
+                              onClick={() => onEnable(resource)}
+                            >
+                              <Power size={16} className="me-2" />
+                              Kích hoạt
+                            </Dropdown.Item>
+                          )}
+
+                          <Dropdown.Divider />
+
+                          <Dropdown.Item
+                            className="text-danger"
+                            onClick={() => onDelete(resource)}
+                            disabled={resource.status === "ASSIGNED"}
+                          >
+                            <Trash size={16} className="me-2" />
+                            Xóa
+                          </Dropdown.Item>
+                        </Dropdown.Menu>
+                      </Dropdown>
+                    </div>
+                  </td>
+                )}
               </tr>
             );
           })}

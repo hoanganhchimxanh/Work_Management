@@ -72,6 +72,14 @@ router.post(
   resourceController.assignToChannel
 );
 
+// Gán nhiều resources cho user
+router.post(
+  "/bulk-assign-to-user",
+  authenticateJWT,
+  authorizeRoles("ADMIN"),
+  resourceController.bulkAssignToUser
+);
+
 // Gỡ gán resource
 router.post(
   "/unassign/:id",
