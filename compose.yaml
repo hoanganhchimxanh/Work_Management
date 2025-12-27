@@ -14,7 +14,7 @@ services:
       context: ./backend
     container_name: work-mgmt-backend
     volumes:
-      - ./backend:/app
+      # - ./backend:/app
       - /app/node_modules
     ports:
       - "9999:9999"
@@ -24,13 +24,26 @@ services:
       - mongodb
     networks:
       - work-network
+    # ========================================
+    # Watch for file changes in backend
+    develop:
+      watch:
+        - action: sync
+          path: ./backend
+          target: /app
+          # ignore built artifacts (nên ignore node_modules)
+          ignore:
+            - node_modules/
+        - action: rebuild
+          # rebuild nếu package.json/backend config thay đổi
+          path: ./backend/package.json
 
   frontend:
     build:
       context: ./frontend
     container_name: work-mgmt-frontend
     volumes:
-      - ./frontend:/app
+      # - ./frontend:/app
       - /app/node_modules
     ports:
       - "3000:3000"
@@ -41,6 +54,18 @@ services:
       - backend
     networks:
       - work-network
+    # ========================================
+    # Watch for file changes in frontend
+    develop:
+      watch:
+        - action: sync
+          path: ./frontend
+          target: /app
+          ignore:
+            - node_modules/
+        - action: rebuild
+          # nếu thay đổi config như package.json
+          path: ./frontend/package.json
 
 networks:
   work-network:

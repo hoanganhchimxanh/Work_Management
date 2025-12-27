@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { Container, Row, Col, Card, Button } from "react-bootstrap";
 import { ExclamationTriangleFill } from "react-bootstrap-icons";
 import { useNavigate } from "react-router-dom";
@@ -8,8 +8,7 @@ function Unauthorized() {
   const navigate = useNavigate();
   const [countdown, setCountdown] = useState(5);
 
-  // Hàm xử lý chuyển hướng theo quyền
-  const handleRedirectBasedOnRole = () => {
+  const handleRedirectBasedOnRole = useCallback(() => {
     const token = localStorage.getItem("token");
 
     if (!token) {
@@ -18,10 +17,9 @@ function Unauthorized() {
     }
 
     try {
-      const decoded = jwtDecode(token);
-      const userRole = decoded.role;
+      const { role } = jwtDecode(token);
 
-      switch (userRole) {
+      switch (role) {
         case "ADMIN":
           navigate("/admin/dashboard");
           break;
@@ -33,16 +31,14 @@ function Unauthorized() {
           break;
         default:
           navigate("/login");
-          break;
       }
     } catch (err) {
       console.error("Lỗi giải mã token:", err);
       navigate("/login");
     }
-  };
+  }, [navigate]);
 
   useEffect(() => {
-    // Nếu countdown về 0 thì tự động chuyển hướng
     if (countdown === 0) {
       handleRedirectBasedOnRole();
       return;
@@ -53,7 +49,7 @@ function Unauthorized() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [countdown]);
+  }, [countdown, handleRedirectBasedOnRole]);
 
   return (
     <Container

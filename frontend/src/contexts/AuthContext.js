@@ -91,6 +91,33 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // ✅ THÊM HÀM CẬP NHẬT USER TỪ TOKEN MỚI
+  const updateUserFromToken = (token) => {
+    try {
+      localStorage.setItem("token", token);
+      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+
+      const payload = JSON.parse(atob(token.split(".")[1]));
+
+      const userData = {
+        accountId: payload.accountId,
+        userId: payload.userId,
+        role: payload.role,
+        isActive: payload.isActive,
+        isFirstLogin: payload.isFirstLogin,
+      };
+
+      setUser(userData);
+
+      console.log("User updated from new token:", userData);
+
+      return userData;
+    } catch (err) {
+      console.error("Error updating user from token:", err);
+      return null;
+    }
+  };
+
   const logout = () => {
     localStorage.removeItem("token");
     delete axios.defaults.headers.common["Authorization"];
@@ -100,7 +127,14 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider
-      value={{ user, login, logout, loading, redirectByRole }}
+      value={{
+        user,
+        login,
+        logout,
+        loading,
+        redirectByRole,
+        updateUserFromToken,
+      }}
     >
       {children}
     </AuthContext.Provider>

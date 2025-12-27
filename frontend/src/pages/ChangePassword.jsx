@@ -1,6 +1,6 @@
 import React, { useState, useContext } from "react";
 import { Button, Container, Form, Row, Col, Alert } from "react-bootstrap";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import axios from "axios";
 import { AuthContext } from "../contexts/AuthContext";
 import "../styles/changePassword.style.css";
@@ -8,8 +8,8 @@ import config from "../configs/api";
 
 function ChangePassword() {
   const { accountId } = useParams();
-  const navigate = useNavigate();
-  const { logout } = useContext(AuthContext);
+  const { logout, redirectByRole, updateUserFromToken } =
+    useContext(AuthContext);
 
   const [password1, setPassword1] = useState("");
   const [password2, setPassword2] = useState("");
@@ -33,7 +33,7 @@ function ChangePassword() {
       setLoading(true);
       const token = localStorage.getItem("token");
 
-      await axios.patch(
+      const response = await axios.patch(
         `${config.backendBase}/account/change-password/${accountId}`,
         { newPassword: password1 },
         {
@@ -41,11 +41,25 @@ function ChangePassword() {
         }
       );
 
-      setSuccess("Đổi mật khẩu thành công! Đang chuyển về trang đăng nhập...");
+      setSuccess("Đổi mật khẩu thành công! Đang chuyển hướng...");
 
-      setTimeout(() => {
-        logout(); // Xóa token và chuyển về /login
-      }, 2000);
+      // ✅ Cập nhật user context từ token mới
+      if (response.data.token) {
+        const updatedUser = updateUserFromToken(response.data.token);
+
+        setTimeout(() => {
+          if (updatedUser) {
+            redirectByRole(updatedUser.role);
+          } else {
+            logout();
+          }
+        }, 1500);
+      } else {
+        // Fallback: logout nếu không có token mới
+        setTimeout(() => {
+          logout();
+        }, 2000);
+      }
     } catch (err) {
       setError(err.response?.data?.message || "Đổi mật khẩu thất bại!");
     } finally {
@@ -61,7 +75,7 @@ function ChangePassword() {
       <Container className="cp-container">
         <Row className="justify-content-center">
           <Col xs={12} md={6}>
-            <h2 className="cp-title">Đổi mật khẩu lần đầu</h2>
+            <h2 className="cp-title">Đổi mật khẩu</h2>
 
             {error && <Alert variant="danger">{error}</Alert>}
             {success && <Alert variant="success">{success}</Alert>}

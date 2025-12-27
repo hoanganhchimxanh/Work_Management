@@ -10,6 +10,7 @@ const refreshYoutubeToken = require("./jobs/refreshYoutubeToken");
 const syncYoutubeAnalytics = require("./jobs/syncYoutubeAnalytics");
 const { initSocket } = require("./socket");
 const seedAdmin = require("./seed/admin.seed");
+const seedAccountant = require("./seed/accountant.seed");
 
 // Express web server
 const app = express();
@@ -74,8 +75,11 @@ const startServer = async () => {
   try {
     await connectDB();
 
-    // Create new admin (if the backend data didn't have)
+    // Seed default system accounts
+    console.log("🌱 Seeding default system accounts...");
     await seedAdmin();
+    await seedAccountant();
+    console.log("✅ System accounts seeding completed\n");
 
     refreshYoutubeToken();
     syncYoutubeAnalytics();

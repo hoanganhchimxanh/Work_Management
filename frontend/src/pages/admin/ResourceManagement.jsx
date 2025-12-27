@@ -9,12 +9,15 @@ import {
   Spinner,
   Alert,
   InputGroup,
+  Badge,
 } from "react-bootstrap";
 import {
   PlusCircle,
   Search,
   FunnelFill,
   ArrowClockwise,
+  CheckSquare,
+  XSquare,
 } from "react-bootstrap-icons";
 import axios from "axios";
 import ResourceStats from "../../components/admin/resourceManagement/ResourceStats";
@@ -23,6 +26,7 @@ import CreateResourceModal from "../../components/admin/resourceManagement/Creat
 import EditResourceModal from "../../components/admin/resourceManagement/EditResourceModal";
 import AssignResourceModal from "../../components/admin/resourceManagement/AssignResourceModal";
 import ResourceImportModal from "../../components/admin/resourceManagement/ResourceImportModal";
+import BulkAssignUserModal from "../../components/admin/resourceManagement/BulkAssignUserModal";
 
 import config from "../../configs/api";
 
@@ -47,6 +51,11 @@ function ResourceManagement() {
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [selectedResource, setSelectedResource] = useState(null);
   const [showResourceImportModal, setShowResourceImportModal] = useState(false);
+
+  // Bulk assign states
+  const [bulkAssignMode, setBulkAssignMode] = useState(false);
+  const [selectedResources, setSelectedResources] = useState([]);
+  const [showBulkAssignUserModal, setShowBulkAssignUserModal] = useState(false);
 
   // Lấy token từ localStorage
   const getAuthConfig = () => {
@@ -198,6 +207,62 @@ function ResourceManagement() {
       setError(err.response?.data?.message || "Có lỗi xảy ra khi gán resource");
       console.error("Error assigning resource:", err);
     }
+  };
+
+  // Bulk assign to user
+  const handleBulkAssignToUser = async (userId) => {
+    try {
+      setError("");
+      await axios.post(
+        `${config.backendBase}/resource/bulk-assign-to-user`,
+        { resourceIds: selectedResources, userId },
+        getAuthConfig()
+      );
+      setSuccess(`Đã gán ${selectedResources.length} resources thành công!`);
+      setShowBulkAssignUserModal(false);
+      setBulkAssignMode(false);
+      setSelectedResources([]);
+      fetchData();
+      setTimeout(() => setSuccess(""), 3000);
+    } catch (err) {
+      setError(
+        err.response?.data?.message || "Có lỗi xảy ra khi gán hàng loạt"
+      );
+      console.error("Error bulk assigning:", err);
+    }
+  };
+
+  // Select/Deselect resource
+  const handleSelectResource = (resourceId, checked) => {
+    if (checked) {
+      setSelectedResources([...selectedResources, resourceId]);
+    } else {
+      setSelectedResources(selectedResources.filter((id) => id !== resourceId));
+    }
+  };
+
+  // Select/Deselect all
+  const handleSelectAll = (checked) => {
+    if (checked) {
+      const availableIds = filteredResources
+        .filter((r) => r.status === "AVAILABLE")
+        .map((r) => r._id);
+      setSelectedResources(availableIds);
+    } else {
+      setSelectedResources([]);
+    }
+  };
+
+  // Toggle bulk assign mode
+  const toggleBulkAssignMode = () => {
+    setBulkAssignMode(!bulkAssignMode);
+    setSelectedResources([]);
+  };
+
+  // Cancel bulk assign mode
+  const cancelBulkAssignMode = () => {
+    setBulkAssignMode(false);
+    setSelectedResources([]);
   };
 
   // Unassign resource
@@ -365,27 +430,54 @@ function ResourceManagement() {
         </div>
 
         <div className="d-flex gap-2">
-          <Button variant="success" onClick={handleResourceExport}>
-            <i className="bi bi-download me-2"></i>
-            Export Excel
-          </Button>
+          {!bulkAssignMode ? (
+            <>
+              <Button variant="success" onClick={handleResourceExport}>
+                <i className="bi bi-download me-2"></i>
+                Export Excel
+              </Button>
 
-          <Button
-            variant="success"
-            onClick={() => setShowResourceImportModal(true)}
-          >
-            <i className="bi bi-upload me-2"></i>
-            Import Excel
-          </Button>
+              <Button
+                variant="success"
+                onClick={() => setShowResourceImportModal(true)}
+              >
+                <i className="bi bi-upload me-2"></i>
+                Import Excel
+              </Button>
 
-          <Button
-            variant="primary"
-            onClick={() => setShowCreateModal(true)}
-            className="d-flex align-items-center gap-2"
-          >
-            <PlusCircle size={20} />
-            Tạo Resource
-          </Button>
+              <Button variant="info" onClick={toggleBulkAssignMode}>
+                <CheckSquare size={20} className="me-2" />
+                Gán hàng loạt
+              </Button>
+
+              <Button
+                variant="primary"
+                onClick={() => setShowCreateModal(true)}
+                className="d-flex align-items-center gap-2"
+              >
+                <PlusCircle size={20} />
+                Tạo Resource
+              </Button>
+            </>
+          ) : (
+            <>
+              <Badge bg="primary" className="d-flex align-items-center px-3">
+                Đã chọn: {selectedResources.length}
+              </Badge>
+              <Button
+                variant="success"
+                onClick={() => setShowBulkAssignUserModal(true)}
+                disabled={selectedResources.length === 0}
+              >
+                <CheckSquare size={20} className="me-2" />
+                Gán {selectedResources.length} resources
+              </Button>
+              <Button variant="secondary" onClick={cancelBulkAssignMode}>
+                <XSquare size={20} className="me-2" />
+                Hủy
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
@@ -398,6 +490,13 @@ function ResourceManagement() {
       {success && (
         <Alert variant="success" dismissible onClose={() => setSuccess("")}>
           {success}
+        </Alert>
+      )}
+
+      {bulkAssignMode && (
+        <Alert variant="info">
+          <strong>Chế độ gán hàng loạt:</strong> Chọn các resources có trạng
+          thái "Khả dụng" để gán cho nhân viên.
         </Alert>
       )}
 
@@ -488,6 +587,10 @@ function ResourceManagement() {
         onUnassign={handleUnassign}
         onDisable={handleDisable}
         onEnable={handleEnable}
+        bulkAssignMode={bulkAssignMode}
+        selectedResources={selectedResources}
+        onSelectResource={handleSelectResource}
+        onSelectAll={handleSelectAll}
       />
 
       {/* Modals */}
@@ -522,6 +625,14 @@ function ResourceManagement() {
         resource={selectedResource}
         users={users}
         channels={channels}
+      />
+
+      <BulkAssignUserModal
+        show={showBulkAssignUserModal}
+        onHide={() => setShowBulkAssignUserModal(false)}
+        onAssignToUser={handleBulkAssignToUser}
+        selectedCount={selectedResources.length}
+        users={users}
       />
 
       <ResourceImportModal

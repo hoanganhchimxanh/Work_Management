@@ -238,25 +238,25 @@ function EmployeeDashboard() {
         (task) => task.status === "COMPLETED"
       ).length;
 
-      // Fetch user's KPIs
+      // Dùng my-kpis-with-progress (chỉ trả về KPI của user hiện tại)
       const kpiResponse = await axios.get(
-        `${config.backendBase}/kpi/get-all-with-progress`,
+        `${config.backendBase}/kpi/my-kpis-with-progress`,
         axiosConfig
       );
-      const userKPIs = kpiResponse.data.data;
-      const completedKPIs = userKPIs.filter(
-        (kpi) => kpi.status === "completed"
-      );
-      const avgKPICompletion =
-        userKPIs.length > 0
-          ? Math.round(
-              userKPIs.reduce((sum, kpi) => {
-                const revenueProgress = kpi.revenueProgress || 0;
-                const bktProgress = kpi.bktProgress || 0;
-                return sum + (revenueProgress + bktProgress) / 2;
-              }, 0) / userKPIs.length
-            )
-          : 0;
+      const userKPIs = kpiResponse.data.data || [];
+
+      // Tính % KPI completion trung bình
+      let avgKPICompletion = 0;
+      if (userKPIs.length > 0) {
+        const totalCompletion = userKPIs.reduce((sum, kpi) => {
+          const revenueProgress = kpi.revenueProgress || 0;
+          const bktProgress = kpi.bktProgress || 0;
+          // Trung bình của 2 progress
+          return sum + (revenueProgress + bktProgress) / 2;
+        }, 0);
+
+        avgKPICompletion = Math.round(totalCompletion / userKPIs.length);
+      }
 
       // Aggregate chart data
       const aggregatedData = aggregateDataByPeriod(allAnalytics, timeFilter);
