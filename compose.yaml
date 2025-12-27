@@ -14,7 +14,7 @@ services:
       context: ./backend
     container_name: work-mgmt-backend
     volumes:
-      - ./backend:/app
+      # - ./backend:/app
       - /app/node_modules
     ports:
       - "9999:9999"
@@ -43,7 +43,7 @@ services:
       context: ./frontend
     container_name: work-mgmt-frontend
     volumes:
-      - ./frontend:/app
+      # - ./frontend:/app
       - /app/node_modules
     ports:
       - "3000:3000"
