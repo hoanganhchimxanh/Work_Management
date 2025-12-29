@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React from "react";
 import { Container, Row, Col, Button, Alert } from "react-bootstrap";
-import axios from "axios";
+
+// Components
 import UserTable from "../../components/admin/userManagement/UserTable";
 import TeamTable from "../../components/admin/userManagement/TeamTable";
 import UserModal from "../../components/admin/userManagement/UserModal";
@@ -8,217 +9,90 @@ import TeamModal from "../../components/admin/userManagement/TeamModal";
 import UserImportModal from "../../components/admin/userManagement/UserImportModal";
 import TeamImportModal from "../../components/admin/userManagement/TeamImportModal";
 
-import config from "../../configs/api";
+// Custom hooks
+import useAuth from "../../hooks/admin/dashboard/useAuth";
+import useUserManagementData from "../../hooks/admin/userManagement/useUserManagementData";
+import useUserManagementModals from "../../hooks/admin/userManagement/useUserManagementModals";
+import useUserManagementActions from "../../hooks/admin/userManagement/useUserManagementActions";
 
-function User_Management() {
-  // Users state
-  const [users, setUsers] = useState([]);
-  const [loadingUsers, setLoadingUsers] = useState(true);
+function UserManagement() {
+  // 1. Authentication
+  const { getAuthConfig } = useAuth();
 
-  // Teams state
-  const [teams, setTeams] = useState([]);
-  const [loadingTeams, setLoadingTeams] = useState(true);
+  // 2. Fetch Data
+  const {
+    users,
+    teams,
+    loadingUsers,
+    loadingTeams,
+    error: fetchError,
+    setError: setFetchError,
+    refetchUsers,
+    refetchTeams,
+    refetchAll,
+  } = useUserManagementData(getAuthConfig);
 
-  // Modal state
-  const [showUserModal, setShowUserModal] = useState(false);
-  const [showTeamModal, setShowTeamModal] = useState(false);
-  const [showUserImportModal, setShowUserImportModal] = useState(false);
-  const [showTeamImportModal, setShowTeamImportModal] = useState(false);
+  // 3. Modals
+  const {
+    modals,
+    selected,
+    openUserModal,
+    closeUserModal,
+    openUserImportModal,
+    closeUserImportModal,
+    openTeamModal,
+    closeTeamModal,
+    openTeamImportModal,
+    closeTeamImportModal,
+  } = useUserManagementModals();
 
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [selectedTeam, setSelectedTeam] = useState(null);
-
-  // Error handling
-  const [error, setError] = useState(null);
-
-  const getAuthConfig = useCallback(
-    () => ({
-      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-    }),
-    []
+  // 4. Actions
+  const {
+    handleUserImport,
+    handleUserExport,
+    handleTeamImport,
+    handleTeamExport,
+    success,
+    error: actionError,
+    setError: setActionError,
+  } = useUserManagementActions(
+    getAuthConfig,
+    refetchUsers,
+    refetchTeams,
+    refetchAll
   );
 
-  const fetchUsers = useCallback(async () => {
-    try {
-      setLoadingUsers(true);
-      const response = await axios.get(
-        `${config.backendBase}/user/get-all`,
-        getAuthConfig()
-      );
-      setUsers(response.data.data);
-      setError(null);
-    } catch (err) {
-      setError("Không thể tải danh sách người dùng");
-      console.error(err);
-    } finally {
-      setLoadingUsers(false);
-    }
-  }, [getAuthConfig]);
-
-  const fetchTeams = useCallback(async () => {
-    try {
-      setLoadingTeams(true);
-      const response = await axios.get(
-        `${config.backendBase}/team/get-all-team`,
-        getAuthConfig()
-      );
-      setTeams(response.data.data);
-      setError(null);
-    } catch (err) {
-      setError("Không thể tải danh sách đội nhóm");
-      console.error(err);
-    } finally {
-      setLoadingTeams(false);
-    }
-  }, [getAuthConfig]);
-
-  // ✅ Parallel loading
-  useEffect(() => {
-    const loadData = async () => {
-      await Promise.all([fetchUsers(), fetchTeams()]);
-    };
-    loadData();
-  }, [fetchUsers, fetchTeams]);
-
-  // User handlers
-  const handleCreateUser = () => {
-    setSelectedUser(null);
-    setShowUserModal(true);
+  // Combined error handling
+  const error = fetchError || actionError;
+  const setError = (msg) => {
+    setFetchError(msg);
+    setActionError(msg);
   };
 
-  const handleEditUser = (user) => {
-    setSelectedUser(user);
-    setShowUserModal(true);
-  };
-
-  const handleUserModalClose = () => {
-    setShowUserModal(false);
-    setSelectedUser(null);
-  };
-
+  // Callback handlers for modals
   const handleUserSaved = () => {
-    fetchUsers();
-    handleUserModalClose();
-  };
-
-  // Team handlers
-  const handleCreateTeam = () => {
-    setSelectedTeam(null);
-    setShowTeamModal(true);
-  };
-
-  const handleEditTeam = (team) => {
-    setSelectedTeam(team);
-    setShowTeamModal(true);
-  };
-
-  const handleTeamModalClose = () => {
-    setShowTeamModal(false);
-    setSelectedTeam(null);
+    refetchUsers();
+    closeUserModal();
   };
 
   const handleTeamSaved = () => {
-    fetchTeams();
-    fetchUsers();
-    handleTeamModalClose();
+    refetchAll(); // Refetch both because team changes affect users
+    closeTeamModal();
   };
 
   const handleTeamDeleted = () => {
-    fetchTeams();
-    fetchUsers();
+    refetchAll();
   };
 
-  // User Import/Export
-  const handleUserImportSubmit = async (file) => {
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-
-      await axios.post(
-        `${config.backendBase}/excel/import-user-excel`,
-        formData,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-        }
-      );
-
-      alert("Import người dùng thành công!");
-      setShowUserImportModal(false);
-      fetchUsers();
-    } catch (err) {
-      alert("Import thất bại: " + (err.response?.data?.message || err.message));
-    }
+  // Import handlers with modal close
+  const onUserImportSubmit = async (file) => {
+    const success = await handleUserImport(file);
+    if (success) closeUserImportModal();
   };
 
-  const handleUserExport = async () => {
-    try {
-      const response = await axios.get(
-        `${config.backendBase}/excel/export-user-excel`,
-        {
-          responseType: "blob",
-        }
-      );
-
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute(
-        "download",
-        `users_${new Date().toISOString().split("T")[0]}.xlsx`
-      );
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    } catch (err) {
-      alert("Export thất bại: " + (err.response?.data?.message || err.message));
-    }
-  };
-
-  // Team Import/Export
-  const handleTeamImportSubmit = async (file) => {
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-
-      await axios.post(
-        `${config.backendBase}/excel/import-team-excel`,
-        formData,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-        }
-      );
-
-      alert("Import team thành công!");
-      setShowTeamImportModal(false);
-      fetchTeams();
-      fetchUsers();
-    } catch (err) {
-      alert("Import thất bại: " + (err.response?.data?.message || err.message));
-    }
-  };
-
-  const handleTeamExport = async () => {
-    try {
-      const response = await axios.get(
-        `${config.backendBase}/excel/export-team-excel`,
-        {
-          responseType: "blob",
-        }
-      );
-
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute(
-        "download",
-        `teams_${new Date().toISOString().split("T")[0]}.xlsx`
-      );
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    } catch (err) {
-      alert("Export thất bại: " + (err.response?.data?.message || err.message));
-    }
+  const onTeamImportSubmit = async (file) => {
+    const success = await handleTeamImport(file);
+    if (success) closeTeamImportModal();
   };
 
   return (
@@ -229,9 +103,16 @@ function User_Management() {
         </Col>
       </Row>
 
+      {/* Alerts */}
       {error && (
         <Alert variant="danger" onClose={() => setError(null)} dismissible>
           {error}
+        </Alert>
+      )}
+
+      {success && (
+        <Alert variant="success" dismissible onClose={() => {}}>
+          {success}
         </Alert>
       )}
 
@@ -247,15 +128,12 @@ function User_Management() {
                 Export Excel
               </Button>
 
-              <Button
-                variant="success"
-                onClick={() => setShowUserImportModal(true)}
-              >
+              <Button variant="success" onClick={openUserImportModal}>
                 <i className="bi bi-upload me-2"></i>
                 Import Excel
               </Button>
 
-              <Button variant="primary" onClick={handleCreateUser}>
+              <Button variant="primary" onClick={() => openUserModal()}>
                 <i className="bi bi-plus-circle me-2"></i>
                 Thêm người dùng
               </Button>
@@ -269,8 +147,8 @@ function User_Management() {
           <UserTable
             users={users}
             loading={loadingUsers}
-            onEdit={handleEditUser}
-            onRefresh={fetchUsers}
+            onEdit={openUserModal}
+            onRefresh={refetchUsers}
             teams={teams}
           />
         </Col>
@@ -290,15 +168,12 @@ function User_Management() {
                 Export Excel
               </Button>
 
-              <Button
-                variant="success"
-                onClick={() => setShowTeamImportModal(true)}
-              >
+              <Button variant="success" onClick={openTeamImportModal}>
                 <i className="bi bi-upload me-2"></i>
                 Import Excel
               </Button>
 
-              <Button variant="primary" onClick={handleCreateTeam}>
+              <Button variant="primary" onClick={() => openTeamModal()}>
                 <i className="bi bi-plus-circle me-2"></i>
                 Tạo đội nhóm
               </Button>
@@ -312,43 +187,43 @@ function User_Management() {
           <TeamTable
             teams={teams}
             loading={loadingTeams}
-            onEdit={handleEditTeam}
-            onRefresh={fetchTeams}
+            onEdit={openTeamModal}
+            onRefresh={refetchTeams}
             onDeleted={handleTeamDeleted}
           />
         </Col>
       </Row>
 
-      {/* Modals */}
+      {/* User Modals */}
       <UserModal
-        show={showUserModal}
-        onHide={handleUserModalClose}
-        user={selectedUser}
+        show={modals.showUserModal}
+        onHide={closeUserModal}
+        user={selected.user}
         onSaved={handleUserSaved}
       />
 
+      <UserImportModal
+        show={modals.showUserImportModal}
+        onHide={closeUserImportModal}
+        onSubmit={onUserImportSubmit}
+      />
+
+      {/* Team Modals */}
       <TeamModal
-        show={showTeamModal}
-        onHide={handleTeamModalClose}
-        team={selectedTeam}
+        show={modals.showTeamModal}
+        onHide={closeTeamModal}
+        team={selected.team}
         users={users}
         onSaved={handleTeamSaved}
       />
 
-      {/* Import Excel Modals */}
-      <UserImportModal
-        show={showUserImportModal}
-        onHide={() => setShowUserImportModal(false)}
-        onSubmit={handleUserImportSubmit}
-      />
-
       <TeamImportModal
-        show={showTeamImportModal}
-        onHide={() => setShowTeamImportModal(false)}
-        onSubmit={handleTeamImportSubmit}
+        show={modals.showTeamImportModal}
+        onHide={closeTeamImportModal}
+        onSubmit={onTeamImportSubmit}
       />
     </Container>
   );
 }
 
-export default User_Management;
+export default UserManagement;
