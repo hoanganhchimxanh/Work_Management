@@ -71,8 +71,13 @@ const NetworkManagement = () => {
     if (success) closeImportModal();
   };
 
-  const onEditSuccess = () => {
-    closeEditModal();
+  const onEditSubmit = async (networkId, data) => {
+    const success = await handleUpdate(networkId, data);
+    if (success) {
+      closeEditModal();
+    } else {
+      throw new Error("Cập nhật thất bại");
+    }
   };
 
   return (
@@ -118,7 +123,7 @@ const NetworkManagement = () => {
         show={modals.showEditModal}
         onHide={closeEditModal}
         network={selectedNetwork}
-        onSuccess={onEditSuccess}
+        onSubmit={onEditSubmit}
       />
 
       {/* Summary */}
