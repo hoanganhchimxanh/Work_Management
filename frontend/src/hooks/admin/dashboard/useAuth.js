@@ -32,11 +32,17 @@ function useAuth() {
   /**
    * Trả về axios config với Authorization header
    */
-  const getAuthConfig = () => ({
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  const getAuthConfig = () => {
+    const token = localStorage.getItem("token");
+
+    if (!token) return {};
+
+    return {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    };
+  };
 
   /**
    * Trả về token string (cho fetch API)

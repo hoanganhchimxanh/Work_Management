@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import {
   Container,
   Card,
@@ -19,7 +19,8 @@ import {
   CheckSquare,
   XSquare,
 } from "react-bootstrap-icons";
-import axios from "axios";
+
+// Components
 import ResourceStats from "../../components/admin/resourceManagement/ResourceStats";
 import ResourceTable from "../../components/admin/resourceManagement/ResourceTable";
 import CreateResourceModal from "../../components/admin/resourceManagement/CreateResourceModal";
@@ -30,403 +31,142 @@ import BulkAssignUserModal from "../../components/admin/resourceManagement/BulkA
 import TablePagination from "../../components/common/TablePagination";
 import ItemsPerPageSelector from "../../components/common/ItemsPerPageSelector";
 
-import config from "../../configs/api";
+// Custom hooks
+import useAuth from "../../hooks/admin/dashboard/useAuth";
+import useResourceData from "../../hooks/admin/resourceManagement/useResourceData";
+import useResourceFilters from "../../hooks/admin/resourceManagement/useResourceFilters";
+import useResourceActions from "../../hooks/admin/resourceManagement/useResourceActions";
+import useResourceModals from "../../hooks/admin/resourceManagement/useResourceModals";
+import useBulkAssign from "../../hooks/admin/resourceManagement/useBulkAssign";
+import usePagination from "../../hooks/admin/resourceManagement/usePagination";
 
 function ResourceManagement() {
-  // States
-  const [resources, setResources] = useState([]);
-  const [stats, setStats] = useState(null);
-  const [users, setUsers] = useState([]);
-  const [channels, setChannels] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  // 1. Authentication
+  const { getAuthConfig } = useAuth();
 
-  // Filter states
-  const [statusFilter, setStatusFilter] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [userFilter, setUserFilter] = useState("");
+  // 2. Filters
+  const {
+    statusFilter,
+    searchQuery,
+    userFilter,
+    setStatusFilter,
+    setSearchQuery,
+    setUserFilter,
+    filteredResources,
+  } = useResourceFilters([]);
 
-  // Modal states
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showAssignModal, setShowAssignModal] = useState(false);
-  const [selectedResource, setSelectedResource] = useState(null);
-  const [showResourceImportModal, setShowResourceImportModal] = useState(false);
+  // 3. Fetch Data
+  const {
+    resources,
+    stats,
+    users,
+    channels,
+    loading,
+    error: fetchError,
+    setError: setFetchError,
+    refetch,
+  } = useResourceData({ statusFilter, userFilter }, getAuthConfig);
 
-  // Bulk assign states
-  const [bulkAssignMode, setBulkAssignMode] = useState(false);
-  const [selectedResources, setSelectedResources] = useState([]);
-  const [showBulkAssignUserModal, setShowBulkAssignUserModal] = useState(false);
+  // Apply filters to fetched resources
+  const filtered = useResourceFilters(resources);
+  const actualFilteredResources = filtered.filteredResources;
 
-  // Pagination states
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  // 4. Pagination
+  const {
+    paginatedItems: paginatedResources,
+    pagination,
+    setCurrentPage,
+    setItemsPerPage,
+  } = usePagination(actualFilteredResources, 10);
 
-  // Lấy token từ localStorage
-  const getAuthConfig = () => {
-    const token = localStorage.getItem("token");
-    return {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    };
+  // 5. Actions
+  const {
+    handleCreate,
+    handleUpdate,
+    handleDelete,
+    handleAssignToUser,
+    handleAssignToChannel,
+    handleBulkAssignToUser,
+    handleUnassign,
+    handleDisable,
+    handleEnable,
+    handleExport,
+    handleImport,
+    success,
+    error: actionError,
+    setSuccess,
+    setError: setActionError,
+  } = useResourceActions(getAuthConfig, refetch);
+
+  // 6. Modals
+  const {
+    modals,
+    selectedResource,
+    openCreateModal,
+    closeCreateModal,
+    openEditModal,
+    closeEditModal,
+    openAssignModal,
+    closeAssignModal,
+    openImportModal,
+    closeImportModal,
+    openBulkAssignUserModal,
+    closeBulkAssignUserModal,
+  } = useResourceModals();
+
+  // 7. Bulk Assign
+  const {
+    bulkAssignMode,
+    selectedResources,
+    selectedCount,
+    toggleBulkAssignMode,
+    cancelBulkAssignMode,
+    handleSelectResource,
+    handleSelectAll,
+  } = useBulkAssign(actualFilteredResources);
+
+  // Combined error handling
+  const error = fetchError || actionError;
+  const setError = (msg) => {
+    setFetchError(msg);
+    setActionError(msg);
   };
 
-  // Fetch all data
-  const fetchData = async () => {
-    setLoading(true);
-    setError("");
-    try {
-      const [resourcesRes, statsRes, usersRes, channelsRes] = await Promise.all(
-        [
-          axios.get(
-            `${config.backendBase}/resource/get-all?status=${statusFilter}&assignedUser=${userFilter}`,
-            getAuthConfig()
-          ),
-          axios.get(`${config.backendBase}/resource/stats`, getAuthConfig()),
-          axios.get(`${config.backendBase}/user/get-all`, getAuthConfig()),
-          axios.get(`${config.backendBase}/channel/get-all`, getAuthConfig()),
-        ]
-      );
-
-      setResources(resourcesRes.data.data);
-      setStats(statsRes.data.data);
-      setUsers(usersRes.data.data);
-      setChannels(channelsRes.data.data);
-    } catch (err) {
-      setError(err.response?.data?.message || "Có lỗi xảy ra khi tải dữ liệu");
-      console.error("Error fetching data:", err);
-    } finally {
-      setLoading(false);
-    }
+  // Wrapper handlers cho modals
+  const onCreateSubmit = async (data) => {
+    const success = await handleCreate(data);
+    if (success) closeCreateModal();
   };
 
-  useEffect(() => {
-    fetchData();
-  }, [statusFilter, userFilter]);
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [statusFilter, userFilter, searchQuery, itemsPerPage]);
-
-  // Create resource
-  const handleCreate = async (data) => {
-    try {
-      setError("");
-      await axios.post(
-        `${config.backendBase}/resource/create-new`,
-        data,
-        getAuthConfig()
-      );
-      setSuccess("Tạo resource thành công!");
-      setShowCreateModal(false);
-      fetchData();
-      setTimeout(() => setSuccess(""), 3000);
-    } catch (err) {
-      setError(err.response?.data?.message || "Có lỗi xảy ra khi tạo resource");
-      console.error("Error creating resource:", err);
-    }
+  const onUpdateSubmit = async (id, data) => {
+    const success = await handleUpdate(id, data);
+    if (success) closeEditModal();
   };
 
-  // Update resource
-  const handleUpdate = async (id, data) => {
-    try {
-      setError("");
-      await axios.put(
-        `${config.backendBase}/resource/update/${id}`,
-        data,
-        getAuthConfig()
-      );
-      setSuccess("Cập nhật resource thành công!");
-      setShowEditModal(false);
-      setSelectedResource(null);
-      fetchData();
-      setTimeout(() => setSuccess(""), 3000);
-    } catch (err) {
-      setError(
-        err.response?.data?.message || "Có lỗi xảy ra khi cập nhật resource"
-      );
-      console.error("Error updating resource:", err);
-    }
+  const onAssignToUserSubmit = async (resourceId, userId) => {
+    const success = await handleAssignToUser(resourceId, userId);
+    if (success) closeAssignModal();
   };
 
-  // Delete resource
-  const handleDelete = async (resource) => {
-    if (resource.status === "ASSIGNED") {
-      setError("Không thể xóa resource đang được gán! Vui lòng gỡ gán trước.");
-      return;
-    }
+  const onAssignToChannelSubmit = async (resourceId, channelId) => {
+    const success = await handleAssignToChannel(resourceId, channelId);
+    if (success) closeAssignModal();
+  };
 
-    if (
-      !window.confirm(`Bạn có chắc chắn muốn xóa resource "${resource.email}"?`)
-    ) {
-      return;
-    }
-
-    try {
-      setError("");
-      await axios.delete(
-        `${config.backendBase}/resource/delete/${resource._id}`,
-        getAuthConfig()
-      );
-      setSuccess("Xóa resource thành công!");
-      fetchData();
-      setTimeout(() => setSuccess(""), 3000);
-    } catch (err) {
-      setError(err.response?.data?.message || "Có lỗi xảy ra khi xóa resource");
-      console.error("Error deleting resource:", err);
+  const onBulkAssignSubmit = async (userId) => {
+    const success = await handleBulkAssignToUser(selectedResources, userId);
+    if (success) {
+      closeBulkAssignUserModal();
+      cancelBulkAssignMode();
     }
   };
 
-  // Assign to user
-  const handleAssignToUser = async (resourceId, userId) => {
-    try {
-      setError("");
-      await axios.post(
-        `${config.backendBase}/resource/assign-to-user/${resourceId}`,
-        { userId },
-        getAuthConfig()
-      );
-      setSuccess("Gán resource cho nhân viên thành công!");
-      setShowAssignModal(false);
-      setSelectedResource(null);
-      fetchData();
-      setTimeout(() => setSuccess(""), 3000);
-    } catch (err) {
-      setError(err.response?.data?.message || "Có lỗi xảy ra khi gán resource");
-      console.error("Error assigning resource:", err);
-    }
+  const onImportSubmit = async (file) => {
+    const success = await handleImport(file);
+    if (success) closeImportModal();
   };
 
-  // Assign to channel
-  const handleAssignToChannel = async (resourceId, channelId) => {
-    try {
-      setError("");
-      await axios.post(
-        `${config.backendBase}/resource/assign-to-channel/${resourceId}`,
-        { channelId },
-        getAuthConfig()
-      );
-      setSuccess("Gán resource cho kênh thành công!");
-      setShowAssignModal(false);
-      setSelectedResource(null);
-      fetchData();
-      setTimeout(() => setSuccess(""), 3000);
-    } catch (err) {
-      setError(err.response?.data?.message || "Có lỗi xảy ra khi gán resource");
-      console.error("Error assigning resource:", err);
-    }
-  };
-
-  // Bulk assign to user
-  const handleBulkAssignToUser = async (userId) => {
-    try {
-      setError("");
-      await axios.post(
-        `${config.backendBase}/resource/bulk-assign-to-user`,
-        { resourceIds: selectedResources, userId },
-        getAuthConfig()
-      );
-      setSuccess(`Đã gán ${selectedResources.length} resources thành công!`);
-      setShowBulkAssignUserModal(false);
-      setBulkAssignMode(false);
-      setSelectedResources([]);
-      fetchData();
-      setTimeout(() => setSuccess(""), 3000);
-    } catch (err) {
-      setError(
-        err.response?.data?.message || "Có lỗi xảy ra khi gán hàng loạt"
-      );
-      console.error("Error bulk assigning:", err);
-    }
-  };
-
-  // Select/Deselect resource
-  const handleSelectResource = (resourceId, checked) => {
-    if (checked) {
-      setSelectedResources([...selectedResources, resourceId]);
-    } else {
-      setSelectedResources(selectedResources.filter((id) => id !== resourceId));
-    }
-  };
-
-  // Select/Deselect all
-  const handleSelectAll = (checked) => {
-    if (checked) {
-      const availableIds = filteredResources
-        .filter((r) => r.status === "AVAILABLE")
-        .map((r) => r._id);
-      setSelectedResources(availableIds);
-    } else {
-      setSelectedResources([]);
-    }
-  };
-
-  // Toggle bulk assign mode
-  const toggleBulkAssignMode = () => {
-    setBulkAssignMode(!bulkAssignMode);
-    setSelectedResources([]);
-  };
-
-  // Cancel bulk assign mode
-  const cancelBulkAssignMode = () => {
-    setBulkAssignMode(false);
-    setSelectedResources([]);
-  };
-
-  // Unassign resource
-  const handleUnassign = async (resource) => {
-    if (
-      !window.confirm(
-        `Bạn có chắc chắn muốn gỡ gán resource "${resource.email}"?`
-      )
-    ) {
-      return;
-    }
-
-    try {
-      setError("");
-      await axios.post(
-        `${config.backendBase}/resource/unassign/${resource._id}`,
-        {},
-        getAuthConfig()
-      );
-      setSuccess("Gỡ gán resource thành công!");
-      fetchData();
-      setTimeout(() => setSuccess(""), 3000);
-    } catch (err) {
-      setError(
-        err.response?.data?.message || "Có lỗi xảy ra khi gỡ gán resource"
-      );
-      console.error("Error unassigning resource:", err);
-    }
-  };
-
-  // Disable resource
-  const handleDisable = async (resource) => {
-    const note = window.prompt(
-      "Nhập lý do vô hiệu hóa (tùy chọn):",
-      resource.note || ""
-    );
-
-    if (note === null) return; // User cancelled
-
-    try {
-      setError("");
-      await axios.patch(
-        `${config.backendBase}/resource/disable/${resource._id}`,
-        { note },
-        getAuthConfig()
-      );
-      setSuccess("Vô hiệu hóa resource thành công!");
-      fetchData();
-      setTimeout(() => setSuccess(""), 3000);
-    } catch (err) {
-      setError(
-        err.response?.data?.message || "Có lỗi xảy ra khi vô hiệu hóa resource"
-      );
-      console.error("Error disabling resource:", err);
-    }
-  };
-
-  // Enable resource
-  const handleEnable = async (resource) => {
-    if (
-      !window.confirm(
-        `Bạn có chắc chắn muốn kích hoạt lại resource "${resource.email}"?`
-      )
-    ) {
-      return;
-    }
-
-    try {
-      setError("");
-      await axios.patch(
-        `${config.backendBase}/resource/enable/${resource._id}`,
-        {},
-        getAuthConfig()
-      );
-      setSuccess("Kích hoạt resource thành công!");
-      fetchData();
-      setTimeout(() => setSuccess(""), 3000);
-    } catch (err) {
-      setError(
-        err.response?.data?.message || "Có lỗi xảy ra khi kích hoạt resource"
-      );
-      console.error("Error enabling resource:", err);
-    }
-  };
-
-  // Filter resources
-  const filteredResources = resources.filter((resource) => {
-    const matchSearch =
-      searchQuery === "" ||
-      resource.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      resource.recoveryEmail.toLowerCase().includes(searchQuery.toLowerCase());
-
-    return matchSearch;
-  });
-
-  const totalItems = filteredResources.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-
-  const paginatedResources = filteredResources.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
-  const handleResourceExport = async () => {
-    try {
-      const response = await axios.get(
-        `${config.backendBase}/excel/export-resource-excel`,
-        {
-          responseType: "blob",
-        }
-      );
-
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute(
-        "download",
-        `resources_${new Date().toISOString().split("T")[0]}.xlsx`
-      );
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    } catch (err) {
-      alert("Export thất bại: " + (err.response?.data?.message || err.message));
-    }
-  };
-
-  // Import resource from Excel
-  const handleImportResource = async (file) => {
-    try {
-      setError("");
-      const formData = new FormData();
-      formData.append("file", file);
-
-      await axios.post(
-        `${config.backendBase}/excel/import-resource-excel`,
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
-
-      setSuccess("Import resource từ Excel thành công!");
-      fetchData();
-      setTimeout(() => setSuccess(""), 3000);
-    } catch (err) {
-      setError(err.response?.data?.message || "Có lỗi xảy ra khi import Excel");
-      console.error("Error importing resource:", err);
-    }
-  };
-
+  // Loading state
   if (loading) {
     return (
       <Container className="py-5 text-center">
@@ -450,15 +190,12 @@ function ResourceManagement() {
         <div className="d-flex gap-2">
           {!bulkAssignMode ? (
             <>
-              <Button variant="success" onClick={handleResourceExport}>
+              <Button variant="success" onClick={handleExport}>
                 <i className="bi bi-download me-2"></i>
                 Export Excel
               </Button>
 
-              <Button
-                variant="success"
-                onClick={() => setShowResourceImportModal(true)}
-              >
+              <Button variant="success" onClick={openImportModal}>
                 <i className="bi bi-upload me-2"></i>
                 Import Excel
               </Button>
@@ -470,7 +207,7 @@ function ResourceManagement() {
 
               <Button
                 variant="primary"
-                onClick={() => setShowCreateModal(true)}
+                onClick={openCreateModal}
                 className="d-flex align-items-center gap-2"
               >
                 <PlusCircle size={20} />
@@ -480,15 +217,15 @@ function ResourceManagement() {
           ) : (
             <>
               <Badge bg="primary" className="d-flex align-items-center px-3">
-                Đã chọn: {selectedResources.length}
+                Đã chọn: {selectedCount}
               </Badge>
               <Button
                 variant="success"
-                onClick={() => setShowBulkAssignUserModal(true)}
-                disabled={selectedResources.length === 0}
+                onClick={openBulkAssignUserModal}
+                disabled={selectedCount === 0}
               >
                 <CheckSquare size={20} className="me-2" />
-                Gán {selectedResources.length} resources
+                Gán {selectedCount} resources
               </Button>
               <Button variant="secondary" onClick={cancelBulkAssignMode}>
                 <XSquare size={20} className="me-2" />
@@ -575,7 +312,7 @@ function ResourceManagement() {
               <Button
                 variant="outline-secondary"
                 className="w-100"
-                onClick={fetchData}
+                onClick={refetch}
               >
                 <ArrowClockwise size={16} className="me-2" />
                 Làm mới
@@ -587,23 +324,19 @@ function ResourceManagement() {
 
       {/* Table */}
       <div className="d-flex justify-content-between align-items-center mb-3">
-        <h5 className="mb-0">Danh sách Resources ({totalItems})</h5>
+        <h5 className="mb-0">Danh sách Resources ({pagination.totalItems})</h5>
 
-        <ItemsPerPageSelector value={itemsPerPage} onChange={setItemsPerPage} />
+        <ItemsPerPageSelector
+          value={pagination.itemsPerPage}
+          onChange={setItemsPerPage}
+        />
       </div>
 
       <ResourceTable
-        // resources={filteredResources}
         resources={paginatedResources}
-        onEdit={(resource) => {
-          setSelectedResource(resource);
-          setShowEditModal(true);
-        }}
+        onEdit={openEditModal}
         onDelete={handleDelete}
-        onAssign={(resource) => {
-          setSelectedResource(resource);
-          setShowAssignModal(true);
-        }}
+        onAssign={openAssignModal}
         onUnassign={handleUnassign}
         onDisable={handleDisable}
         onEnable={handleEnable}
@@ -614,57 +347,51 @@ function ResourceManagement() {
       />
 
       <TablePagination
-        currentPage={currentPage}
-        totalPages={totalPages}
+        currentPage={pagination.currentPage}
+        totalPages={pagination.totalPages}
         onPageChange={setCurrentPage}
       />
 
       {/* Modals */}
       <CreateResourceModal
-        show={showCreateModal}
-        onHide={() => setShowCreateModal(false)}
-        onCreate={handleCreate}
+        show={modals.showCreateModal}
+        onHide={closeCreateModal}
+        onCreate={onCreateSubmit}
         users={users}
         channels={channels}
       />
 
       <EditResourceModal
-        show={showEditModal}
-        onHide={() => {
-          setShowEditModal(false);
-          setSelectedResource(null);
-        }}
-        onUpdate={handleUpdate}
+        show={modals.showEditModal}
+        onHide={closeEditModal}
+        onUpdate={onUpdateSubmit}
         resource={selectedResource}
         users={users}
         channels={channels}
       />
 
       <AssignResourceModal
-        show={showAssignModal}
-        onHide={() => {
-          setShowAssignModal(false);
-          setSelectedResource(null);
-        }}
-        onAssignToUser={handleAssignToUser}
-        onAssignToChannel={handleAssignToChannel}
+        show={modals.showAssignModal}
+        onHide={closeAssignModal}
+        onAssignToUser={onAssignToUserSubmit}
+        onAssignToChannel={onAssignToChannelSubmit}
         resource={selectedResource}
         users={users}
         channels={channels}
       />
 
       <BulkAssignUserModal
-        show={showBulkAssignUserModal}
-        onHide={() => setShowBulkAssignUserModal(false)}
-        onAssignToUser={handleBulkAssignToUser}
-        selectedCount={selectedResources.length}
+        show={modals.showBulkAssignUserModal}
+        onHide={closeBulkAssignUserModal}
+        onAssignToUser={onBulkAssignSubmit}
+        selectedCount={selectedCount}
         users={users}
       />
 
       <ResourceImportModal
-        show={showResourceImportModal}
-        onHide={() => setShowResourceImportModal(false)}
-        onSubmit={handleImportResource}
+        show={modals.showImportModal}
+        onHide={closeImportModal}
+        onSubmit={onImportSubmit}
       />
     </Container>
   );
