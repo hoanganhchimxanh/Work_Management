@@ -1,4 +1,3 @@
-import React, { useState, useEffect } from "react";
 import {
   Modal,
   Table,
@@ -18,177 +17,30 @@ import {
   Trash,
   CloudDownload,
 } from "react-bootstrap-icons";
-import axios from "axios";
-import config from "../../../configs/api";
+import { useChannelRevenue } from "../../../hooks/admin/channelManagement/useChannelRevenue";
+import { useRevenueActions } from "../../../hooks/admin/channelManagement/useRevenueActions";
+import { useRevenueUtils } from "../../../hooks/admin/channelManagement/useRevenueUtils";
 
 function ChannelMonthRevenueModal({ show, onHide, channelId, channelName }) {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [channelData, setChannelData] = useState(null);
-  const [revenues, setRevenues] = useState([]);
-  const [totals, setTotals] = useState({ totalEstimated: 0, totalActual: 0 });
-  const [editingMonth, setEditingMonth] = useState(null);
+  const {
+    loading,
+    error,
+    channelData,
+    revenues,
+    totals,
+    setRevenues,
+    fetchRevenueData,
+  } = useChannelRevenue(channelId, show);
 
-  const getToken = () => localStorage.getItem("token");
+  const {
+    handleSyncAnalytics,
+    handleUpdateRevenue,
+    handleToggleLock,
+    handleDeleteRevenue,
+  } = useRevenueActions(channelId, revenues, setRevenues, fetchRevenueData);
 
-  useEffect(() => {
-    if (show && channelId) {
-      fetchRevenueData();
-    }
-  }, [show, channelId]);
-
-  const fetchRevenueData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const token = getToken();
-      const response = await axios.get(
-        `${config.backendBase}/channel-revenue/${channelId}/monthly`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      setChannelData(response.data.data.channel);
-      setRevenues(response.data.data.revenues);
-      setTotals(response.data.data.totals);
-    } catch (err) {
-      setError(err.response?.data?.message || "Lỗi khi tải dữ liệu");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSyncAnalytics = async () => {
-    if (!window.confirm("Đồng bộ doanh thu từ YouTube Analytics?")) return;
-
-    try {
-      setLoading(true);
-      const token = getToken();
-
-      const now = new Date();
-      const endMonth = `${now.getFullYear()}-${String(
-        now.getMonth() + 1
-      ).padStart(2, "0")}`;
-
-      const startDate = new Date(now);
-      startDate.setMonth(startDate.getMonth() - 11);
-      const startMonth = `${startDate.getFullYear()}-${String(
-        startDate.getMonth() + 1
-      ).padStart(2, "0")}`;
-
-      await axios.post(
-        `${config.backendBase}/channel-revenue/${channelId}/sync-analytics`,
-        { startMonth, endMonth },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      alert("Đồng bộ thành công!");
-      fetchRevenueData();
-    } catch (err) {
-      alert(err.response?.data?.message || "Lỗi khi đồng bộ");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleUpdateRevenue = async (month, field, value) => {
-    try {
-      const token = getToken();
-      const updateData = { month, [field]: parseFloat(value) || 0 };
-
-      await axios.post(
-        `${config.backendBase}/channel-revenue/${channelId}/monthly`,
-        updateData,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      const updatedRevenues = revenues.map((rev) => {
-        if (rev.month === month) {
-          return { ...rev, [field]: parseFloat(value) || 0 };
-        }
-        return rev;
-      });
-      setRevenues(updatedRevenues);
-    } catch (err) {
-      alert(err.response?.data?.message || "Lỗi khi cập nhật");
-    }
-  };
-
-  const handleToggleLock = async (month) => {
-    try {
-      const token = getToken();
-      await axios.patch(
-        `${config.backendBase}/channel-revenue/${channelId}/monthly/${month}/toggle-lock`,
-        {},
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      fetchRevenueData();
-    } catch (err) {
-      alert(err.response?.data?.message || "Lỗi khi khóa/mở khóa");
-    }
-  };
-
-  const handleDeleteRevenue = async (month) => {
-    if (!window.confirm(`Xóa dữ liệu tháng ${month}?`)) return;
-
-    try {
-      const token = getToken();
-      await axios.delete(
-        `${config.backendBase}/channel-revenue/${channelId}/monthly/${month}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      fetchRevenueData();
-    } catch (err) {
-      alert(err.response?.data?.message || "Lỗi khi xóa");
-    }
-  };
-
-  const getFormulaText = () => {
-    if (!channelData?.isMonetized) {
-      return <span>Kênh chưa bật kiếm tiền</span>;
-    }
-
-    return (
-      <>
-        <div>
-          • <strong>Trường hợp có Network:</strong>
-          <br />
-          DT Thực tế = DT Ước tính × (100% − Net Network − Thuế TNCN)
-        </div>
-
-        <div className="mt-2">
-          • <strong>Trường hợp không có Network:</strong>
-          <br />
-          DT Thực tế = DT Ước tính × (100% − Thuế Mỹ − Thuế TNCN)
-        </div>
-      </>
-    );
-  };
-
-  // Hàm hỗ trợ lấy giá trị và nhãn của phần khấu trừ
-  const getDeductionInfo = (rev) => {
-    if (channelData?.hasNetwork) {
-      return { value: rev.netNetwork, label: "Net Network" };
-    } else {
-      return { value: rev.taxUS, label: "Thuế Mỹ" };
-    }
-  };
-
-  const getDeductionFieldName = () => {
-    return channelData?.hasNetwork ? "netNetwork" : "taxUS";
-  };
+  const { getDeductionInfo, getDeductionFieldName, getFormulaText } =
+    useRevenueUtils(channelData);
 
   return (
     <Modal show={show} onHide={onHide} size="xl" centered>
@@ -397,7 +249,7 @@ function ChannelMonthRevenueModal({ show, onHide, channelId, channelName }) {
             {/* Công thức tính */}
             <Alert variant="info" className="mt-4 mb-0">
               <Calculator className="me-2" />
-              <strong>Công thức tính (áp dụng theo từng tháng):</strong>
+              <strong>Công thức tính (Áp dụng theo từng tháng):</strong>
               <div className="mt-2">{getFormulaText()}</div>
             </Alert>
           </>
