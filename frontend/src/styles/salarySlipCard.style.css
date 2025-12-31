@@ -1,0 +1,54 @@
+/* Thêm vào cuối file hiện tại */
+
+/* Card nhỏ cho stats */
+.stats-card {
+  background-color: #f8fafc;
+  border-radius: 12px;
+  padding: 20px;
+  height: 100%;
+  border: 1px solid #e2e8f0;
+}
+
+/* Total net pay nổi bật */
+.net-pay-section {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  border-radius: 16px;
+  padding: 24px;
+  text-align: center;
+  margin-top: 32px;
+}
+
+.net-pay-label {
+  font-size: 14px;
+  opacity: 0.9;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.net-pay-amount {
+  font-size: 36px;
+  font-weight: 800;
+  margin: 8px 0;
+}
+
+/* Badge fixes & additions */
+.badge-network {
+  background-color: #fef3c7;
+  color: #d97706;
+}
+
+.badge-bonus {
+  background-color: #d1fae5;
+  color: #059669;
+}
+
+.badge-violation {
+  background-color: #fee2e2;
+  color: #dc2626;
+}
+
+/* Table hover */
+.salary-table tbody tr:hover {
+  background-color: #f8fafc;
+}

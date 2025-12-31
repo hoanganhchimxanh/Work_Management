@@ -1,212 +1,84 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React from "react";
 import { Container, Alert } from "react-bootstrap";
-import axios from "axios";
 
+// Components
 import NetworkFilters from "../../components/admin/networkManagement/NetworkFilters";
 import NetworkTable from "../../components/admin/networkManagement/NetworkTable";
 import NetworkImportModal from "../../components/admin/networkManagement/NetworkImportModal";
 import EditNetworkModal from "../../components/admin/networkManagement/EditNetworkModal";
 
-import config from "../../configs/api";
+// Custom hooks
+import useAuth from "../../hooks/admin/dashboard/useAuth";
+import useNetworkData from "../../hooks/admin/networkManagement/useNetworkData";
+import useNetworkFilters from "../../hooks/admin/networkManagement/useNetworkFilters";
+import useNetworkActions from "../../hooks/admin/networkManagement/useNetworkActions";
+import useNetworkModals from "../../hooks/admin/networkManagement/useNetworkModals";
 
 const NetworkManagement = () => {
-  const [networks, setNetworks] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [filters, setFilters] = useState({
-    search: "",
-    status: "",
-    location: "",
-    country: "",
-  });
-  const [alert, setAlert] = useState(null);
-  const [showImportModal, setShowImportModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedNetwork, setSelectedNetwork] = useState(null);
+  // 1. Authentication
+  const { getAuthConfig } = useAuth();
 
-  /* ======================
-     Helpers
-  ====================== */
+  // 2. Server-side Filters (for API)
+  const [status, setStatus] = React.useState("");
+  const [location, setLocation] = React.useState("");
+  const [country, setCountry] = React.useState("");
 
-  const getAuthHeaders = () => ({
-    Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
-  });
+  const serverFilters = { status, location, country };
 
-  const showAlert = (message, variant = "success") => {
-    setAlert({ message, variant });
-    setTimeout(() => setAlert(null), 3000);
+  // 3. Fetch Data
+  const { networks, loading, error, refetch } = useNetworkData(
+    serverFilters,
+    getAuthConfig
+  );
+
+  // 4. Client-side Filters (for search)
+  const { filters, filteredNetworks, handleFilterChange } =
+    useNetworkFilters(networks);
+
+  // Sync server filters with handleFilterChange
+  const onFilterChange = (field, value) => {
+    handleFilterChange(field, value);
+
+    // Also update server filters
+    if (field === "status") setStatus(value);
+    if (field === "location") setLocation(value);
+    if (field === "country") setCountry(value);
   };
 
-  /* ======================
-     Fetch Networks
-  ====================== */
+  // 5. Actions
+  const {
+    handleExport,
+    handleImport,
+    handleUpdate,
+    handleDelete,
+    alert,
+    setAlert,
+  } = useNetworkActions(getAuthConfig, serverFilters, refetch);
 
-  const fetchNetworks = useCallback(async () => {
-    setLoading(true);
-    try {
-      const params = {};
-      if (filters.status) params.status = filters.status;
-      if (filters.location) params.location = filters.location;
-      if (filters.country) params.country = filters.country;
+  // 6. Modals
+  const {
+    modals,
+    selectedNetwork,
+    openImportModal,
+    closeImportModal,
+    openEditModal,
+    closeEditModal,
+  } = useNetworkModals();
 
-      const { data } = await axios.get(
-        `${config.backendBase}/network/get-all`,
-        {
-          params,
-          headers: getAuthHeaders(),
-        }
-      );
-
-      if (data.success) {
-        setNetworks(data.data);
-      } else {
-        showAlert("Lỗi khi tải dữ liệu networks", "danger");
-      }
-    } catch (error) {
-      console.error("Fetch networks error:", error);
-      showAlert("Lỗi khi tải dữ liệu networks", "danger");
-    } finally {
-      setLoading(false);
-    }
-  }, [filters.status, filters.location, filters.country]);
-
-  useEffect(() => {
-    fetchNetworks();
-  }, [fetchNetworks]);
-
-  /* ======================
-     Filters
-  ====================== */
-
-  const handleFilterChange = (field, value) => {
-    setFilters((prev) => ({ ...prev, [field]: value }));
+  // Wrapper handlers for modals
+  const onImportSubmit = async (file) => {
+    const success = await handleImport(file);
+    if (success) closeImportModal();
   };
 
-  const filteredNetworks = networks.filter((network) => {
-    if (!filters.search) return true;
-    const keyword = filters.search.toLowerCase();
-
-    return (
-      network.profileAdsenseId?.toLowerCase().includes(keyword) ||
-      network.emailAddress?.toLowerCase().includes(keyword) ||
-      network.assignedUser?.fullName?.toLowerCase().includes(keyword)
-    );
-  });
-
-  /* ======================
-     Export Excel
-  ====================== */
-
-  const handleExport = async () => {
-    try {
-      const params = {};
-      if (filters.status) params.status = filters.status;
-      if (filters.location) params.location = filters.location;
-      if (filters.country) params.country = filters.country;
-
-      const response = await axios.get(
-        `${config.backendBase}/network/export-excel`,
-        {
-          params,
-          headers: getAuthHeaders(),
-          responseType: "blob",
-        }
-      );
-
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `networks_${new Date().toISOString().split("T")[0]}.xlsx`;
-
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-
-      showAlert("Xuất Excel thành công!");
-    } catch (error) {
-      console.error("Export error:", error);
-      showAlert("Lỗi khi xuất Excel", "danger");
+  const onEditSubmit = async (networkId, data) => {
+    const success = await handleUpdate(networkId, data);
+    if (success) {
+      closeEditModal();
+    } else {
+      throw new Error("Cập nhật thất bại");
     }
   };
-
-  /* ======================
-     Import Excel
-  ====================== */
-
-  const handleImportClick = () => {
-    setShowImportModal(true);
-  };
-
-  const handleImportSubmit = async (file) => {
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-
-      await axios.post(`${config.backendBase}/network/import-excel`, formData, {
-        headers: {
-          ...getAuthHeaders(),
-          "Content-Type": "multipart/form-data",
-        },
-      });
-
-      showAlert("Import network thành công!");
-      setShowImportModal(false);
-      fetchNetworks();
-    } catch (error) {
-      console.error("Import error:", error);
-      showAlert("Lỗi khi import network", "danger");
-    }
-  };
-
-  /* ======================
-     Edit Network
-  ====================== */
-
-  const handleEdit = (network) => {
-    setSelectedNetwork(network);
-    setShowEditModal(true);
-  };
-
-  const handleEditSuccess = () => {
-    showAlert("Cập nhật network thành công!");
-    fetchNetworks();
-  };
-
-  /* ======================
-     Delete Network
-  ====================== */
-
-  const handleDelete = async (network) => {
-    const confirmDelete = window.confirm(
-      `Bạn có chắc chắn muốn xóa network "${network.profileAdsenseId}"?\n\nLưu ý: Không thể xóa network nếu còn kênh đang thuộc network này!`
-    );
-
-    if (!confirmDelete) return;
-
-    try {
-      const { data } = await axios.delete(
-        `${config.backendBase}/network/delete/${network._id}`,
-        {
-          headers: getAuthHeaders(),
-        }
-      );
-
-      if (data.success) {
-        showAlert("Xóa network thành công!");
-        fetchNetworks();
-      } else {
-        showAlert(data.message || "Xóa thất bại!", "danger");
-      }
-    } catch (error) {
-      console.error("Delete error:", error);
-      const errorMsg = error.response?.data?.message || "Lỗi khi xóa network!";
-      showAlert(errorMsg, "danger");
-    }
-  };
-
-  /* ======================
-     Render
-  ====================== */
 
   return (
     <Container fluid className="py-4">
@@ -214,6 +86,7 @@ const NetworkManagement = () => {
         <h2>Quản lý Network</h2>
       </div>
 
+      {/* Alert */}
       {alert && (
         <Alert
           variant={alert.variant}
@@ -224,36 +97,47 @@ const NetworkManagement = () => {
         </Alert>
       )}
 
+      {/* Error from fetch */}
+      {error && (
+        <Alert variant="danger" dismissible onClose={() => {}}>
+          {error}
+        </Alert>
+      )}
+
+      {/* Filters */}
       <NetworkFilters
         filters={filters}
-        onFilterChange={handleFilterChange}
+        onFilterChange={onFilterChange}
         onExport={handleExport}
-        onImport={handleImportClick}
+        onImport={openImportModal}
       />
 
+      {/* Modals */}
       <NetworkImportModal
-        show={showImportModal}
-        onHide={() => setShowImportModal(false)}
-        onSubmit={handleImportSubmit}
+        show={modals.showImportModal}
+        onHide={closeImportModal}
+        onSubmit={onImportSubmit}
       />
 
       <EditNetworkModal
-        show={showEditModal}
-        onHide={() => setShowEditModal(false)}
+        show={modals.showEditModal}
+        onHide={closeEditModal}
         network={selectedNetwork}
-        onSuccess={handleEditSuccess}
+        onSubmit={onEditSubmit}
       />
 
+      {/* Summary */}
       <div className="mb-3">
         <strong>Tổng số network:</strong> {filteredNetworks.length}
       </div>
 
+      {/* Table */}
       <NetworkTable
         networks={filteredNetworks}
         loading={loading}
-        onEdit={handleEdit}
+        onEdit={openEditModal}
         onDelete={handleDelete}
-        onRefresh={filteredNetworks}
+        onRefresh={refetch}
       />
     </Container>
   );

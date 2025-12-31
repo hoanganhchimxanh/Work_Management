@@ -3,7 +3,7 @@ import { Modal, Button, Form, Row, Col, Alert, Spinner } from "react-bootstrap";
 import axios from "axios";
 import config from "../../../configs/api";
 
-const EditNetworkModal = ({ show, onHide, network, onSuccess }) => {
+const EditNetworkModal = ({ show, onHide, network, onSubmit }) => {
   const [formData, setFormData] = useState({
     profileAdsenseId: "",
     emailAddress: "",
@@ -90,17 +90,14 @@ const EditNetworkModal = ({ show, onHide, network, onSuccess }) => {
       setError("Profile AdSense ID là bắt buộc!");
       return;
     }
-
     if (!formData.emailAddress.trim()) {
       setError("Email Address là bắt buộc!");
       return;
     }
-
     if (!formData.creationDate) {
       setError("Ngày tạo là bắt buộc!");
       return;
     }
-
     if (!formData.assignedUser) {
       setError("Vui lòng chọn nhân viên quản lý!");
       return;
@@ -111,30 +108,15 @@ const EditNetworkModal = ({ show, onHide, network, onSuccess }) => {
     try {
       const payload = {
         ...formData,
-        // Chuyển empty string thành null cho các trường date
         channelJoinDate: formData.channelJoinDate || null,
         reminderDate: formData.reminderDate || null,
       };
 
-      const { data } = await axios.put(
-        `${config.backendBase}/network/update/${network._id}`,
-        payload,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
+      await onSubmit(network._id, payload);
 
-      if (data.success) {
-        onSuccess?.();
-        onHide();
-      } else {
-        setError(data.message || "Cập nhật thất bại!");
-      }
+      onHide();
     } catch (err) {
-      console.error("Update network error:", err);
-      setError(err.response?.data?.message || "Lỗi khi cập nhật network!");
+      setError(err.message || "Lỗi khi cập nhật network!");
     } finally {
       setLoading(false);
     }

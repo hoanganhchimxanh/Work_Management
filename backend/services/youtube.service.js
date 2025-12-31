@@ -1,4 +1,3 @@
-// services/youtube.service.js
 const { google } = require("googleapis");
 const { YoutubeAuth, ChannelAnalytics } = require("../models");
 

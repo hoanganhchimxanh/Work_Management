@@ -9,6 +9,7 @@ const YoutubeAuth = require("./youtubeAuth.model");
 const ChannelAnalytics = require("./channelAnalytics.model");
 const Resource = require("./resource.model");
 const Notification = require("./notification.model");
+const ChannelRevenue = require("./channelRevenue.model");
 
 module.exports = {
   User,
@@ -22,4 +23,5 @@ module.exports = {
   ChannelAnalytics,
   Resource,
   Notification,
+  ChannelRevenue,
 };

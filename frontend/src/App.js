@@ -41,12 +41,18 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import RoleBasedRoute from "./components/RoleBasedRoute";
 import PublicRoute from "./components/PublicRoute";
 
+// View components
+import SalarySlipCard from "./components/accountant/salaryManagement/SalarySlipCard";
+// import ChannelMonthRevenue from "./components/admin/channelManagement/ChannelMonthRevenue";
+
 function App() {
   return (
     <Routes>
       <Route path="/unauthorized" element={<Unauthorized />} />
       <Route path="/test" element={<TestPage />} />
       <Route path="*" element={<NotFound />} />
+      <Route path="/salary-slip" element={<SalarySlipCard />} />
+      {/* <Route path="/channel-month-revenue" element={<ChannelMonthRevenue />} /> */}
 
       {/* PUBLIC ROUTES - Ai cũng truy cập được */}
       <Route element={<PublicRoute />}>

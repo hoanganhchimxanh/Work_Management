@@ -1,174 +1,66 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { Container, Row, Col, Button, Alert, Tabs, Tab } from "react-bootstrap";
-import axios from "axios";
+
+// Components
 import KPITable from "../../components/admin/kpiTaskManagement/KPITable";
 import TaskTable from "../../components/admin/kpiTaskManagement/TaskTable";
 import KPIModal from "../../components/admin/kpiTaskManagement/KPIModal";
 import TaskModal from "../../components/admin/kpiTaskManagement/TaskModal";
 
-import config from "../../configs/api";
+// Custom hooks
+import useAuth from "../../hooks/admin/dashboard/useAuth";
+import useKPITaskData from "../../hooks/admin/kpiTaskManagement/useKPITaskData";
+import useKPITaskModals from "../../hooks/admin/kpiTaskManagement/useKPITaskModals";
+import useTabNavigation from "../../hooks/admin/kpiTaskManagement/useTabNavigation";
 
-function KPI_Task_Management() {
-  // KPIs state
-  const [kpis, setKPIs] = useState([]);
-  const [loadingKPIs, setLoadingKPIs] = useState(true);
+function KPITaskManagement() {
+  // 1. Authentication
+  const { getAuthConfig } = useAuth();
 
-  // Tasks state
-  const [tasks, setTasks] = useState([]);
-  const [loadingTasks, setLoadingTasks] = useState(true);
+  // 2. Tab Navigation
+  const { activeTab, setActiveTab } = useTabNavigation("kpi");
 
-  // Users and Teams state
-  const [users, setUsers] = useState([]);
-  const [teams, setTeams] = useState([]);
+  // 3. Fetch Data
+  const {
+    kpis,
+    tasks,
+    users,
+    teams,
+    loadingKPIs,
+    loadingTasks,
+    error,
+    setError,
+    refetchKPIs,
+    refetchTasks,
+  } = useKPITaskData(getAuthConfig);
 
-  // Modal state
-  const [showKPIModal, setShowKPIModal] = useState(false);
-  const [showTaskModal, setShowTaskModal] = useState(false);
-  const [selectedKPI, setSelectedKPI] = useState(null);
-  const [selectedTask, setSelectedTask] = useState(null);
+  // 4. Modals
+  const {
+    modals,
+    selected,
+    openKPIModal,
+    closeKPIModal,
+    openTaskModal,
+    closeTaskModal,
+  } = useKPITaskModals();
 
-  // Error handling
-  const [error, setError] = useState(null);
-
-  // Active tab
-  const [activeTab, setActiveTab] = useState("kpi");
-
-  // Get auth token
-  const getAuthToken = () => {
-    return localStorage.getItem("token") || "";
-  };
-
-  // Fetch KPIs with progress
-  const fetchKPIs = async () => {
-    try {
-      setLoadingKPIs(true);
-      const response = await axios.get(
-        `${config.backendBase}/kpi/get-all-with-progress`,
-        {
-          headers: {
-            Authorization: `Bearer ${getAuthToken()}`,
-          },
-        }
-      );
-      setKPIs(response.data.data);
-      setError(null);
-    } catch (err) {
-      setError("Không thể tải danh sách KPI");
-      console.error(err);
-    } finally {
-      setLoadingKPIs(false);
-    }
-  };
-
-  // Fetch Tasks
-  const fetchTasks = async () => {
-    try {
-      setLoadingTasks(true);
-      const response = await axios.get(`${config.backendBase}/task/get-all`, {
-        headers: {
-          Authorization: `Bearer ${getAuthToken()}`,
-        },
-      });
-      setTasks(response.data.data);
-      setError(null);
-    } catch (err) {
-      setError("Không thể tải danh sách công việc");
-      console.error(err);
-    } finally {
-      setLoadingTasks(false);
-    }
-  };
-
-  // Fetch Users
-  const fetchUsers = async () => {
-    try {
-      const response = await axios.get(`${config.backendBase}/user/get-all`, {
-        headers: {
-          Authorization: `Bearer ${getAuthToken()}`,
-        },
-      });
-      const normalizedUsers = response.data.data.map((user) => ({
-        ...user,
-        _id: user.userId,
-      }));
-      setUsers(normalizedUsers);
-    } catch (err) {
-      console.error("Error fetching users:", err);
-    }
-  };
-
-  // Fetch Teams
-  const fetchTeams = async () => {
-    try {
-      const response = await axios.get(
-        `${config.backendBase}/team/get-all-team`,
-        {
-          headers: {
-            Authorization: `Bearer ${getAuthToken()}`,
-          },
-        }
-      );
-      setTeams(response.data.data);
-    } catch (err) {
-      console.error("Error fetching teams:", err);
-    }
-  };
-
-  useEffect(() => {
-    fetchKPIs();
-    fetchTasks();
-    fetchUsers();
-    fetchTeams();
-  }, []);
-
-  // KPI handlers
-  const handleCreateKPI = () => {
-    setSelectedKPI(null);
-    setShowKPIModal(true);
-  };
-
-  const handleEditKPI = (kpi) => {
-    setSelectedKPI(kpi);
-    setShowKPIModal(true);
-  };
-
-  const handleKPIModalClose = () => {
-    setShowKPIModal(false);
-    setSelectedKPI(null);
-  };
-
+  // Callback handlers for modals
   const handleKPISaved = () => {
-    fetchKPIs();
-    handleKPIModalClose();
+    refetchKPIs();
+    closeKPIModal();
   };
 
   const handleKPIDeleted = () => {
-    fetchKPIs();
-  };
-
-  // Task handlers
-  const handleCreateTask = () => {
-    setSelectedTask(null);
-    setShowTaskModal(true);
-  };
-
-  const handleEditTask = (task) => {
-    setSelectedTask(task);
-    setShowTaskModal(true);
-  };
-
-  const handleTaskModalClose = () => {
-    setShowTaskModal(false);
-    setSelectedTask(null);
+    refetchKPIs();
   };
 
   const handleTaskSaved = () => {
-    fetchTasks();
-    handleTaskModalClose();
+    refetchTasks();
+    closeTaskModal();
   };
 
   const handleTaskDeleted = () => {
-    fetchTasks();
+    refetchTasks();
   };
 
   return (
@@ -179,12 +71,14 @@ function KPI_Task_Management() {
         </Col>
       </Row>
 
+      {/* Alert */}
       {error && (
         <Alert variant="danger" onClose={() => setError(null)} dismissible>
           {error}
         </Alert>
       )}
 
+      {/* Tabs */}
       <Tabs
         activeKey={activeTab}
         onSelect={(k) => setActiveTab(k)}
@@ -196,20 +90,21 @@ function KPI_Task_Management() {
             <Col>
               <div className="d-flex justify-content-between align-items-center">
                 <h5>Danh sách KPI</h5>
-                <Button variant="primary" onClick={handleCreateKPI}>
+                <Button variant="primary" onClick={() => openKPIModal()}>
                   <i className="bi bi-plus-circle me-2"></i>
                   Tạo KPI mới
                 </Button>
               </div>
             </Col>
           </Row>
+
           <Row>
             <Col>
               <KPITable
                 kpis={kpis}
                 loading={loadingKPIs}
-                onEdit={handleEditKPI}
-                onRefresh={fetchKPIs}
+                onEdit={openKPIModal}
+                onRefresh={refetchKPIs}
                 onDeleted={handleKPIDeleted}
               />
             </Col>
@@ -222,7 +117,7 @@ function KPI_Task_Management() {
             <Col>
               <div className="d-flex justify-content-between align-items-center">
                 <h5>Danh sách công việc</h5>
-                <Button variant="success" onClick={handleCreateTask}>
+                <Button variant="success" onClick={() => openTaskModal()}>
                   <i className="bi bi-plus-circle me-2"></i>
                   Tạo công việc mới
                 </Button>
@@ -235,8 +130,8 @@ function KPI_Task_Management() {
               <TaskTable
                 tasks={tasks}
                 loading={loadingTasks}
-                onEdit={handleEditTask}
-                onRefresh={fetchTasks}
+                onEdit={openTaskModal}
+                onRefresh={refetchTasks}
                 onDeleted={handleTaskDeleted}
               />
             </Col>
@@ -244,20 +139,21 @@ function KPI_Task_Management() {
         </Tab>
       </Tabs>
 
-      {/* Modals */}
+      {/* KPI Modal */}
       <KPIModal
-        show={showKPIModal}
-        onHide={handleKPIModalClose}
-        kpi={selectedKPI}
+        show={modals.showKPIModal}
+        onHide={closeKPIModal}
+        kpi={selected.kpi}
         users={users}
         teams={teams}
         onSaved={handleKPISaved}
       />
 
+      {/* Task Modal */}
       <TaskModal
-        show={showTaskModal}
-        onHide={handleTaskModalClose}
-        task={selectedTask}
+        show={modals.showTaskModal}
+        onHide={closeTaskModal}
+        task={selected.task}
         users={users}
         teams={teams}
         onSaved={handleTaskSaved}
@@ -266,4 +162,4 @@ function KPI_Task_Management() {
   );
 }
 
-export default KPI_Task_Management;
+export default KPITaskManagement;
