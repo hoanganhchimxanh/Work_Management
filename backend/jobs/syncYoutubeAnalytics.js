@@ -63,7 +63,7 @@ const syncYoutubeAnalytics = () => {
     }
   );
 
-  console.log("Analytics sync scheduler started (runs daily at 6:00 AM)");
+  console.log("Analytics sync scheduler started (runs daily at 9:00 AM)");
 };
 
 module.exports = syncYoutubeAnalytics;
