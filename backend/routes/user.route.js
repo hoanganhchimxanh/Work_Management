@@ -9,6 +9,7 @@ const {
   getPersonal,
   updateUser,
   deleteUser,
+  deleteSelfAccount,
 } = require("../controllers/user.controller");
 const {
   authenticateJWT,
@@ -64,6 +65,12 @@ router.delete(
   authenticateJWT,
   authorizeRoles("ADMIN"),
   deleteUser
+);
+router.delete(
+  "/delete-self-account",
+  authenticateJWT,
+  authorizeRoles(["EMPLOYEE", "ACCOUNTANT"]),
+  deleteSelfAccount
 );
 
 module.exports = router;

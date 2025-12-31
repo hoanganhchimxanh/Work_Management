@@ -6,10 +6,8 @@ const Team = db.Team;
 const bcrypt = require("bcrypt");
 const generator = require("generate-password");
 const sendEmail = require("../utils/mailer");
-const XLSX = require("xlsx");
 const sendNewAccountTemplate = require("../utils/emailTemplates/sendNewAccount");
 const sendRejectTemplate = require("../utils/emailTemplates/sendReject");
-const sendResourcesTemplate = require("../utils/emailTemplates/sendResources");
 
 // Tạo người dùng mới thủ công
 const createNewUser = async (req, res, next) => {
@@ -481,6 +479,180 @@ const deleteUser = async (req, res, next) => {
   }
 };
 
+const deleteSelfAccount = async (req, res, next) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const userId = req.user.userId; // Từ JWT token
+    const { confirmPassword } = req.body;
+
+    // 1. Kiểm tra user tồn tại
+    const user = await User.findById(userId).session(session);
+    if (!user) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy người dùng!",
+      });
+    }
+
+    // 2. Kiểm tra role (chỉ cho phép EMPLOYEE và ACCOUNTANT)
+    if (user.role === "ADMIN") {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(403).json({
+        success: false,
+        message: "Admin không được phép tự xóa tài khoản!",
+      });
+    }
+
+    // 3. Xác thực mật khẩu (nếu có)
+    if (confirmPassword) {
+      const account = await Account.findOne({ user: userId }).session(session);
+      if (account) {
+        const isPasswordValid = await bcrypt.compare(
+          confirmPassword,
+          account.password
+        );
+        if (!isPasswordValid) {
+          await session.abortTransaction();
+          session.endSession();
+          return res.status(401).json({
+            success: false,
+            message: "Mật khẩu không chính xác!",
+          });
+        }
+      }
+    }
+
+    // 4. Lấy thông tin liên quan để log
+    const relatedData = {
+      channels: await Channel.countDocuments({ assignedUser: userId }).session(
+        session
+      ),
+      networks: await Network.countDocuments({ assignedUser: userId }).session(
+        session
+      ),
+      resources: await db.Resource.countDocuments({
+        assignedUser: userId,
+      }).session(session),
+      tasks: await db.Task.countDocuments({ assignedToUser: userId }).session(
+        session
+      ),
+      kpis: await db.KPI.countDocuments({ user: userId }).session(session),
+    };
+
+    console.log(
+      `[DELETE ACCOUNT] User ${user.fullName} (${user.personalEmail}):`,
+      relatedData
+    );
+
+    // 5. Xóa Account
+    await Account.deleteMany({ user: userId }, { session });
+
+    // 6. Xử lý Channel - Gỡ assignedUser (không xóa channel)
+    await Channel.updateMany(
+      { assignedUser: userId },
+      { $unset: { assignedUser: "" } },
+      { session }
+    );
+
+    // 7. Xử lý Network - Gỡ assignedUser (không xóa network)
+    await Network.updateMany(
+      { assignedUser: userId },
+      { $unset: { assignedUser: "" } },
+      { session }
+    );
+
+    // 8. Xử lý Resource - Gỡ assignedUser và chuyển về AVAILABLE
+    await db.Resource.updateMany(
+      { assignedUser: userId },
+      { $unset: { assignedUser: "" }, status: "AVAILABLE" },
+      { session }
+    );
+
+    // 9. Xử lý Team
+    // Gỡ user khỏi members
+    await Team.updateMany(
+      { members: userId },
+      { $pull: { members: userId } },
+      { session }
+    );
+
+    // Gỡ user khỏi leader (set null)
+    await Team.updateMany(
+      { leader: userId },
+      { $unset: { leader: "" } },
+      { session }
+    );
+
+    // 10. Xử lý Task - Gỡ assignedToUser (không xóa task)
+    await db.Task.updateMany(
+      { assignedToUser: userId },
+      { $unset: { assignedToUser: "" } },
+      { session }
+    );
+
+    // 11. Xóa KPI cá nhân (không xóa KPI của team)
+    await db.KPI.deleteMany({ user: userId }, { session });
+
+    // 12. Xóa YoutubeAuth
+    await db.YoutubeAuth.deleteMany({ user: userId }, { session });
+
+    // 13. Xóa Notification
+    await db.Notification.deleteMany({ recipient: userId }, { session });
+
+    // 14. Cuối cùng, xóa User
+    await User.findByIdAndDelete(userId, { session });
+
+    // Commit transaction
+    await session.commitTransaction();
+    session.endSession();
+
+    // 15. Gửi email thông báo (optional)
+    try {
+      await sendEmail({
+        to: user.personalEmail,
+        subject: "Xác nhận xóa tài khoản",
+        text: "",
+        html: `
+          <h2>Tài khoản của bạn đã được xóa</h2>
+          <p>Xin chào ${user.fullName},</p>
+          <p>Tài khoản của bạn tại hệ thống đã được xóa thành công vào lúc ${new Date().toLocaleString(
+            "vi-VN"
+          )}.</p>
+          <p>Nếu đây không phải là hành động của bạn, vui lòng liên hệ với quản trị viên ngay lập tức.</p>
+          <br>
+          <p>Trân trọng,<br>Đội ngũ quản lý</p>
+        `,
+        attachments: [],
+      });
+    } catch (mailErr) {
+      console.error("Gửi email thông báo thất bại:", mailErr);
+    }
+
+    res.json({
+      success: true,
+      message: "Xóa tài khoản thành công!",
+      data: {
+        deletedUser: {
+          userId: user._id,
+          fullName: user.fullName,
+          personalEmail: user.personalEmail,
+        },
+        relatedDataRemoved: relatedData,
+      },
+    });
+  } catch (err) {
+    await session.abortTransaction();
+    session.endSession();
+    console.error("[DELETE ACCOUNT ERROR]", err);
+    next(err);
+  }
+};
+
 module.exports = {
   createNewUser,
   registerByUser,
@@ -491,4 +663,5 @@ module.exports = {
   getPersonal,
   updateUser,
   deleteUser,
+  deleteSelfAccount,
 };
