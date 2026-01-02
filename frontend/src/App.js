@@ -14,7 +14,7 @@ import NotFound from "./pages/NotFound";
 import AdminLayout from "./layouts/AdminLayout";
 import Dashboard from "./pages/admin/Dashboard";
 import UserManagement from "./pages/admin/UserManagement";
-import ResourceManagement from "./pages/admin/ResourceManagement";
+import ResourceManagement from "./pages/admin/ResourceManagement2";
 import KPITaskManagement from "./pages/admin/KPITaskManagement";
 import NetworkManagement from "./pages/admin/NetworkManagement";
 import ChannelManagement from "./pages/admin/ChannelManagement";
