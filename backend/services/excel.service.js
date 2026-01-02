@@ -10,9 +10,10 @@ class ExcelService {
    * Import data từ Excel
    * @param {string} entityType - Loại entity (user, team, resource, network)
    * @param {Buffer} fileBuffer - Buffer của file Excel
+   * @param {Object} options - Additional options (assignedUser, originalFileName)
    * @returns {Promise<Object>} - Kết quả import
    */
-  async importFromExcel(entityType, fileBuffer) {
+  async importFromExcel(entityType, fileBuffer, options = {}) {
     const config = excelConfigs[entityType];
     if (!config) {
       throw new Error(`Entity type "${entityType}" không được hỗ trợ`);
@@ -34,9 +35,13 @@ class ExcelService {
       success: [],
       errors: [],
       total: data.length,
+      batchId: null, // Thêm batchId để trả về
     };
 
-    // Xử lý từng row một cách độc lập (không dùng transaction)
+    // Array để lưu IDs của các records được tạo thành công (cho ResourceBatch)
+    const createdResourceIds = [];
+
+    // Xử lý từng row một cách độc lập
     for (let i = 0; i < data.length; i++) {
       const row = data[i];
       const rowNumber = i + 2;
@@ -97,6 +102,11 @@ class ExcelService {
           ...this._getSuccessInfo(newRecord, config),
           ...extraData,
         });
+
+        // ✅ Lưu ID cho ResourceBatch (chỉ với entity type = resource)
+        if (entityType === "resource") {
+          createdResourceIds.push(newRecord._id);
+        }
       } catch (err) {
         results.errors.push({
           row: rowNumber,
@@ -110,6 +120,43 @@ class ExcelService {
       console.error("IMPORT FAILED - ALL ROWS INVALID");
       console.error("ERROR DETAILS:", JSON.stringify(results.errors, null, 2));
       throw new Error("Không có bản ghi hợp lệ để import");
+    }
+
+    // ✅ TẠO RESOURCE BATCH (chỉ cho resource imports)
+    if (entityType === "resource" && createdResourceIds.length > 0) {
+      try {
+        const ResourceBatch = this.db.ResourceBatch;
+
+        // Lấy originalFileName từ options hoặc tạo tên mặc định
+        const excelFileName =
+          options.originalFileName ||
+          `Import_${new Date().toISOString().split("T")[0]}_${Date.now()}.xlsx`;
+
+        // Lấy assignedUser từ options (admin đang import)
+        const assignedUser = options.assignedUser || options.userId;
+
+        if (!assignedUser) {
+          throw new Error("Không xác định được user thực hiện import");
+        }
+
+        const newBatch = await ResourceBatch.create({
+          excelFileName,
+          resources: createdResourceIds,
+          assignedUser,
+          status: "ACTIVE",
+        });
+
+        results.batchId = newBatch._id;
+
+        console.log(
+          `✅ Created ResourceBatch: ${newBatch._id} with ${createdResourceIds.length} resources`
+        );
+      } catch (batchError) {
+        console.error("❌ Error creating ResourceBatch:", batchError);
+        // Không throw error để không làm fail cả quá trình import
+        // Chỉ log lỗi và tiếp tục
+        results.batchError = batchError.message;
+      }
     }
 
     return results;
@@ -208,25 +255,17 @@ class ExcelService {
 
   // ==================== PRIVATE METHODS ====================
 
-  /**
-   * Xử lý và validate data từ một row
-   * Hỗ trợ đọc từ nhiều định dạng Excel khác nhau
-   */
   async _processRowData(row, config, session) {
     const processedData = {};
     let error = null;
 
-    // Kiểm tra required fields
     for (const col of config.columns) {
-      // Thử đọc từ excelKey chính
       let value = row[col.excelKey];
 
-      // Nếu không có, thử đọc từ altExcelKey (alternative key)
       if (value === undefined && col.altExcelKey) {
         value = row[col.altExcelKey];
       }
 
-      // Check required
       if (col.required && !value) {
         error = `Thiếu thông tin bắt buộc: ${col.displayName}`;
         break;
@@ -234,19 +273,16 @@ class ExcelService {
 
       if (!value) continue;
 
-      // Validate
       if (col.validate && !col.validate(value)) {
         error = `Giá trị không hợp lệ cho ${col.displayName}`;
         break;
       }
 
-      // Transform
       let transformedValue = value;
       if (col.transform) {
         transformedValue = await col.transform(value);
       }
 
-      // Handle reference
       if (col.isReference) {
         const refValue = await this._resolveReference(
           col,
@@ -266,14 +302,10 @@ class ExcelService {
     return { data: processedData, error };
   }
 
-  /**
-   * Resolve reference (tìm ID từ reference field)
-   */
   async _resolveReference(col, value, session) {
     const RefModel = this.db[col.referenceModel];
 
     if (col.isArray) {
-      // Handle array of references
       const values = value.split(col.delimiter || ",").map((v) => v.trim());
       const query = {};
       query[col.referenceField] = { $in: values };
@@ -281,7 +313,6 @@ class ExcelService {
       const refs = await RefModel.find(query).lean();
       return refs.map((ref) => ref[col.referenceKey]);
     } else {
-      // Handle single reference
       const query = {};
       query[col.referenceField] = value;
 
@@ -290,11 +321,7 @@ class ExcelService {
     }
   }
 
-  /**
-   * Kiểm tra duplicate record
-   */
   async _checkDuplicate(Model, data, config, session) {
-    // Tìm unique field (thường là email hoặc field đầu tiên required)
     const uniqueField = config.columns.find(
       (col) => col.required && !col.isReference
     );
@@ -314,9 +341,6 @@ class ExcelService {
     return null;
   }
 
-  /**
-   * Lấy thông tin success từ record
-   */
   _getSuccessInfo(record, config) {
     const info = {};
     config.columns.slice(0, 3).forEach((col) => {
@@ -327,11 +351,7 @@ class ExcelService {
     return info;
   }
 
-  /**
-   * Lấy fields để populate
-   */
   _getPopulateFields(modelName) {
-    // Common fields for each model
     const fieldMap = {
       User: "fullName personalEmail role team",
       Team: "name",
@@ -341,9 +361,6 @@ class ExcelService {
     return fieldMap[modelName] || "name";
   }
 
-  /**
-   * Default prepare export data
-   */
   _defaultPrepareExportData(records, config) {
     return records.map((record, index) => {
       const row = { stt: index + 1 };
@@ -359,9 +376,6 @@ class ExcelService {
     });
   }
 
-  /**
-   * Get nested value từ object
-   */
   _getNestedValue(obj, path) {
     return path.split(".").reduce((current, key) => current?.[key], obj);
   }

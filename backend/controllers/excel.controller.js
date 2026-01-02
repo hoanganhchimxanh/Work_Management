@@ -5,7 +5,7 @@ const ExcelService = require("../services/excel.service");
 const excelService = new ExcelService(db);
 
 /**
- * Generic import handler
+ * Generic import handler với hỗ trợ ResourceBatch
  * @param {string} entityType - user, team, resource, etc.
  */
 const importExcel = (entityType) => async (req, res, next) => {
@@ -17,16 +17,39 @@ const importExcel = (entityType) => async (req, res, next) => {
       });
     }
 
+    // ✅ Chuẩn bị options cho import
+    const options = {
+      originalFileName: req.file.originalname, // Lấy tên file gốc
+      userId: req.user.userId, // Lấy từ JWT token (admin đang import)
+      assignedUser: req.user.userId, // User được gán quản lý batch
+    };
+
+    // Gọi service với options
     const results = await excelService.importFromExcel(
       entityType,
-      req.file.buffer
+      req.file.buffer,
+      options
     );
 
-    return res.json({
+    // ✅ Response bao gồm cả batchId (nếu có)
+    const response = {
       success: true,
       message: `Import hoàn tất: ${results.success.length}/${results.total} thành công`,
       data: results,
-    });
+    };
+
+    // Thêm thông tin về batch nếu có
+    if (results.batchId) {
+      response.message += ` | Batch ID: ${results.batchId}`;
+      response.batchId = results.batchId;
+    }
+
+    // Cảnh báo nếu có lỗi tạo batch
+    if (results.batchError) {
+      response.warning = `Import thành công nhưng không tạo được batch: ${results.batchError}`;
+    }
+
+    return res.json(response);
   } catch (err) {
     next(err);
   }

@@ -14,9 +14,25 @@ const logRequestTime = (req, res, next) => {
 router.use(logRequestTime);
 router.use(express.json());
 
-// ============== RESOURCE BATCH ROUTES (ADMIN ONLY) ==============
+// ============== RESOURCE BATCH ROUTES ==============
 
-// Lấy tất cả các batch
+// ✅ Lấy batches của user hiện tại (EMPLOYEE có thể xem)
+router.get(
+  "/my-batches",
+  authenticateJWT,
+  authorizeRoles(["ADMIN", "EMPLOYEE"]),
+  resourceBatchController.getMyBatches
+);
+
+// ✅ Lấy thống kê batches (ADMIN only)
+router.get(
+  "/stats",
+  authenticateJWT,
+  authorizeRoles("ADMIN"),
+  resourceBatchController.getBatchStats
+);
+
+// Lấy tất cả các batch (ADMIN only)
 router.get(
   "/get-all",
   authenticateJWT,
@@ -24,7 +40,7 @@ router.get(
   resourceBatchController.getAllBatches
 );
 
-// Lấy một batch theo ID
+// Lấy một batch theo ID (ADMIN only)
 router.get(
   "/get-by-id/:id",
   authenticateJWT,
@@ -32,7 +48,7 @@ router.get(
   resourceBatchController.getBatchById
 );
 
-// Tạo mới một batch (thường dùng khi import Excel)
+// Tạo mới một batch (thường dùng khi import Excel - ADMIN only)
 router.post(
   "/create",
   authenticateJWT,
