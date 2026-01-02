@@ -120,7 +120,6 @@ const login = async (req, res, next) => {
 };
 
 // Đổi mật khẩu
-// Đổi mật khẩu
 const changePassword = async (req, res, next) => {
   try {
     const account = await Account.findById(req.params.id).populate("user");

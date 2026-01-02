@@ -9,7 +9,6 @@ import {
 } from "react-bootstrap-icons";
 
 const SalarySlipCard = () => {
-  // Dữ liệu thu nhập thực tế (có thể thay bằng props/API sau)
   const incomes = [
     {
       id: 1,
@@ -31,16 +30,6 @@ const SalarySlipCard = () => {
       deductionRate: 37,
       netVND: 515860,
     },
-    {
-      id: 3,
-      source: "Bonus Leader",
-      from: "MMO Master",
-      records: 1,
-      type: "BONUS",
-      grossUSD: 100,
-      deductionRate: 0,
-      netVND: 2600000,
-    },
   ];
 
   // Tính toán tổng
@@ -57,8 +46,10 @@ const SalarySlipCard = () => {
         {/* HEADER */}
         <Row className="align-items-center mb-5">
           <Col lg={8}>
-            <h2 className="header-title mb-1">PHIẾU THANH TOÁN THU NHẬP</h2>
-            <div className="text-muted fs-5">MMO Master Inc.</div>
+            <h2 className="header-title mb-1">PHIẾU TÍNH TOÁN THU NHẬP KÊNH</h2>
+            <div className="text-muted fs-5">
+              Công ty cố phần tập đoàn truyền thông Thăng Long
+            </div>
             <div className="fw-bold text-success fs-4 mt-2">
               Kỳ thanh toán: Tháng 12/2025
             </div>
@@ -99,7 +90,7 @@ const SalarySlipCard = () => {
                 <div className="fw-bold fs-5">KHẤU TRỪ VI PHẠM NỘI BỘ</div>
                 <div className="fs-3 fw-bold">−150.000 đ</div>
                 <small className="opacity-75">
-                  2 lần vi phạm (tổng 901 phút muộn)
+                  2 lần vi phạm (tổng 360 phút muộn)
                 </small>
               </div>
             </Alert>
@@ -138,7 +129,7 @@ const SalarySlipCard = () => {
                         bg="primary"
                         className="badge-custom badge-team text-white"
                       >
-                        <People size={14} className="me-1" /> Thưởng Team
+                        <People size={14} className="me-1" /> Kênh Team
                       </Badge>
                     )}
                     {item.type === "NETWORK" && (
@@ -146,15 +137,7 @@ const SalarySlipCard = () => {
                         bg="warning"
                         className="badge-custom badge-network text-white"
                       >
-                        <Globe size={14} className="me-1" /> Network
-                      </Badge>
-                    )}
-                    {item.type === "BONUS" && (
-                      <Badge
-                        bg="success"
-                        className="badge-custom badge-bonus text-white"
-                      >
-                        <Trophy size={14} className="me-1" /> Bonus Leader
+                        <Globe size={14} className="me-1" /> Kênh Network
                       </Badge>
                     )}
                   </td>
@@ -219,8 +202,6 @@ const SalarySlipCard = () => {
             Network.
             <br />
             • Ăn chia Network (20%) + Thuế TNCN (7%) áp dụng cho nguồn Team.
-            <br />
-            • Bonus Leader không chịu khấu trừ thuế.
             <br />• Tất cả thanh toán được chuyển khoản trong vòng 7 ngày làm
             việc sau kỳ.
           </small>

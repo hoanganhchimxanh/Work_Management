@@ -23,41 +23,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use(morgan("dev"));
 
 // --- Routes ---
-app.get("/", (req, res) => {
-  res.status(200).json({ message: "Welcome to ExpressJS server" });
-});
+const routes = require("./routes");
 
-const userRouter = require("./routes/user.route");
-const accountRouter = require("./routes/account.route");
-const teamRouter = require("./routes/team.route");
-const kpiRouter = require("./routes/kpi.route");
-const taskRouter = require("./routes/task.route");
-const channelRouter = require("./routes/channel.route");
-const networkRouter = require("./routes/network.route");
-const youtubeAuthRouter = require("./routes/youtubeAuth.route");
-const youtubeAnalyticsRouter = require("./routes/youtubeAnalytics.route");
-const dashboardRouter = require("./routes/dashboard.route");
-const excelRouter = require("./routes/excel.route");
-const notificationRouter = require("./routes/notification.route");
-const resourceRouter = require("./routes/resource.route");
-const bugReportRouter = require("./routes/bugReport.route");
-const channelRevenueRouter = require("./routes/channelRevenue.route");
-
-app.use("/user", userRouter);
-app.use("/account", accountRouter);
-app.use("/team", teamRouter);
-app.use("/kpi", kpiRouter);
-app.use("/task", taskRouter);
-app.use("/channel", channelRouter);
-app.use("/network", networkRouter);
-app.use("/youtube-auth", youtubeAuthRouter);
-app.use("/youtube-analytics", youtubeAnalyticsRouter);
-app.use("/dashboard", dashboardRouter);
-app.use("/excel", excelRouter);
-app.use("/notification", notificationRouter);
-app.use("/resource", resourceRouter);
-app.use("/bug-report", bugReportRouter);
-app.use("/channel-revenue", channelRevenueRouter);
+app.use("/", routes);
 
 // --- Xử lý lỗi ---
 

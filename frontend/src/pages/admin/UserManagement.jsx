@@ -8,12 +8,15 @@ import UserModal from "../../components/admin/userManagement/UserModal";
 import TeamModal from "../../components/admin/userManagement/TeamModal";
 import UserImportModal from "../../components/admin/userManagement/UserImportModal";
 import TeamImportModal from "../../components/admin/userManagement/TeamImportModal";
+import TablePagination from "../../components/common/TablePagination";
+import ItemsPerPageSelector from "../../components/common/ItemsPerPageSelector";
 
 // Custom hooks
 import useAuth from "../../hooks/admin/dashboard/useAuth";
 import useUserManagementData from "../../hooks/admin/userManagement/useUserManagementData";
 import useUserManagementModals from "../../hooks/admin/userManagement/useUserManagementModals";
 import useUserManagementActions from "../../hooks/admin/userManagement/useUserManagementActions";
+import usePagination from "../../hooks/admin/resourceManagement/usePagination";
 
 function UserManagement() {
   // 1. Authentication
@@ -32,7 +35,23 @@ function UserManagement() {
     refetchAll,
   } = useUserManagementData(getAuthConfig);
 
-  // 3. Modals
+  // 3. Pagination for Users
+  const {
+    paginatedItems: paginatedUsers,
+    pagination: userPagination,
+    setCurrentPage: setUserCurrentPage,
+    setItemsPerPage: setUserItemsPerPage,
+  } = usePagination(users, 10);
+
+  // 4. Pagination for Teams
+  const {
+    paginatedItems: paginatedTeams,
+    pagination: teamPagination,
+    setCurrentPage: setTeamCurrentPage,
+    setItemsPerPage: setTeamItemsPerPage,
+  } = usePagination(teams, 10);
+
+  // 5. Modals
   const {
     modals,
     selected,
@@ -46,7 +65,7 @@ function UserManagement() {
     closeTeamImportModal,
   } = useUserManagementModals();
 
-  // 4. Actions
+  // 6. Actions
   const {
     handleUserImport,
     handleUserExport,
@@ -142,14 +161,41 @@ function UserManagement() {
         </Col>
       </Row>
 
-      <Row className="mb-5">
+      {/* User Table Controls */}
+      <Row className="mb-3">
+        <Col>
+          <div className="d-flex justify-content-between align-items-center">
+            <h6 className="mb-0 text-muted">
+              Danh sách người dùng ({userPagination.totalItems})
+            </h6>
+
+            <ItemsPerPageSelector
+              value={userPagination.itemsPerPage}
+              onChange={setUserItemsPerPage}
+            />
+          </div>
+        </Col>
+      </Row>
+
+      <Row className="mb-3">
         <Col>
           <UserTable
-            users={users}
+            users={paginatedUsers}
             loading={loadingUsers}
             onEdit={openUserModal}
             onRefresh={refetchUsers}
             teams={teams}
+          />
+        </Col>
+      </Row>
+
+      {/* User Pagination */}
+      <Row className="mb-5">
+        <Col>
+          <TablePagination
+            currentPage={userPagination.currentPage}
+            totalPages={userPagination.totalPages}
+            onPageChange={setUserCurrentPage}
           />
         </Col>
       </Row>
@@ -182,14 +228,41 @@ function UserManagement() {
         </Col>
       </Row>
 
-      <Row>
+      {/* Team Table Controls */}
+      <Row className="mb-3">
+        <Col>
+          <div className="d-flex justify-content-between align-items-center">
+            <h6 className="mb-0 text-muted">
+              Danh sách đội nhóm ({teamPagination.totalItems})
+            </h6>
+
+            <ItemsPerPageSelector
+              value={teamPagination.itemsPerPage}
+              onChange={setTeamItemsPerPage}
+            />
+          </div>
+        </Col>
+      </Row>
+
+      <Row className="mb-3">
         <Col>
           <TeamTable
-            teams={teams}
+            teams={paginatedTeams}
             loading={loadingTeams}
             onEdit={openTeamModal}
             onRefresh={refetchTeams}
             onDeleted={handleTeamDeleted}
+          />
+        </Col>
+      </Row>
+
+      {/* Team Pagination */}
+      <Row>
+        <Col>
+          <TablePagination
+            currentPage={teamPagination.currentPage}
+            totalPages={teamPagination.totalPages}
+            onPageChange={setTeamCurrentPage}
           />
         </Col>
       </Row>

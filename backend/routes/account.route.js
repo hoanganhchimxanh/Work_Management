@@ -1,18 +1,11 @@
 const express = require("express");
-const {
-  createNewAccount,
-  login,
-  changePassword,
-  register,
-  autoResetPassword,
-  updateStatus,
-} = require("../controllers/account.controller");
+const router = express.Router();
+const accountController = require("../controllers/account.controller");
 const {
   authenticateJWT,
   authorizeRoles,
 } = require("../middlewares/auth.middleware");
 
-const router = express.Router();
 const logRequestTime = (req, res, next) => {
   console.log("Time: ", Date.now());
   next();
@@ -21,22 +14,24 @@ const logRequestTime = (req, res, next) => {
 router.use(logRequestTime);
 router.use(express.json());
 
-router.post("/create-new-account", createNewAccount);
-router.post("/register", register);
-router.post("/login", login);
-router.post("/auto-reset-password", autoResetPassword);
+// ========== ACCOUNT ROUTES ==========
+router.post("/create-new-account", accountController.createNewAccount);
+router.post("/register", accountController.register);
+router.post("/login", accountController.login);
+router.post("/auto-reset-password", accountController.autoResetPassword);
+
 router.patch(
   "/change-password/:id",
   authenticateJWT,
   authorizeRoles(["ACCOUNTANT", "EMPLOYEE"]),
-  changePassword
+  accountController.changePassword
 );
 
 router.put(
   "/update-status",
   authenticateJWT,
   authorizeRoles("ADMIN"),
-  updateStatus
+  accountController.updateStatus
 );
 
 module.exports = router;

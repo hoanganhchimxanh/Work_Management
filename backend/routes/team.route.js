@@ -1,17 +1,11 @@
 const express = require("express");
-const {
-  createNew,
-  getAll,
-  getById,
-  editInfo,
-  deleteTeam,
-} = require("../controllers/team.controller");
+const router = express.Router();
+const teamController = require("../controllers/team.controller");
 const {
   authenticateJWT,
   authorizeRoles,
 } = require("../middlewares/auth.middleware");
 
-const router = express.Router();
 const logRequestTime = (req, res, next) => {
   console.log("Time: ", Date.now());
   next();
@@ -20,26 +14,40 @@ const logRequestTime = (req, res, next) => {
 router.use(logRequestTime);
 router.use(express.json());
 
-router.post("/create-new", authenticateJWT, authorizeRoles("ADMIN"), createNew);
-router.get("/get-all-team", authenticateJWT, authorizeRoles("ADMIN"), getAll);
+// ========== TEAM ROUTES ==========
+router.post(
+  "/create-new",
+  authenticateJWT,
+  authorizeRoles("ADMIN"),
+  teamController.createNew
+);
+
+router.get(
+  "/get-all-team",
+  authenticateJWT,
+  authorizeRoles("ADMIN"),
+  teamController.getAll
+);
+
 router.get(
   "/get-team/:id",
   authenticateJWT,
   authorizeRoles(["ADMIN", "EMPLOYEE"]),
-  getById
+  teamController.getById
 );
 
 router.put(
   "/edit-team-info/:id",
   authenticateJWT,
   authorizeRoles("ADMIN"),
-  editInfo
+  teamController.editInfo
 );
+
 router.delete(
   "/delete-team/:id",
   authenticateJWT,
   authorizeRoles("ADMIN"),
-  deleteTeam
+  teamController.deleteTeam
 );
 
 module.exports = router;
