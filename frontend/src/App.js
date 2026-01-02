@@ -35,6 +35,8 @@ import AccountantLayout from "./layouts/AccountantLayout";
 import AccountantNetworkManagement from "./pages/accountant/NetworkManagement";
 import AccountantNotification from "./pages/accountant/NotificationPage";
 import AccountantDashboard from "./pages/accountant/AccountantDashboard";
+import AccountantEmployeeList from "./pages/accountant/EmployeeList";
+import AccountantChannelRevenue from "./pages/accountant/ChannelRevenue";
 
 // Protected route
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -101,6 +103,11 @@ function App() {
           <Route path="dashboard" element={<AccountantDashboard />} />
           <Route path="networks" element={<AccountantNetworkManagement />} />
           <Route path="notifications" element={<AccountantNotification />} />
+          <Route path="employee-list" element={<AccountantEmployeeList />} />
+          <Route
+            path="channels-revenue"
+            element={<AccountantChannelRevenue />}
+          />
         </Route>
 
         {/* Employee pages */}

@@ -7,6 +7,7 @@ import {
   List,
   BellFill,
   BugFill,
+  FileSlides,
 } from "react-bootstrap-icons";
 import { useContext } from "react";
 import { AuthContext } from "../../contexts/AuthContext";
@@ -79,6 +80,11 @@ const Sidebar = () => {
       to: "/accountant/dashboard",
       icon: <HouseDoorFill />,
       label: "Dashboard",
+    },
+    {
+      to: "/accountant/employee-list",
+      icon: <FileSlides />,
+      label: "Quản lý Doanh thu kênh",
     },
     {
       to: "/accountant/networks",
