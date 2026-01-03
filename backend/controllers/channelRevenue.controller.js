@@ -313,15 +313,16 @@ const deleteRevenue = async (req, res, next) => {
   }
 };
 
-// [ADMIN] Lấy tổng quan doanh thu của tất cả kênh
+// Lấy tổng quan doanh thu của tất cả kênh
 const getAllChannelsRevenueSummary = async (req, res, next) => {
   try {
     const { month } = req.query;
-
     const matchStage = month ? { month } : {};
 
     const summary = await ChannelRevenue.aggregate([
       { $match: matchStage },
+
+      // Join Channel
       {
         $lookup: {
           from: "channels",
@@ -331,16 +332,46 @@ const getAllChannelsRevenueSummary = async (req, res, next) => {
         },
       },
       { $unwind: "$channelData" },
+
+      // Join User (assignedUser)
+      {
+        $lookup: {
+          from: "users",
+          localField: "channelData.assignedUser",
+          foreignField: "_id",
+          as: "assignedUser",
+        },
+      },
+      {
+        $unwind: {
+          path: "$assignedUser",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+
+      // Group theo CHANNEL
       {
         $group: {
           _id: "$channel",
           channelName: { $first: "$channelData.name" },
           channelLink: { $first: "$channelData.link" },
+
+          assignedUser: {
+            $first: {
+              userId: "$assignedUser._id",
+              fullName: "$assignedUser.fullName",
+              personalEmail: "$assignedUser.personalEmail",
+              team: "$assignedUser.team",
+              status: "$assignedUser.status",
+            },
+          },
+
           totalEstimated: { $sum: "$estimatedRevenue" },
           totalActual: { $sum: "$actualRevenue" },
           monthCount: { $sum: 1 },
         },
       },
+
       { $sort: { totalActual: -1 } },
     ]);
 

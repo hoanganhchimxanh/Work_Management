@@ -105,7 +105,7 @@ function App() {
           <Route path="notifications" element={<AccountantNotification />} />
           <Route path="employee-list" element={<AccountantEmployeeList />} />
           <Route
-            path="channels-revenue"
+            path="channels-revenue/:userId"
             element={<AccountantChannelRevenue />}
           />
         </Route>

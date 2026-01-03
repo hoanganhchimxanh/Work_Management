@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Container,
   Table,
@@ -8,19 +8,32 @@ import {
   InputGroup,
   Row,
   Col,
+  Spinner,
+  Alert,
 } from "react-bootstrap";
-import { Search, Pencil, Trash, ArrowRightCircle } from "react-bootstrap-icons";
+import { Search, ArrowRightCircle } from "react-bootstrap-icons";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 function EmployeeList() {
   const navigate = useNavigate();
 
   // State cho bộ lọc tháng/năm
-  const [selectedMonth, setSelectedMonth] = useState("01");
-  const [selectedYear, setSelectedYear] = useState("2026");
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const now = new Date();
+    return String(now.getMonth() + 1).padStart(2, "0");
+  });
+  const [selectedYear, setSelectedYear] = useState(() => {
+    return String(new Date().getFullYear());
+  });
 
   // State cho ô tìm kiếm tên
   const [searchTerm, setSearchTerm] = useState("");
+
+  // State cho data từ API
+  const [employees, setEmployees] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   // Danh sách tháng
   const months = [
@@ -40,45 +53,75 @@ function EmployeeList() {
 
   const years = ["2024", "2025", "2026", "2027"];
 
-  // Dữ liệu mẫu nhân viên (trong thực tế sẽ fetch theo tháng/năm)
-  const employees = [
-    {
-      id: 1,
-      name: "Nguyễn Văn An",
-      personalEmail: "an.nguyen@gmail.com",
-      loginEmail: "an.nguyen@company.com",
-      status: "active",
-      totalRevenue: "312,500,000 VND",
-    },
-    {
-      id: 2,
-      name: "Trần Thị Bình",
-      personalEmail: "binh.tran@yahoo.com",
-      loginEmail: "binh.tran@company.com",
-      status: "active",
-      totalRevenue: "289,700,000 VND",
-    },
-    {
-      id: 3,
-      name: "Lê Văn Cường",
-      personalEmail: "cuong.le@outlook.com",
-      loginEmail: "cuong.le@company.com",
-      status: "inactive",
-      totalRevenue: "156,200,000 VND",
-    },
-    {
-      id: 4,
-      name: "Phạm Minh Duy",
-      personalEmail: "duy.pham@gmail.com",
-      loginEmail: "duy.pham@company.com",
-      status: "active",
-      totalRevenue: "423,800,000 VND",
-    },
-  ];
+  // Fetch danh sách nhân viên và doanh thu
+  useEffect(() => {
+    fetchEmployeesRevenue();
+  }, [selectedMonth, selectedYear]);
+
+  const fetchEmployeesRevenue = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const token = localStorage.getItem("token");
+      const monthQuery = `${selectedYear}-${selectedMonth}`;
+
+      // Gọi API lấy tất cả users
+      const usersResponse = await axios.get(
+        `http://localhost:9999/user/get-all`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          params: { status: "ACTIVE" },
+        }
+      );
+
+      const users = usersResponse.data.data;
+
+      // Gọi API lấy tổng quan doanh thu tất cả kênh
+      const revenueResponse = await axios.get(
+        `http://localhost:9999/channel-revenue/summary`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          params: { month: monthQuery },
+        }
+      );
+
+      const revenueData = revenueResponse.data.data.channels;
+
+      // Map doanh thu theo user
+      const employeesWithRevenue = users.map((user) => {
+        // Tính tổng doanh thu của các kênh do user quản lý
+        const userChannels = revenueData.filter(
+          (channel) => channel.assignedUser?.userId === user.userId
+        );
+
+        const totalRevenue = userChannels.reduce(
+          (sum, channel) => sum + (channel.totalActual || 0),
+          0
+        );
+
+        return {
+          ...user,
+          totalRevenue,
+          channelCount: userChannels.length,
+        };
+      });
+
+      setEmployees(employeesWithRevenue);
+    } catch (err) {
+      console.error("Error fetching employees revenue:", err);
+      setError(
+        err.response?.data?.message ||
+          "Không thể tải danh sách nhân viên. Vui lòng thử lại."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Lọc theo tên
   const filteredEmployees = employees.filter((emp) =>
-    emp.name.toLowerCase().includes(searchTerm.toLowerCase())
+    emp.fullName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // Hàm lấy nhãn tháng
@@ -86,12 +129,11 @@ function EmployeeList() {
     months.find((m) => m.value === selectedMonth)?.label || "Tháng";
 
   // Hàm chuyển hướng đến trang doanh thu kênh của nhân viên
-  const handleViewRevenue = (employeeId, employeeName) => {
-    // Có thể truyền thêm params nếu cần: employeeId, name, month, year...
-    navigate("/accountant/channels-revenue", {
+  const handleViewRevenue = (employee) => {
+    navigate(`/accountant/channels-revenue/${employee.userId}`, {
       state: {
-        employeeId,
-        employeeName,
+        employeeId: employee.userId,
+        employeeName: employee.fullName,
         month: selectedMonth,
         year: selectedYear,
       },
@@ -99,16 +141,50 @@ function EmployeeList() {
   };
 
   const getStatusBadge = (status) => {
-    return status === "active" ? (
-      <Badge bg="success">Hoạt động</Badge>
-    ) : (
-      <Badge bg="secondary">Khóa</Badge>
-    );
+    const statusMap = {
+      ACTIVE: { bg: "success", text: "Hoạt động" },
+      PENDING: { bg: "warning", text: "Chờ duyệt" },
+      QUIT: { bg: "secondary", text: "Đã nghỉ" },
+    };
+
+    const statusInfo = statusMap[status] || {
+      bg: "secondary",
+      text: status,
+    };
+
+    return <Badge bg={statusInfo.bg}>{statusInfo.text}</Badge>;
   };
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+    }).format(amount);
+  };
+
+  if (loading) {
+    return (
+      <Container
+        fluid
+        className="py-4 d-flex justify-content-center align-items-center"
+        style={{ minHeight: "400px" }}
+      >
+        <Spinner animation="border" role="status" variant="primary">
+          <span className="visually-hidden">Đang tải...</span>
+        </Spinner>
+      </Container>
+    );
+  }
 
   return (
     <Container fluid className="py-4">
       <h3 className="mb-4">Danh Sách Nhân Viên & Doanh Thu</h3>
+
+      {error && (
+        <Alert variant="danger" dismissible onClose={() => setError(null)}>
+          {error}
+        </Alert>
+      )}
 
       {/* Bộ lọc Tháng - Năm và Tìm kiếm */}
       <Row className="mb-4 align-items-end">
@@ -177,46 +253,49 @@ function EmployeeList() {
       >
         <thead>
           <tr>
-            <th style={{ width: "80px" }}>STT</th>
+            <th style={{ width: "60px" }}>STT</th>
             <th>Tên nhân viên</th>
             <th>Email cá nhân</th>
             <th>Email đăng nhập</th>
+            <th>Team</th>
+            <th>Số kênh</th>
             <th>Tổng doanh thu</th>
             <th>Trạng thái</th>
-            <th style={{ width: "160px" }}>Hành động</th>
-            <th style={{ width: "140px" }}>Xem doanh thu</th>
+            <th style={{ width: "140px" }}>Xem chi tiết</th>
           </tr>
         </thead>
         <tbody>
           {filteredEmployees.length > 0 ? (
             filteredEmployees.map((employee, index) => (
-              <tr key={employee.id}>
+              <tr key={employee.userId}>
                 <td>{index + 1}</td>
-                <td className="text-start fw-medium">{employee.name}</td>
+                <td
+                  className="text-start fw-medium"
+                  style={{ cursor: "pointer" }}
+                  onClick={() => handleViewRevenue(employee)}
+                >
+                  <span className="text-primary text-decoration-underline">
+                    {employee.fullName}
+                  </span>
+                </td>
                 <td>{employee.personalEmail}</td>
-                <td>{employee.loginEmail}</td>
+                <td>{employee.loginEmail || "—"}</td>
+                <td>{employee.team || "—"}</td>
+                <td>
+                  <Badge bg="info">{employee.channelCount}</Badge>
+                </td>
                 <td className="fw-bold text-success">
-                  {employee.totalRevenue}
+                  {formatCurrency(employee.totalRevenue)}
                 </td>
                 <td>{getStatusBadge(employee.status)}</td>
-                <td>
-                  <Button variant="outline-primary" size="sm" className="me-2">
-                    <Pencil className="me-1" /> Sửa
-                  </Button>
-                  <Button variant="outline-danger" size="sm">
-                    <Trash className="me-1" /> Xóa
-                  </Button>
-                </td>
                 <td>
                   <Button
                     variant="primary"
                     size="sm"
-                    onClick={() =>
-                      handleViewRevenue(employee.id, employee.name)
-                    }
+                    onClick={() => handleViewRevenue(employee)}
                   >
                     <ArrowRightCircle className="me-1" />
-                    Xem chi tiết
+                    Xem kênh
                   </Button>
                 </td>
               </tr>
@@ -230,6 +309,28 @@ function EmployeeList() {
           )}
         </tbody>
       </Table>
+
+      {/* Tổng kết */}
+      {filteredEmployees.length > 0 && (
+        <Row className="mt-4">
+          <Col md={6}>
+            <Alert variant="info">
+              <strong>Tổng số nhân viên:</strong> {filteredEmployees.length}
+            </Alert>
+          </Col>
+          <Col md={6} className="text-end">
+            <Alert variant="success">
+              <strong>Tổng doanh thu:</strong>{" "}
+              {formatCurrency(
+                filteredEmployees.reduce(
+                  (sum, emp) => sum + emp.totalRevenue,
+                  0
+                )
+              )}
+            </Alert>
+          </Col>
+        </Row>
+      )}
     </Container>
   );
 }
