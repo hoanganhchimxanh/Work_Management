@@ -244,6 +244,7 @@ const updateBatch = async (req, res) => {
 const deleteBatch = async (req, res) => {
   try {
     const { id } = req.params;
+
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
@@ -251,19 +252,29 @@ const deleteBatch = async (req, res) => {
       });
     }
 
-    const deletedBatch = await ResourceBatch.findByIdAndDelete(id);
-
-    if (!deletedBatch) {
+    // 1️⃣ Tìm batch
+    const batch = await ResourceBatch.findById(id);
+    if (!batch) {
       return res.status(404).json({
         success: false,
         message: "Không tìm thấy batch để xóa",
       });
     }
 
+    const resourceIds = batch.resources || [];
+
+    // 2️⃣ Xóa resources thuộc batch
+    if (resourceIds.length > 0) {
+      await Resource.deleteMany({ _id: { $in: resourceIds } });
+    }
+
+    // 3️⃣ Xóa batch
+    await ResourceBatch.findByIdAndDelete(id);
+
     res.status(200).json({
       success: true,
-      message: "Xóa batch thành công",
-      data: deletedBatch,
+      message: "Đã xóa batch và toàn bộ resources liên quan",
+      deletedResourcesCount: resourceIds.length,
     });
   } catch (error) {
     console.error("Error in deleteBatch:", error);
@@ -455,9 +466,6 @@ const getBatchStats = async (req, res) => {
 };
 
 const assignUserToBatch = async (req, res) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
   try {
     const { id } = req.params;
     const { userId, force = false } = req.body;
@@ -466,42 +474,35 @@ const assignUserToBatch = async (req, res) => {
       !mongoose.Types.ObjectId.isValid(id) ||
       !mongoose.Types.ObjectId.isValid(userId)
     ) {
-      await session.abortTransaction();
       return res.status(400).json({
         success: false,
         message: "ID batch hoặc userId không hợp lệ",
       });
     }
 
-    // Tìm batch
-    const batch = await ResourceBatch.findById(id).session(session);
+    const batch = await ResourceBatch.findById(id);
     if (!batch) {
-      await session.abortTransaction();
       return res.status(404).json({
         success: false,
         message: "Không tìm thấy batch",
       });
     }
 
-    // Kiểm tra user tồn tại (và có thể check role)
-    const user = await db.User.findById(userId).session(session);
+    const user = await db.User.findById(userId);
     if (!user || user.status !== "ACTIVE") {
-      await session.abortTransaction();
       return res.status(400).json({
         success: false,
         message: "User không tồn tại hoặc không active",
       });
     }
 
-    // Nếu không force, check nếu resources đã assigned
     if (!force) {
       const assignedResources = await Resource.find({
         _id: { $in: batch.resources },
         assignedUser: { $ne: null },
-      }).session(session);
+      });
 
       if (assignedResources.length > 0) {
-        await session.abortTransaction();
         return res.status(400).json({
           success: false,
           message:
@@ -510,12 +511,12 @@ const assignUserToBatch = async (req, res) => {
       }
     }
 
-    // Cập nhật batch
+    // ✅ Update batch
     batch.assignedUser = userId;
-    batch.status = "ACTIVE"; // Hoặc tùy chỉnh
-    await batch.save({ session });
+    batch.status = "ACTIVE";
+    await batch.save();
 
-    // Cập nhật bulk resources (hiệu suất cao)
+    // ✅ Bulk update resources
     await Resource.updateMany(
       { _id: { $in: batch.resources } },
       {
@@ -523,32 +524,25 @@ const assignUserToBatch = async (req, res) => {
           assignedUser: userId,
           status: "ASSIGNED",
         },
-      },
-      { session }
+      }
     );
 
-    await session.commitTransaction();
-
-    // Populate để trả về data đầy đủ
     const updatedBatch = await ResourceBatch.findById(id)
       .populate("resources", "email status assignedUser assignedChannel")
       .populate("assignedUser", "fullName personalEmail");
 
     res.status(200).json({
       success: true,
-      message: "Assign user cho batch thành công và đã đồng bộ resources",
+      message: "Assign user cho batch thành công",
       data: updatedBatch,
     });
   } catch (error) {
-    await session.abortTransaction();
     console.error("Error in assignUserToBatch:", error);
     res.status(500).json({
       success: false,
       message: "Lỗi server khi assign user cho batch",
       error: error.message,
     });
-  } finally {
-    session.endSession();
   }
 };
 
