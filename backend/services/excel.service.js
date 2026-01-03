@@ -133,7 +133,7 @@ class ExcelService {
           `Import_${new Date().toISOString().split("T")[0]}_${Date.now()}.xlsx`;
 
         // Lấy assignedUser từ options (admin đang import)
-        const assignedUser = options.assignedUser || options.userId;
+        const assignedUser = options.userId || null;
 
         if (!assignedUser) {
           throw new Error("Không xác định được user thực hiện import");

@@ -14,7 +14,7 @@ const resourceBatchSchema = new mongoose.Schema(
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Resource",
-        required: true,
+        default: null,
       },
     ],
 

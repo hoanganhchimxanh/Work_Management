@@ -80,4 +80,12 @@ router.get(
   resourceBatchController.getBatchResources
 );
 
+// Assign user cho batch và đồng bộ resources (ADMIN only)
+router.post(
+  "/assign/:id",
+  authenticateJWT,
+  authorizeRoles("ADMIN"),
+  resourceBatchController.assignUserToBatch
+);
+
 module.exports = router;
