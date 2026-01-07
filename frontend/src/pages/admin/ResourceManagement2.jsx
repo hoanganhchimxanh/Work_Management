@@ -37,13 +37,13 @@ import TablePagination from "../../components/common/TablePagination";
 import ItemsPerPageSelector from "../../components/common/ItemsPerPageSelector";
 
 // Custom hooks
-import useAuth from "../../hooks/admin/dashboard/useAuth";
+import useAuth from "../../hooks/useAuth";
 import useResourceData from "../../hooks/admin/resourceManagement/useResourceData";
 import useResourceFilters from "../../hooks/admin/resourceManagement/useResourceFilters";
 import useResourceActions from "../../hooks/admin/resourceManagement/useResourceActions";
 import useResourceModals from "../../hooks/admin/resourceManagement/useResourceModals";
 import useBulkAssign from "../../hooks/admin/resourceManagement/useBulkAssign";
-import usePagination from "../../hooks/admin/resourceManagement/usePagination";
+import usePagination from "../../hooks/usePagination";
 
 function ResourceManagement() {
   // Tab state
@@ -52,17 +52,11 @@ function ResourceManagement() {
   // 1. Authentication
   const { getAuthConfig } = useAuth();
 
-  // 2. Filters (only for resources tab)
-  const {
-    statusFilter,
-    searchQuery,
-    userFilter,
-    setStatusFilter,
-    setSearchQuery,
-    setUserFilter,
-  } = useResourceFilters([]);
+  // 2. Status và User filters (được truyền vào API)
+  const [statusFilter, setStatusFilter] = useState("");
+  const [userFilter, setUserFilter] = useState("");
 
-  // 3. Fetch Data
+  // 3. Fetch Data với filters
   const {
     resources,
     stats,
@@ -74,19 +68,19 @@ function ResourceManagement() {
     refetch,
   } = useResourceData({ statusFilter, userFilter }, getAuthConfig);
 
-  // Apply filters to fetched resources
-  const filtered = useResourceFilters(resources);
-  const actualFilteredResources = filtered.filteredResources;
+  // 4. Apply search filter (client-side) và kết hợp với server-side filters
+  const { searchQuery, setSearchQuery, filteredResources, resetSearch } =
+    useResourceFilters(resources, statusFilter, userFilter);
 
-  // 4. Pagination (only for resources tab)
+  // 5. Pagination (chỉ cho resources tab)
   const {
     paginatedItems: paginatedResources,
     pagination,
     setCurrentPage,
     setItemsPerPage,
-  } = usePagination(actualFilteredResources, 10);
+  } = usePagination(filteredResources, 10);
 
-  // 5. Actions
+  // 6. Actions
   const {
     handleCreate,
     handleUpdate,
@@ -105,7 +99,7 @@ function ResourceManagement() {
     setError: setActionError,
   } = useResourceActions(getAuthConfig, refetch);
 
-  // 6. Modals
+  // 7. Modals
   const {
     modals,
     selectedResource,
@@ -121,7 +115,7 @@ function ResourceManagement() {
     closeBulkAssignUserModal,
   } = useResourceModals();
 
-  // 7. Bulk Assign (only for resources tab)
+  // 8. Bulk Assign (sử dụng filteredResources thay vì resources)
   const {
     bulkAssignMode,
     selectedResources,
@@ -130,13 +124,20 @@ function ResourceManagement() {
     cancelBulkAssignMode,
     handleSelectResource,
     handleSelectAll,
-  } = useBulkAssign(actualFilteredResources);
+  } = useBulkAssign(filteredResources);
 
   // Combined error handling
   const error = fetchError || actionError;
   const setError = (msg) => {
     setFetchError(msg);
     setActionError(msg);
+  };
+
+  // Reset all filters
+  const handleResetFilters = () => {
+    setStatusFilter("");
+    setUserFilter("");
+    resetSearch();
   };
 
   // Wrapper handlers cho modals
@@ -172,7 +173,6 @@ function ResourceManagement() {
     const success = await handleImport(file);
     if (success) {
       closeImportModal();
-      // Chuyển sang tab batches để xem batch vừa tạo
       setActiveTab("batches");
     }
   };
@@ -322,6 +322,14 @@ function ResourceManagement() {
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                       />
+                      {searchQuery && (
+                        <Button
+                          variant="outline-secondary"
+                          onClick={resetSearch}
+                        >
+                          <XSquare size={16} />
+                        </Button>
+                      )}
                     </InputGroup>
                   </Col>
 
@@ -356,24 +364,53 @@ function ResourceManagement() {
                     </Form.Select>
                   </Col>
 
-                  <Col md={2} className="d-flex align-items-end">
+                  <Col md={2} className="d-flex align-items-end gap-2">
                     <Button
                       variant="outline-secondary"
-                      className="w-100"
-                      onClick={refetch}
+                      className="flex-grow-1"
+                      onClick={handleResetFilters}
+                      disabled={!statusFilter && !userFilter && !searchQuery}
                     >
-                      <ArrowClockwise size={16} className="me-2" />
-                      Làm mới
+                      <XSquare size={16} className="me-2" />
+                      Reset
+                    </Button>
+                    <Button variant="outline-primary" onClick={refetch}>
+                      <ArrowClockwise size={16} />
                     </Button>
                   </Col>
                 </Row>
+
+                {/* Filter indicators */}
+                {(statusFilter || userFilter || searchQuery) && (
+                  <div className="mt-3 d-flex gap-2 flex-wrap">
+                    <small className="text-muted">Đang lọc:</small>
+                    {searchQuery && (
+                      <Badge bg="secondary" pill>
+                        Tìm kiếm: "{searchQuery}"
+                      </Badge>
+                    )}
+                    {statusFilter && (
+                      <Badge bg="secondary" pill>
+                        Trạng thái: {statusFilter}
+                      </Badge>
+                    )}
+                    {userFilter && (
+                      <Badge bg="secondary" pill>
+                        Người quản lý:{" "}
+                        {users.find((u) => u.userId === userFilter)?.fullName ||
+                          userFilter}
+                      </Badge>
+                    )}
+                  </div>
+                )}
               </Card.Body>
             </Card>
 
             {/* Table */}
             <div className="d-flex justify-content-between align-items-center mb-3">
               <h5 className="mb-0">
-                Danh sách Resources ({pagination.totalItems})
+                Danh sách Resources ({filteredResources.length}/
+                {resources.length})
               </h5>
 
               <ItemsPerPageSelector

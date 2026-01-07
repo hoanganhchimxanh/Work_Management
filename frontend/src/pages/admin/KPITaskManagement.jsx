@@ -8,7 +8,7 @@ import KPIModal from "../../components/admin/kpiTaskManagement/KPIModal";
 import TaskModal from "../../components/admin/kpiTaskManagement/TaskModal";
 
 // Custom hooks
-import useAuth from "../../hooks/admin/dashboard/useAuth";
+import useAuth from "../../hooks/useAuth";
 import useKPITaskData from "../../hooks/admin/kpiTaskManagement/useKPITaskData";
 import useKPITaskModals from "../../hooks/admin/kpiTaskManagement/useKPITaskModals";
 import useTabNavigation from "../../hooks/admin/kpiTaskManagement/useTabNavigation";

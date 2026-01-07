@@ -94,17 +94,17 @@ function EmployeeDashboard() {
     const date = new Date(dateString);
 
     if (filter === "365days" || filter === "lifetime") {
-      return date.toLocaleDateString("en-US", {
+      return date.toLocaleDateString("vi-VN", {
         month: "short",
         year: "numeric",
       });
     } else if (filter === "90days") {
-      return date.toLocaleDateString("en-US", {
+      return date.toLocaleDateString("vi-VN", {
         month: "short",
         day: "numeric",
       });
     } else {
-      return date.toLocaleDateString("en-US", {
+      return date.toLocaleDateString("vi-VN", {
         month: "numeric",
         day: "numeric",
       });
@@ -495,10 +495,19 @@ function EmployeeDashboard() {
               </h5>
               {chartData.length > 0 ? (
                 <ResponsiveContainer width="100%" height={400}>
-                  <LineChart data={chartData}>
+                  <LineChart
+                    data={chartData}
+                    margin={{
+                      right: 20,
+                      left: 10,
+                    }}
+                  >
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis tickFormatter={formatShortCurrency} />
+                    <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                    <YAxis
+                      tickFormatter={formatShortCurrency}
+                      tick={{ fontSize: 11 }}
+                    />
                     <Tooltip content={<CustomTooltip />} />
                     <Line
                       type="monotone"

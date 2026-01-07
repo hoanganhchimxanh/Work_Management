@@ -84,15 +84,51 @@ function EditResourceBatchModal({ show, onHide, batchId, onBatchUpdated }) {
       setSaving(true);
       setError(null);
 
-      const payload = {
+      const originalAssignedUser = batch.assignedUser?._id || "";
+      const newAssignedUser = formData.assignedUser || null;
+
+      // Xử lý thay đổi assignedUser
+      if (newAssignedUser !== originalAssignedUser) {
+        if (newAssignedUser) {
+          // Gọi API assign cho user mới
+          await axios.post(
+            `${config.backendBase}/resource-batch/assign/${batchId}`,
+            {
+              userId: newAssignedUser,
+              force: true, // Force để overwrite nếu cần, có thể thêm checkbox để chọn
+            }
+          );
+        } else {
+          // Unassign: Cập nhật batch trước
+          await axios.put(
+            `${config.backendBase}/resource-batch/update/${batchId}`,
+            {
+              assignedUser: null,
+            }
+          );
+
+          // Sau đó cập nhật tất cả resources (loop vì chưa có bulk API)
+          for (const resource of batch.resources) {
+            await axios.put(
+              `${config.backendBase}/resource/update/${resource._id}`, // Giả định có route update resource
+              {
+                assignedUser: null,
+                status: "AVAILABLE",
+              }
+            );
+          }
+        }
+      }
+
+      // Cập nhật các trường khác (excelFileName và status)
+      const updatePayload = {
         excelFileName: formData.excelFileName.trim(),
-        assignedUser: formData.assignedUser || null,
         status: formData.status,
       };
 
       await axios.put(
         `${config.backendBase}/resource-batch/update/${batchId}`,
-        payload
+        updatePayload
       );
 
       // Gọi callback để refresh table ở parent

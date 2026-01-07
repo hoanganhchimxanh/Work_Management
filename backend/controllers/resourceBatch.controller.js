@@ -244,6 +244,7 @@ const updateBatch = async (req, res) => {
 const deleteBatch = async (req, res) => {
   try {
     const { id } = req.params;
+
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
@@ -251,19 +252,29 @@ const deleteBatch = async (req, res) => {
       });
     }
 
-    const deletedBatch = await ResourceBatch.findByIdAndDelete(id);
-
-    if (!deletedBatch) {
+    // 1️⃣ Tìm batch
+    const batch = await ResourceBatch.findById(id);
+    if (!batch) {
       return res.status(404).json({
         success: false,
         message: "Không tìm thấy batch để xóa",
       });
     }
 
+    const resourceIds = batch.resources || [];
+
+    // 2️⃣ Xóa resources thuộc batch
+    if (resourceIds.length > 0) {
+      await Resource.deleteMany({ _id: { $in: resourceIds } });
+    }
+
+    // 3️⃣ Xóa batch
+    await ResourceBatch.findByIdAndDelete(id);
+
     res.status(200).json({
       success: true,
-      message: "Xóa batch thành công",
-      data: deletedBatch,
+      message: "Đã xóa batch và toàn bộ resources liên quan",
+      deletedResourcesCount: resourceIds.length,
     });
   } catch (error) {
     console.error("Error in deleteBatch:", error);
@@ -454,6 +465,87 @@ const getBatchStats = async (req, res) => {
   }
 };
 
+const assignUserToBatch = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { userId, force = false } = req.body;
+
+    if (
+      !mongoose.Types.ObjectId.isValid(id) ||
+      !mongoose.Types.ObjectId.isValid(userId)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "ID batch hoặc userId không hợp lệ",
+      });
+    }
+
+    const batch = await ResourceBatch.findById(id);
+    if (!batch) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy batch",
+      });
+    }
+
+    const user = await db.User.findById(userId);
+    if (!user || user.status !== "ACTIVE") {
+      return res.status(400).json({
+        success: false,
+        message: "User không tồn tại hoặc không active",
+      });
+    }
+
+    if (!force) {
+      const assignedResources = await Resource.find({
+        _id: { $in: batch.resources },
+        assignedUser: { $ne: null },
+      });
+
+      if (assignedResources.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Một số resources đã được assigned. Sử dụng force=true để overwrite.",
+        });
+      }
+    }
+
+    // ✅ Update batch
+    batch.assignedUser = userId;
+    batch.status = "ACTIVE";
+    await batch.save();
+
+    // ✅ Bulk update resources
+    await Resource.updateMany(
+      { _id: { $in: batch.resources } },
+      {
+        $set: {
+          assignedUser: userId,
+          status: "ASSIGNED",
+        },
+      }
+    );
+
+    const updatedBatch = await ResourceBatch.findById(id)
+      .populate("resources", "email status assignedUser assignedChannel")
+      .populate("assignedUser", "fullName personalEmail");
+
+    res.status(200).json({
+      success: true,
+      message: "Assign user cho batch thành công",
+      data: updatedBatch,
+    });
+  } catch (error) {
+    console.error("Error in assignUserToBatch:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi server khi assign user cho batch",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   getAllBatches,
   getBatchById,
@@ -461,6 +553,7 @@ module.exports = {
   updateBatch,
   deleteBatch,
   getBatchResources,
-  getMyBatches, // ✅ Mới
-  getBatchStats, // ✅ Mới
+  getMyBatches,
+  getBatchStats,
+  assignUserToBatch,
 };

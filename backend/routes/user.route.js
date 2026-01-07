@@ -38,7 +38,7 @@ router.delete(
 router.get(
   "/get-all",
   authenticateJWT,
-  authorizeRoles("ADMIN"),
+  authorizeRoles(["ADMIN", "ACCOUNTANT"]),
   userController.getAll
 );
 router.get(

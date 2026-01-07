@@ -132,17 +132,9 @@ class ExcelService {
           options.originalFileName ||
           `Import_${new Date().toISOString().split("T")[0]}_${Date.now()}.xlsx`;
 
-        // Lấy assignedUser từ options (admin đang import)
-        const assignedUser = options.assignedUser || options.userId;
-
-        if (!assignedUser) {
-          throw new Error("Không xác định được user thực hiện import");
-        }
-
         const newBatch = await ResourceBatch.create({
           excelFileName,
           resources: createdResourceIds,
-          assignedUser,
           status: "ACTIVE",
         });
 

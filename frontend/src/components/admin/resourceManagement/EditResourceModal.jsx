@@ -89,7 +89,6 @@ function EditResourceModal({
       email: formData.email,
       recoveryEmail: formData.recoveryEmail,
       status: formData.status,
-      assignedUser: formData.assignedUser || null,
       assignedChannel: formData.assignedChannel || null,
       note: formData.note,
     };
@@ -200,18 +199,15 @@ function EditResourceModal({
 
           <Form.Group className="mb-3">
             <Form.Label>Gán cho nhân viên</Form.Label>
-            <Form.Select
-              name="assignedUser"
-              value={formData.assignedUser}
-              onChange={handleChange}
-            >
-              <option value="">-- Chọn nhân viên --</option>
-              {users?.map((user) => (
-                <option key={user._id} value={user._id}>
-                  {user.fullName} ({user.personalEmail})
-                </option>
-              ))}
-            </Form.Select>
+            <Form.Control
+              type="text"
+              value={
+                resource?.assignedUser
+                  ? `${resource.assignedUser.fullName} (${resource.assignedUser.personalEmail})`
+                  : "Chưa gán"
+              }
+              disabled
+            />
           </Form.Group>
 
           <Form.Group className="mb-3">

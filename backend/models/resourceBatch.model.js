@@ -14,7 +14,7 @@ const resourceBatchSchema = new mongoose.Schema(
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Resource",
-        required: true,
+        default: null,
       },
     ],
 
@@ -22,7 +22,7 @@ const resourceBatchSchema = new mongoose.Schema(
     assignedUser: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+      default: null,
     },
 
     // Trạng thái batch

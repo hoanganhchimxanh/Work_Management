@@ -1,12 +1,43 @@
-import { useState } from "react";
-import { Container, Pagination, Table, Row, Col, Form } from "react-bootstrap";
+import React, { useState, useEffect } from "react";
+import {
+  Container,
+  Table,
+  Form,
+  Badge,
+  Button,
+  Row,
+  Col,
+  Spinner,
+  Alert,
+  Card,
+} from "react-bootstrap";
+import { ArrowLeft, Lock, Unlock } from "react-bootstrap-icons";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
+import axios from "axios";
 
 function ChannelRevenue() {
-  // State để lưu tháng và năm được chọn
-  const [selectedMonth, setSelectedMonth] = useState("01"); // Mặc định tháng 1
-  const [selectedYear, setSelectedYear] = useState("2026"); // Mặc định năm hiện tại
+  const navigate = useNavigate();
+  const { employeeId } = useParams();
+  const location = useLocation();
 
-  // Danh sách tháng và năm (có thể mở rộng thêm năm nếu cần)
+  // Lấy thông tin từ state nếu có
+  const stateData = location.state || {};
+
+  // State cho bộ lọc tháng/năm
+  const [selectedMonth, setSelectedMonth] = useState(
+    stateData.month || String(new Date().getMonth() + 1).padStart(2, "0")
+  );
+  const [selectedYear, setSelectedYear] = useState(
+    stateData.year || String(new Date().getFullYear())
+  );
+
+  // State cho data
+  const [employeeInfo, setEmployeeInfo] = useState(null);
+  const [channels, setChannels] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Danh sách tháng
   const months = [
     { value: "01", label: "Tháng 1" },
     { value: "02", label: "Tháng 2" },
@@ -22,23 +53,198 @@ function ChannelRevenue() {
     { value: "12", label: "Tháng 12" },
   ];
 
-  const years = ["2024", "2025", "2026", "2027"]; // Có thể generate động nếu cần
+  const years = ["2024", "2025", "2026", "2027"];
 
-  // Dữ liệu mẫu - trong thực tế bạn sẽ fetch theo selectedMonth + selectedYear
-  const channels = [
-    { id: 1, name: "Kênh YouTube Chính", revenue: "125,400,000 VND" },
-    { id: 2, name: "Kênh TikTok", revenue: "89,200,000 VND" },
-    { id: 3, name: "Kênh Facebook", revenue: "67,800,000 VND" },
-    { id: 4, name: "Kênh Affiliate Shopee", revenue: "45,500,000 VND" },
-    { id: 5, name: "Kênh Instagram", revenue: "32,100,000 VND" },
-  ];
+  useEffect(() => {
+    if (employeeId) {
+      fetchEmployeeChannelsRevenue();
+    }
+  }, [employeeId, selectedMonth, selectedYear]);
 
-  // Hàm format tiêu đề
+  const fetchEmployeeChannelsRevenue = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const token = localStorage.getItem("token");
+      const monthQuery = `${selectedYear}-${selectedMonth}`;
+
+      // Lấy thông tin nhân viên
+      const userResponse = await axios.get(
+        `http://localhost:9999/user/get-one/${employeeId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      setEmployeeInfo(userResponse.data.data);
+
+      // Lấy tất cả kênh của nhân viên
+      const channelsResponse = await axios.get(
+        `http://localhost:9999/channel/by-owner/${employeeId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      const userChannels = channelsResponse.data.data;
+
+      // Lấy doanh thu cho từng kênh
+      const channelsWithRevenue = await Promise.all(
+        userChannels.map(async (channel) => {
+          try {
+            const revenueResponse = await axios.get(
+              `http://localhost:9999/channel-revenue/${channel._id}/monthly`,
+              {
+                headers: { Authorization: `Bearer ${token}` },
+                params: {
+                  startMonth: monthQuery,
+                  endMonth: monthQuery,
+                },
+              }
+            );
+
+            const revenueData = revenueResponse.data.data;
+            const monthRevenue = revenueData.revenues[0] || null;
+
+            return {
+              ...channel,
+              estimatedRevenue: monthRevenue?.estimatedRevenue || 0,
+              actualRevenue: monthRevenue?.actualRevenue || 0,
+              locked: monthRevenue?.locked || false,
+              revenueId: monthRevenue?._id || null,
+              hasNetwork: !!channel.network,
+              networkName: channel.network?.name || null,
+            };
+          } catch (err) {
+            console.error(
+              `Error fetching revenue for channel ${channel._id}:`,
+              err
+            );
+            return {
+              ...channel,
+              estimatedRevenue: 0,
+              actualRevenue: 0,
+              locked: false,
+              revenueId: null,
+              hasNetwork: !!channel.network,
+              networkName: channel.network?.name || null,
+            };
+          }
+        })
+      );
+
+      setChannels(channelsWithRevenue);
+    } catch (err) {
+      console.error("Error fetching employee channels revenue:", err);
+      setError(
+        err.response?.data?.message ||
+          "Không thể tải dữ liệu. Vui lòng thử lại."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleToggleLock = async (channelId, currentLockStatus) => {
+    try {
+      const token = localStorage.getItem("token");
+      const monthQuery = `${selectedYear}-${selectedMonth}`;
+
+      await axios.patch(
+        `http://localhost:9999/channel-revenue/${channelId}/monthly/${monthQuery}/toggle-lock`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      // Refresh data
+      await fetchEmployeeChannelsRevenue();
+    } catch (err) {
+      console.error("Error toggling lock:", err);
+      alert(
+        err.response?.data?.message || "Không thể thay đổi trạng thái khóa"
+      );
+    }
+  };
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+    }).format(amount);
+  };
+
   const monthLabel =
     months.find((m) => m.value === selectedMonth)?.label || "Tháng";
 
+  const totalEstimated = channels.reduce(
+    (sum, ch) => sum + ch.estimatedRevenue,
+    0
+  );
+  const totalActual = channels.reduce((sum, ch) => sum + ch.actualRevenue, 0);
+
+  if (loading) {
+    return (
+      <Container
+        fluid
+        className="py-4 d-flex justify-content-center align-items-center"
+        style={{ minHeight: "400px" }}
+      >
+        <Spinner animation="border" role="status" variant="primary">
+          <span className="visually-hidden">Đang tải...</span>
+        </Spinner>
+      </Container>
+    );
+  }
+
   return (
     <Container fluid className="py-4">
+      {/* Header với nút quay lại */}
+      <Row className="mb-4">
+        <Col>
+          <Button
+            variant="outline-secondary"
+            size="sm"
+            onClick={() => navigate(-1)}
+            className="mb-3"
+          >
+            <ArrowLeft className="me-2" />
+            Quay lại
+          </Button>
+          <h3>
+            Doanh Thu Các Kênh -{" "}
+            {employeeInfo?.fullName || stateData.employeeName || "Nhân viên"}
+          </h3>
+        </Col>
+      </Row>
+
+      {error && (
+        <Alert variant="danger" dismissible onClose={() => setError(null)}>
+          {error}
+        </Alert>
+      )}
+
+      {/* Thông tin nhân viên */}
+      {employeeInfo && (
+        <Card className="mb-4">
+          <Card.Body>
+            <Row>
+              <Col md={4}>
+                <strong>Email:</strong> {employeeInfo.personalEmail}
+              </Col>
+              <Col md={4}>
+                <strong>Team:</strong> {employeeInfo.team?.name || "—"}
+              </Col>
+              <Col md={4}>
+                <strong>Số kênh:</strong> {channels.length}
+              </Col>
+            </Row>
+          </Card.Body>
+        </Card>
+      )}
+
       {/* Bộ lọc Tháng - Năm */}
       <Row className="mb-4 align-items-end">
         <Col md={6} lg={4}>
@@ -73,9 +279,9 @@ function ChannelRevenue() {
           </Form.Group>
         </Col>
         <Col md={6} lg={8} className="text-md-end">
-          <h4 className="mb-0">
-            Doanh Thu Theo Kênh - {monthLabel} / {selectedYear}
-          </h4>
+          <h5 className="mb-0 text-primary">
+            {monthLabel} / {selectedYear}
+          </h5>
         </Col>
       </Row>
 
@@ -89,46 +295,100 @@ function ChannelRevenue() {
       >
         <thead>
           <tr>
-            <th style={{ width: "80px" }}>STT</th>
+            <th style={{ width: "60px" }}>STT</th>
             <th>Tên Kênh</th>
-            <th style={{ width: "200px" }}>Doanh Thu Tháng</th>
+            <th>Network</th>
+            <th>Trạng thái</th>
+            <th>Doanh thu ước tính</th>
+            <th>Doanh thu thực tế</th>
+            <th style={{ width: "120px" }}>Khóa</th>
           </tr>
         </thead>
         <tbody>
           {channels.length > 0 ? (
             channels.map((channel, index) => (
-              <tr key={channel.id}>
+              <tr key={channel._id}>
                 <td>{index + 1}</td>
-                <td className="text-start">{channel.name}</td>
-                <td className="fw-bold text-primary">{channel.revenue}</td>
+                <td className="text-start">
+                  <div>{channel.name}</div>
+                  {channel.link && (
+                    <small className="text-muted">{channel.link}</small>
+                  )}
+                </td>
+                <td>
+                  {channel.hasNetwork ? (
+                    <Badge bg="info">{channel.networkName || "Network"}</Badge>
+                  ) : (
+                    <span className="text-muted">—</span>
+                  )}
+                </td>
+                <td>
+                  <Badge
+                    bg={
+                      channel.status === "ACTIVE"
+                        ? "success"
+                        : channel.status === "HIDDEN"
+                        ? "warning"
+                        : "secondary"
+                    }
+                  >
+                    {channel.status}
+                  </Badge>
+                </td>
+                <td className="fw-bold text-info">
+                  {formatCurrency(channel.estimatedRevenue)}
+                </td>
+                <td className="fw-bold text-success">
+                  {formatCurrency(channel.actualRevenue)}
+                </td>
+                <td>
+                  {channel.revenueId ? (
+                    <Button
+                      variant={channel.locked ? "danger" : "outline-secondary"}
+                      size="sm"
+                      onClick={() =>
+                        handleToggleLock(channel._id, channel.locked)
+                      }
+                    >
+                      {channel.locked ? (
+                        <>
+                          <Lock className="me-1" />
+                          Đã khóa
+                        </>
+                      ) : (
+                        <>
+                          <Unlock className="me-1" />
+                          Mở khóa
+                        </>
+                      )}
+                    </Button>
+                  ) : (
+                    <span className="text-muted">Chưa có dữ liệu</span>
+                  )}
+                </td>
               </tr>
             ))
           ) : (
             <tr>
-              <td colSpan={3} className="text-muted">
+              <td colSpan={7} className="text-muted py-4">
                 Không có dữ liệu cho tháng này
               </td>
             </tr>
           )}
         </tbody>
+        {channels.length > 0 && (
+          <tfoot>
+            <tr className="table-info fw-bold">
+              <td colSpan={4} className="text-end">
+                Tổng cộng:
+              </td>
+              <td className="text-info">{formatCurrency(totalEstimated)}</td>
+              <td className="text-success">{formatCurrency(totalActual)}</td>
+              <td></td>
+            </tr>
+          </tfoot>
+        )}
       </Table>
-
-      {/* Phân trang */}
-      <div className="d-flex justify-content-center mt-4">
-        <Pagination>
-          <Pagination.First disabled />
-          <Pagination.Prev disabled />
-          <Pagination.Item active>{1}</Pagination.Item>
-          <Pagination.Item>{2}</Pagination.Item>
-          <Pagination.Item>{3}</Pagination.Item>
-          <Pagination.Ellipsis />
-          <Pagination.Item>{8}</Pagination.Item>
-          <Pagination.Item>{9}</Pagination.Item>
-          <Pagination.Item>{10}</Pagination.Item>
-          <Pagination.Next />
-          <Pagination.Last />
-        </Pagination>
-      </div>
     </Container>
   );
 }

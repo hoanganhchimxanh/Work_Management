@@ -8,7 +8,7 @@ import NetworkImportModal from "../../components/admin/networkManagement/Network
 import EditNetworkModal from "../../components/admin/networkManagement/EditNetworkModal";
 
 // Custom hooks
-import useAuth from "../../hooks/admin/dashboard/useAuth";
+import useAuth from "../../hooks/useAuth";
 import useNetworkData from "../../hooks/admin/networkManagement/useNetworkData";
 import useNetworkFilters from "../../hooks/admin/networkManagement/useNetworkFilters";
 import useNetworkActions from "../../hooks/admin/networkManagement/useNetworkActions";

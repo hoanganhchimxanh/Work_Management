@@ -162,7 +162,6 @@ const updateResource = async (req, res, next) => {
       defaultPassword,
       recoveryEmail,
       status,
-      assignedUser,
       assignedChannel,
       note,
     } = req.body;
@@ -172,6 +171,15 @@ const updateResource = async (req, res, next) => {
       return res.status(404).json({
         success: false,
         message: "Không tìm thấy resource!",
+      });
+    }
+
+    // 🔒 KHÓA TUYỆT ĐỐI assignedUser
+    if ("assignedUser" in req.body) {
+      return res.status(403).json({
+        success: false,
+        message:
+          "Không được phép thay đổi người quản lý resource. Hãy sử dụng Batch Assign.",
       });
     }
 
@@ -191,20 +199,6 @@ const updateResource = async (req, res, next) => {
       resource.email = email.toLowerCase().trim();
     }
 
-    // Validate assignedUser nếu có
-    if (assignedUser !== undefined) {
-      if (assignedUser) {
-        const user = await User.findById(assignedUser);
-        if (!user) {
-          return res.status(404).json({
-            success: false,
-            message: "Không tìm thấy user!",
-          });
-        }
-      }
-      resource.assignedUser = assignedUser;
-    }
-
     // Validate assignedChannel nếu có
     if (assignedChannel !== undefined) {
       if (assignedChannel) {
@@ -221,11 +215,9 @@ const updateResource = async (req, res, next) => {
 
     // Hash mật khẩu mới nếu có
     if (defaultPassword) {
-      const hashedPassword = await bcrypt.hash(defaultPassword, 10);
-      resource.defaultPassword = hashedPassword;
+      resource.defaultPassword = await bcrypt.hash(defaultPassword, 10);
     }
 
-    // Cập nhật các field khác
     if (recoveryEmail)
       resource.recoveryEmail = recoveryEmail.toLowerCase().trim();
     if (status) resource.status = status;
@@ -237,18 +229,6 @@ const updateResource = async (req, res, next) => {
       .populate("assignedUser", "fullName personalEmail role")
       .populate("assignedChannel", "name link status")
       .lean();
-
-    // 🔔 SEND NOTIFICATION
-    if (assignedUser) {
-      await sendNotification({
-        userId: assignedUser,
-        title: "Admin đã chỉnh sửa tài nguyên của bạn",
-        message: `Thông tin tài nguyên ${resource.email} đã được admin cập nhật. Vui lòng kiểm tra lại.`,
-        metadata: {
-          resourceId: resourceId,
-        },
-      });
-    }
 
     res.json({
       success: true,
