@@ -37,13 +37,13 @@ import TablePagination from "../../components/common/TablePagination";
 import ItemsPerPageSelector from "../../components/common/ItemsPerPageSelector";
 
 // Custom hooks
-import useAuth from "../../hooks/admin/dashboard/useAuth";
+import useAuth from "../../hooks/useAuth";
 import useResourceData from "../../hooks/admin/resourceManagement/useResourceData";
 import useResourceFilters from "../../hooks/admin/resourceManagement/useResourceFilters";
 import useResourceActions from "../../hooks/admin/resourceManagement/useResourceActions";
 import useResourceModals from "../../hooks/admin/resourceManagement/useResourceModals";
 import useBulkAssign from "../../hooks/admin/resourceManagement/useBulkAssign";
-import usePagination from "../../hooks/admin/resourceManagement/usePagination";
+import usePagination from "../../hooks/usePagination";
 
 function ResourceManagement() {
   // Tab state

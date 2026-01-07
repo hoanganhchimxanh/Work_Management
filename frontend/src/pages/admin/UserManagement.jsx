@@ -12,11 +12,11 @@ import TablePagination from "../../components/common/TablePagination";
 import ItemsPerPageSelector from "../../components/common/ItemsPerPageSelector";
 
 // Custom hooks
-import useAuth from "../../hooks/admin/dashboard/useAuth";
+import useAuth from "../../hooks/useAuth";
 import useUserManagementData from "../../hooks/admin/userManagement/useUserManagementData";
 import useUserManagementModals from "../../hooks/admin/userManagement/useUserManagementModals";
 import useUserManagementActions from "../../hooks/admin/userManagement/useUserManagementActions";
-import usePagination from "../../hooks/admin/resourceManagement/usePagination";
+import usePagination from "../../hooks/usePagination";
 
 function UserManagement() {
   // 1. Authentication

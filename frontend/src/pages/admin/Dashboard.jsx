@@ -13,7 +13,7 @@ import Overview from "../../components/admin/dashboard/Overview";
 import TopRanking from "../../components/admin/dashboard/TopRanking";
 
 // Custom hooks
-import useAuth from "../../hooks/admin/dashboard/useAuth";
+import useAuth from "../../hooks/useAuth";
 import useDateRange from "../../hooks/admin/dashboard/useDateRange";
 import useCurrency from "../../hooks/admin/dashboard/useCurrency";
 import useDashboardData from "../../hooks/admin/dashboard/useDashboardData";
