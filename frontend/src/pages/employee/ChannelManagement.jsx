@@ -8,6 +8,7 @@ import AddChannelModal from "../../components/employee/channelManagement/AddChan
 import EditChannelModal from "../../components/employee/channelManagement/EditChannelModal";
 
 import config from "../../configs/api";
+import { parse, isValid, format } from "date-fns";
 
 function EmployeeChannelManagement() {
   const { user } = useContext(AuthContext);
@@ -122,23 +123,47 @@ function EmployeeChannelManagement() {
     }
   };
 
-  // Sync channel analytics
+  const convertToISODate = (input) => {
+    // Parse theo dd-MM-yyyy
+    const parsedDate = parse(input, "dd-MM-yyyy", new Date());
+
+    if (!isValid(parsedDate)) return null;
+
+    // Convert sang yyyy-MM-dd
+    return format(parsedDate, "yyyy-MM-dd");
+  };
+
   const handleSyncChannel = async (channelId) => {
-    const startDate = prompt("Nhập ngày bắt đầu (YYYY-MM-DD):");
-    const endDate = prompt("Nhập ngày kết thúc (YYYY-MM-DD):");
+    const startInput = prompt("Nhập ngày bắt đầu (dd-MM-yyyy):");
+    const endInput = prompt("Nhập ngày kết thúc (dd-MM-yyyy):");
+
+    if (!startInput || !endInput) {
+      alert("Vui lòng nhập đầy đủ ngày bắt đầu và kết thúc!");
+      return;
+    }
+
+    const startDate = convertToISODate(startInput);
+    const endDate = convertToISODate(endInput);
 
     if (!startDate || !endDate) {
-      alert("Vui lòng nhập đầy đủ ngày bắt đầu và kết thúc!");
+      alert("Ngày không hợp lệ! Vui lòng nhập theo định dạng dd-MM-yyyy");
+      return;
+    }
+
+    // (Optional) kiểm tra logic thời gian
+    if (new Date(startDate) > new Date(endDate)) {
+      alert("Ngày bắt đầu không được lớn hơn ngày kết thúc!");
       return;
     }
 
     try {
       setSyncing(true);
+
       const response = await axios.post(
         `${config.backendBase}/youtube-analytics/sync/${channelId}`,
         null,
         {
-          params: { startDate, endDate },
+          params: { startDate, endDate }, // yyyy-MM-dd
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
