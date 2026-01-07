@@ -36,8 +36,10 @@ function Overview({
             borderRadius: "4px",
           }}
         >
-          <p style={{ margin: 0, fontWeight: "bold" }}>{label}</p>
-          <p style={{ margin: 0, color: "#0d6efd" }}>
+          <p style={{ margin: 0, fontWeight: "bold", fontSize: "11px" }}>
+            {label}
+          </p>
+          <p style={{ margin: 0, color: "#0d6efd", fontSize: "11px" }}>
             {formatCurrency(payload[0].value)}
           </p>
         </div>
@@ -174,7 +176,13 @@ function Overview({
             <Card.Body>
               <h5 className="fw-bold mb-4">{getChartTitle()}</h5>
               <ResponsiveContainer width="100%" height={350}>
-                <LineChart data={revenueData}>
+                <LineChart
+                  data={revenueData}
+                  margin={{
+                    right: 20,
+                    left: 10,
+                  }}
+                >
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis
                     dataKey="date"
@@ -182,8 +190,12 @@ function Overview({
                     textAnchor={dateRange === "lifetime" ? "end" : "middle"}
                     height={dateRange === "lifetime" ? 80 : 60}
                     interval={dateRange === "lifetime" ? "preserveStartEnd" : 0}
+                    tick={{ fontSize: 11 }}
                   />
-                  <YAxis tickFormatter={formatShortCurrency} />
+                  <YAxis
+                    tickFormatter={formatShortCurrency}
+                    tick={{ fontSize: 11 }}
+                  />
                   <Tooltip content={<CustomTooltip />} />
                   <Legend />
                   <Line

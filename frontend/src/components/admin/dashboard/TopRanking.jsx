@@ -50,8 +50,12 @@ function TopRanking({
                   textAnchor="end"
                   interval={0}
                   height={80}
+                  tick={{ fontSize: 11 }}
                 />
-                <YAxis tickFormatter={formatShortCurrency} />
+                <YAxis
+                  tickFormatter={formatShortCurrency}
+                  tick={{ fontSize: 11 }}
+                />
                 <Tooltip content={<CustomTooltip />} />
                 <Bar dataKey="revenue" fill="#0d6efd" name="Doanh thu" />
               </BarChart>
@@ -74,8 +78,12 @@ function TopRanking({
                   textAnchor="end"
                   height={80}
                   interval={0}
+                  tick={{ fontSize: 11 }}
                 />
-                <YAxis tickFormatter={formatShortCurrency} />
+                <YAxis
+                  tickFormatter={formatShortCurrency}
+                  tick={{ fontSize: 11 }}
+                />
                 <Tooltip content={<CustomTooltip />} />
                 <Bar dataKey="revenue" fill="#198754" name="Doanh thu" />
               </BarChart>
@@ -98,8 +106,12 @@ function TopRanking({
                   textAnchor="end"
                   height={80}
                   interval={0}
+                  tick={{ fontSize: 11 }}
                 />
-                <YAxis tickFormatter={formatShortCurrency} />
+                <YAxis
+                  tickFormatter={formatShortCurrency}
+                  tick={{ fontSize: 11 }}
+                />
                 <Tooltip content={<CustomTooltip />} />
                 <Bar dataKey="revenue" fill="#ffc107" name="Doanh thu" />
               </BarChart>
