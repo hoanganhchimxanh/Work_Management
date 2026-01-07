@@ -165,7 +165,6 @@ function BugReport() {
                   variant="primary"
                   onClick={handleSubmit}
                   disabled={submitting}
-                  className="w-100"
                 >
                   {submitting ? "Đang gửi..." : "Gửi báo cáo"}
                 </Button>
