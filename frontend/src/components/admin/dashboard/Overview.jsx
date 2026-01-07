@@ -36,10 +36,8 @@ function Overview({
             borderRadius: "4px",
           }}
         >
-          <p style={{ margin: 0, fontWeight: "bold", fontSize: "11px" }}>
-            {label}
-          </p>
-          <p style={{ margin: 0, color: "#0d6efd", fontSize: "11px" }}>
+          <p style={{ margin: 0, fontWeight: "bold" }}>{label}</p>
+          <p style={{ margin: 0, color: "#0d6efd" }}>
             {formatCurrency(payload[0].value)}
           </p>
         </div>
