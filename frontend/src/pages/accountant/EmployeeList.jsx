@@ -66,7 +66,7 @@ function EmployeeList() {
       const token = localStorage.getItem("token");
       const monthQuery = `${selectedYear}-${selectedMonth}`;
 
-      // Gọi API lấy tất cả users
+      // ✅ FIX 1: Lấy tất cả users và filter chỉ lấy EMPLOYEE
       const usersResponse = await axios.get(
         `http://localhost:9999/user/get-all`,
         {
@@ -75,7 +75,10 @@ function EmployeeList() {
         }
       );
 
-      const users = usersResponse.data.data;
+      // Filter chỉ lấy EMPLOYEE (không lấy ADMIN và ACCOUNTANT)
+      const employees = usersResponse.data.data.filter(
+        (user) => user.role === "EMPLOYEE"
+      );
 
       // Gọi API lấy tổng quan doanh thu tất cả kênh
       const revenueResponse = await axios.get(
@@ -88,22 +91,38 @@ function EmployeeList() {
 
       const revenueData = revenueResponse.data.data.channels;
 
-      // Map doanh thu theo user
-      const employeesWithRevenue = users.map((user) => {
-        // Tính tổng doanh thu của các kênh do user quản lý
-        const userChannels = revenueData.filter(
-          (channel) => channel.assignedUser?.userId === user.userId
-        );
+      // ✅ FIX 2: Tạo map để tra cứu nhanh doanh thu theo userId
+      const revenueByUserId = {};
 
-        const totalRevenue = userChannels.reduce(
-          (sum, channel) => sum + (channel.totalActual || 0),
-          0
-        );
+      revenueData.forEach((channel) => {
+        // Backend trả về channelData với assignedUser
+        const assignedUserId = channel.assignedUser?.userId;
+
+        if (assignedUserId) {
+          if (!revenueByUserId[assignedUserId]) {
+            revenueByUserId[assignedUserId] = {
+              totalRevenue: 0,
+              channelCount: 0,
+            };
+          }
+
+          revenueByUserId[assignedUserId].totalRevenue +=
+            channel.totalActual || 0;
+          revenueByUserId[assignedUserId].channelCount += 1;
+        }
+      });
+
+      // Map doanh thu theo user
+      const employeesWithRevenue = employees.map((user) => {
+        const userRevenue = revenueByUserId[user._id] || {
+          totalRevenue: 0,
+          channelCount: 0,
+        };
 
         return {
           ...user,
-          totalRevenue,
-          channelCount: userChannels.length,
+          totalRevenue: userRevenue.totalRevenue,
+          channelCount: userRevenue.channelCount,
         };
       });
 
@@ -156,9 +175,9 @@ function EmployeeList() {
   };
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("vi-VN", {
+    return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: "VND",
+      currency: "USD",
     }).format(amount);
   };
 
