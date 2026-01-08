@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   Container,
   Card,
@@ -48,6 +48,7 @@ import usePagination from "../../hooks/usePagination";
 function ResourceManagement() {
   // Tab state
   const [activeTab, setActiveTab] = useState("resources");
+  const batchTableRef = useRef(null);
 
   // 1. Authentication
   const { getAuthConfig } = useAuth();
@@ -84,11 +85,9 @@ function ResourceManagement() {
   const {
     handleCreate,
     handleUpdate,
-    handleDelete,
     handleAssignToUser,
     handleAssignToChannel,
     handleBulkAssignToUser,
-    handleUnassign,
     handleDisable,
     handleEnable,
     handleExport,
@@ -107,7 +106,6 @@ function ResourceManagement() {
     closeCreateModal,
     openEditModal,
     closeEditModal,
-    openAssignModal,
     closeAssignModal,
     openImportModal,
     closeImportModal,
@@ -174,6 +172,10 @@ function ResourceManagement() {
     if (success) {
       closeImportModal();
       setActiveTab("batches");
+
+      if (batchTableRef.current) {
+        batchTableRef.current.fetchBatches();
+      }
     }
   };
 
@@ -422,9 +424,6 @@ function ResourceManagement() {
             <ResourceTable
               resources={paginatedResources}
               onEdit={openEditModal}
-              onDelete={handleDelete}
-              onAssign={openAssignModal}
-              onUnassign={handleUnassign}
               onDisable={handleDisable}
               onEnable={handleEnable}
               bulkAssignMode={bulkAssignMode}
@@ -442,7 +441,7 @@ function ResourceManagement() {
 
           {/* Batches Tab */}
           <Tab.Pane eventKey="batches">
-            <ResourceBatchTable onBatchUpdated={refetch} />
+            <ResourceBatchTable ref={batchTableRef} onBatchUpdated={refetch} />
           </Tab.Pane>
         </Tab.Content>
       </Tab.Container>

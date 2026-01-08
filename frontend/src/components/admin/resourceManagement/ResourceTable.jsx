@@ -1,21 +1,10 @@
 import React from "react";
-import { Table, Badge, Button, Dropdown, Form } from "react-bootstrap";
-import {
-  PencilSquare,
-  Trash,
-  PersonPlus,
-  Archive,
-  ThreeDotsVertical,
-  Power,
-  XCircle,
-} from "react-bootstrap-icons";
+import { Table, Badge, Button, Form } from "react-bootstrap";
+import { PencilSquare, Archive, Power } from "react-bootstrap-icons";
 
 function ResourceTable({
   resources,
   onEdit,
-  onDelete,
-  onAssign,
-  onUnassign,
   onDisable,
   onEnable,
   selectedResources = [],
@@ -141,62 +130,25 @@ function ResourceTable({
                         <PencilSquare size={16} />
                       </Button>
 
-                      <Dropdown align="end">
-                        <Dropdown.Toggle
-                          variant="outline-secondary"
-                          size="sm"
-                          id={`dropdown-${resource._id}`}
-                        >
-                          <ThreeDotsVertical size={16} />
-                        </Dropdown.Toggle>
-
-                        <Dropdown.Menu>
-                          {resource.status !== "ASSIGNED" && (
-                            <Dropdown.Item onClick={() => onAssign(resource)}>
-                              <PersonPlus size={16} className="me-2" />
-                              Gán Resource
-                            </Dropdown.Item>
-                          )}
-
-                          {resource.status === "ASSIGNED" && (
-                            <Dropdown.Item onClick={() => onUnassign(resource)}>
-                              <XCircle size={16} className="me-2" />
-                              Gỡ gán
-                            </Dropdown.Item>
-                          )}
-
-                          <Dropdown.Divider />
-
-                          {resource.status !== "DISABLED" ? (
-                            <Dropdown.Item
-                              className="text-warning"
-                              onClick={() => onDisable(resource)}
-                            >
-                              <Power size={16} className="me-2" />
-                              Vô hiệu hóa
-                            </Dropdown.Item>
-                          ) : (
-                            <Dropdown.Item
-                              className="text-success"
-                              onClick={() => onEnable(resource)}
-                            >
-                              <Power size={16} className="me-2" />
-                              Kích hoạt
-                            </Dropdown.Item>
-                          )}
-
-                          <Dropdown.Divider />
-
-                          <Dropdown.Item
-                            className="text-danger"
-                            onClick={() => onDelete(resource)}
-                            disabled={resource.status === "ASSIGNED"}
-                          >
-                            <Trash size={16} className="me-2" />
-                            Xóa
-                          </Dropdown.Item>
-                        </Dropdown.Menu>
-                      </Dropdown>
+                      <Button
+                        size="sm"
+                        variant={
+                          resource.status === "DISABLED"
+                            ? "outline-success"
+                            : "outline-warning"
+                        }
+                        onClick={() =>
+                          resource.status === "DISABLED"
+                            ? onEnable(resource)
+                            : onDisable(resource)
+                        }
+                      >
+                        {resource.status === "DISABLED" ? (
+                          <Power size={16} />
+                        ) : (
+                          <Power size={16} />
+                        )}
+                      </Button>
                     </div>
                   </td>
                 )}
