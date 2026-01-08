@@ -1,28 +1,33 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Container,
   Card,
   Button,
-  Form,
   Row,
   Col,
   Spinner,
   Alert,
-  InputGroup,
+  Nav,
+  Tab,
   Badge,
+  Form,
+  InputGroup,
 } from "react-bootstrap";
 import {
   PlusCircle,
-  Search,
-  FunnelFill,
-  ArrowClockwise,
   CheckSquare,
   XSquare,
+  ListUl,
+  Grid3x3Gap,
+  FunnelFill,
+  Search,
+  ArrowClockwise,
 } from "react-bootstrap-icons";
 
 // Components
 import ResourceStats from "../../components/admin/resourceManagement/ResourceStats";
 import ResourceTable from "../../components/admin/resourceManagement/ResourceTable";
+import ResourceBatchTable from "../../components/admin/resourceManagement/ResourceBatchTable";
 import CreateResourceModal from "../../components/admin/resourceManagement/CreateResourceModal";
 import EditResourceModal from "../../components/admin/resourceManagement/EditResourceModal";
 import AssignResourceModal from "../../components/admin/resourceManagement/AssignResourceModal";
@@ -41,21 +46,17 @@ import useBulkAssign from "../../hooks/admin/resourceManagement/useBulkAssign";
 import usePagination from "../../hooks/usePagination";
 
 function ResourceManagement() {
+  // Tab state
+  const [activeTab, setActiveTab] = useState("resources");
+
   // 1. Authentication
   const { getAuthConfig } = useAuth();
 
-  // 2. Filters
-  const {
-    statusFilter,
-    searchQuery,
-    userFilter,
-    setStatusFilter,
-    setSearchQuery,
-    setUserFilter,
-    filteredResources,
-  } = useResourceFilters([]);
+  // 2. Status và User filters (được truyền vào API)
+  const [statusFilter, setStatusFilter] = useState("");
+  const [userFilter, setUserFilter] = useState("");
 
-  // 3. Fetch Data
+  // 3. Fetch Data với filters
   const {
     resources,
     stats,
@@ -67,19 +68,19 @@ function ResourceManagement() {
     refetch,
   } = useResourceData({ statusFilter, userFilter }, getAuthConfig);
 
-  // Apply filters to fetched resources
-  const filtered = useResourceFilters(resources);
-  const actualFilteredResources = filtered.filteredResources;
+  // 4. Apply search filter (client-side) và kết hợp với server-side filters
+  const { searchQuery, setSearchQuery, filteredResources, resetSearch } =
+    useResourceFilters(resources, statusFilter, userFilter);
 
-  // 4. Pagination
+  // 5. Pagination (chỉ cho resources tab)
   const {
     paginatedItems: paginatedResources,
     pagination,
     setCurrentPage,
     setItemsPerPage,
-  } = usePagination(actualFilteredResources, 10);
+  } = usePagination(filteredResources, 10);
 
-  // 5. Actions
+  // 6. Actions
   const {
     handleCreate,
     handleUpdate,
@@ -98,7 +99,7 @@ function ResourceManagement() {
     setError: setActionError,
   } = useResourceActions(getAuthConfig, refetch);
 
-  // 6. Modals
+  // 7. Modals
   const {
     modals,
     selectedResource,
@@ -114,7 +115,7 @@ function ResourceManagement() {
     closeBulkAssignUserModal,
   } = useResourceModals();
 
-  // 7. Bulk Assign
+  // 8. Bulk Assign (sử dụng filteredResources thay vì resources)
   const {
     bulkAssignMode,
     selectedResources,
@@ -123,13 +124,20 @@ function ResourceManagement() {
     cancelBulkAssignMode,
     handleSelectResource,
     handleSelectAll,
-  } = useBulkAssign(actualFilteredResources);
+  } = useBulkAssign(filteredResources);
 
   // Combined error handling
   const error = fetchError || actionError;
   const setError = (msg) => {
     setFetchError(msg);
     setActionError(msg);
+  };
+
+  // Reset all filters
+  const handleResetFilters = () => {
+    setStatusFilter("");
+    setUserFilter("");
+    resetSearch();
   };
 
   // Wrapper handlers cho modals
@@ -163,11 +171,14 @@ function ResourceManagement() {
 
   const onImportSubmit = async (file) => {
     const success = await handleImport(file);
-    if (success) closeImportModal();
+    if (success) {
+      closeImportModal();
+      setActiveTab("batches");
+    }
   };
 
   // Loading state
-  if (loading) {
+  if (loading && activeTab === "resources") {
     return (
       <Container className="py-5 text-center">
         <Spinner animation="border" variant="primary" />
@@ -188,49 +199,56 @@ function ResourceManagement() {
         </div>
 
         <div className="d-flex gap-2">
-          {!bulkAssignMode ? (
+          {activeTab === "resources" && (
             <>
-              <Button variant="success" onClick={handleExport}>
-                <i className="bi bi-download me-2"></i>
-                Export Excel
-              </Button>
+              {!bulkAssignMode ? (
+                <>
+                  <Button variant="success" onClick={handleExport}>
+                    <i className="bi bi-download me-2"></i>
+                    Export Excel
+                  </Button>
 
-              <Button variant="success" onClick={openImportModal}>
-                <i className="bi bi-upload me-2"></i>
-                Import Excel
-              </Button>
+                  <Button variant="success" onClick={openImportModal}>
+                    <i className="bi bi-upload me-2"></i>
+                    Import Excel
+                  </Button>
 
-              <Button variant="info" onClick={toggleBulkAssignMode}>
-                <CheckSquare size={20} className="me-2" />
-                Gán hàng loạt
-              </Button>
+                  <Button variant="info" onClick={toggleBulkAssignMode}>
+                    <CheckSquare size={20} className="me-2" />
+                    Gán hàng loạt
+                  </Button>
 
-              <Button
-                variant="primary"
-                onClick={openCreateModal}
-                className="d-flex align-items-center gap-2"
-              >
-                <PlusCircle size={20} />
-                Tạo Resource
-              </Button>
-            </>
-          ) : (
-            <>
-              <Badge bg="primary" className="d-flex align-items-center px-3">
-                Đã chọn: {selectedCount}
-              </Badge>
-              <Button
-                variant="success"
-                onClick={openBulkAssignUserModal}
-                disabled={selectedCount === 0}
-              >
-                <CheckSquare size={20} className="me-2" />
-                Gán {selectedCount} resources
-              </Button>
-              <Button variant="secondary" onClick={cancelBulkAssignMode}>
-                <XSquare size={20} className="me-2" />
-                Hủy
-              </Button>
+                  <Button
+                    variant="primary"
+                    onClick={openCreateModal}
+                    className="d-flex align-items-center gap-2"
+                  >
+                    <PlusCircle size={20} />
+                    Tạo Resource
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Badge
+                    bg="primary"
+                    className="d-flex align-items-center px-3"
+                  >
+                    Đã chọn: {selectedCount}
+                  </Badge>
+                  <Button
+                    variant="success"
+                    onClick={openBulkAssignUserModal}
+                    disabled={selectedCount === 0}
+                  >
+                    <CheckSquare size={20} className="me-2" />
+                    Gán {selectedCount} resources
+                  </Button>
+                  <Button variant="secondary" onClick={cancelBulkAssignMode}>
+                    <XSquare size={20} className="me-2" />
+                    Hủy
+                  </Button>
+                </>
+              )}
             </>
           )}
         </div>
@@ -248,109 +266,186 @@ function ResourceManagement() {
         </Alert>
       )}
 
-      {bulkAssignMode && (
+      {bulkAssignMode && activeTab === "resources" && (
         <Alert variant="info">
           <strong>Chế độ gán hàng loạt:</strong> Chọn các resources có trạng
           thái "Khả dụng" để gán cho nhân viên.
         </Alert>
       )}
 
-      {/* Stats */}
-      <ResourceStats stats={stats} />
+      {/* Stats - Only show on resources tab */}
+      {activeTab === "resources" && <ResourceStats stats={stats} />}
 
-      {/* Filters */}
-      <Card className="mb-4 border-0 shadow-sm">
-        <Card.Body>
-          <Row className="g-3">
-            <Col md={4}>
-              <Form.Label>
-                <Search size={16} className="me-2" />
-                Tìm kiếm
-              </Form.Label>
-              <InputGroup>
-                <Form.Control
-                  type="text"
-                  placeholder="Tìm theo email..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </InputGroup>
-            </Col>
+      {/* Tabs */}
+      <Tab.Container activeKey={activeTab} onSelect={(k) => setActiveTab(k)}>
+        <Card className="border-0 shadow-sm mb-4">
+          <Card.Header className="bg-white">
+            <Nav variant="tabs" className="border-0">
+              <Nav.Item>
+                <Nav.Link
+                  eventKey="resources"
+                  className="d-flex align-items-center gap-2"
+                >
+                  <ListUl size={18} />
+                  Danh sách Resources
+                </Nav.Link>
+              </Nav.Item>
+              <Nav.Item>
+                <Nav.Link
+                  eventKey="batches"
+                  className="d-flex align-items-center gap-2"
+                >
+                  <Grid3x3Gap size={18} />
+                  Resource Batches
+                </Nav.Link>
+              </Nav.Item>
+            </Nav>
+          </Card.Header>
+        </Card>
 
-            <Col md={3}>
-              <Form.Label>
-                <FunnelFill size={16} className="me-2" />
-                Trạng thái
-              </Form.Label>
-              <Form.Select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-              >
-                <option value="">Tất cả</option>
-                <option value="AVAILABLE">Khả dụng</option>
-                <option value="ASSIGNED">Đang sử dụng</option>
-                <option value="DISABLED">Vô hiệu hóa</option>
-              </Form.Select>
-            </Col>
+        <Tab.Content>
+          {/* Resources Tab */}
+          <Tab.Pane eventKey="resources">
+            {/* Filters */}
+            <Card className="mb-4 border-0 shadow-sm">
+              <Card.Body>
+                <Row className="g-3">
+                  <Col md={4}>
+                    <Form.Label>
+                      <Search size={16} className="me-2" />
+                      Tìm kiếm
+                    </Form.Label>
+                    <InputGroup>
+                      <Form.Control
+                        type="text"
+                        placeholder="Tìm theo email..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                      />
+                      {searchQuery && (
+                        <Button
+                          variant="outline-secondary"
+                          onClick={resetSearch}
+                        >
+                          <XSquare size={16} />
+                        </Button>
+                      )}
+                    </InputGroup>
+                  </Col>
 
-            <Col md={3}>
-              <Form.Label>Người quản lý</Form.Label>
-              <Form.Select
-                value={userFilter}
-                onChange={(e) => setUserFilter(e.target.value)}
-              >
-                <option value="">Tất cả</option>
-                {users.map((user) => (
-                  <option key={user.userId} value={user.userId}>
-                    {user.fullName}
-                  </option>
-                ))}
-              </Form.Select>
-            </Col>
+                  <Col md={3}>
+                    <Form.Label>
+                      <FunnelFill size={16} className="me-2" />
+                      Trạng thái
+                    </Form.Label>
+                    <Form.Select
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value)}
+                    >
+                      <option value="">Tất cả</option>
+                      <option value="AVAILABLE">Khả dụng</option>
+                      <option value="ASSIGNED">Đang sử dụng</option>
+                      <option value="DISABLED">Vô hiệu hóa</option>
+                    </Form.Select>
+                  </Col>
 
-            <Col md={2} className="d-flex align-items-end">
-              <Button
-                variant="outline-secondary"
-                className="w-100"
-                onClick={refetch}
-              >
-                <ArrowClockwise size={16} className="me-2" />
-                Làm mới
-              </Button>
-            </Col>
-          </Row>
-        </Card.Body>
-      </Card>
+                  <Col md={3}>
+                    <Form.Label>Người quản lý</Form.Label>
+                    <Form.Select
+                      value={userFilter}
+                      onChange={(e) => setUserFilter(e.target.value)}
+                    >
+                      <option value="">Tất cả</option>
+                      {users.map((user) => (
+                        <option key={user.userId} value={user.userId}>
+                          {user.fullName}
+                        </option>
+                      ))}
+                    </Form.Select>
+                  </Col>
 
-      {/* Table */}
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <h5 className="mb-0">Danh sách Resources ({pagination.totalItems})</h5>
+                  <Col md={2} className="d-flex align-items-end gap-2">
+                    <Button
+                      variant="outline-secondary"
+                      className="flex-grow-1"
+                      onClick={handleResetFilters}
+                      disabled={!statusFilter && !userFilter && !searchQuery}
+                    >
+                      <XSquare size={16} className="me-2" />
+                      Reset
+                    </Button>
+                    <Button variant="outline-primary" onClick={refetch}>
+                      <ArrowClockwise size={16} />
+                    </Button>
+                  </Col>
+                </Row>
 
-        <ItemsPerPageSelector
-          value={pagination.itemsPerPage}
-          onChange={setItemsPerPage}
-        />
-      </div>
+                {/* Filter indicators */}
+                {(statusFilter || userFilter || searchQuery) && (
+                  <div className="mt-3 d-flex gap-2 flex-wrap">
+                    <small className="text-muted">Đang lọc:</small>
+                    {searchQuery && (
+                      <Badge bg="secondary" pill>
+                        Tìm kiếm: "{searchQuery}"
+                      </Badge>
+                    )}
+                    {statusFilter && (
+                      <Badge bg="secondary" pill>
+                        Trạng thái: {statusFilter}
+                      </Badge>
+                    )}
+                    {userFilter && (
+                      <Badge bg="secondary" pill>
+                        Người quản lý:{" "}
+                        {users.find((u) => u.userId === userFilter)?.fullName ||
+                          userFilter}
+                      </Badge>
+                    )}
+                  </div>
+                )}
+              </Card.Body>
+            </Card>
 
-      <ResourceTable
-        resources={paginatedResources}
-        onEdit={openEditModal}
-        onDelete={handleDelete}
-        onAssign={openAssignModal}
-        onUnassign={handleUnassign}
-        onDisable={handleDisable}
-        onEnable={handleEnable}
-        bulkAssignMode={bulkAssignMode}
-        selectedResources={selectedResources}
-        onSelectResource={handleSelectResource}
-        onSelectAll={handleSelectAll}
-      />
+            {/* Table */}
+            <div className="d-flex justify-content-between align-items-center mb-3">
+              <h5 className="mb-0">
+                Danh sách Resources ({filteredResources.length}/
+                {resources.length})
+              </h5>
 
-      <TablePagination
-        currentPage={pagination.currentPage}
-        totalPages={pagination.totalPages}
-        onPageChange={setCurrentPage}
-      />
+              <ItemsPerPageSelector
+                value={pagination.itemsPerPage}
+                onChange={setItemsPerPage}
+              />
+            </div>
+
+            <ResourceTable
+              resources={paginatedResources}
+              onEdit={openEditModal}
+              onDelete={handleDelete}
+              onAssign={openAssignModal}
+              onUnassign={handleUnassign}
+              onDisable={handleDisable}
+              onEnable={handleEnable}
+              bulkAssignMode={bulkAssignMode}
+              selectedResources={selectedResources}
+              onSelectResource={handleSelectResource}
+              onSelectAll={handleSelectAll}
+            />
+
+            <TablePagination
+              currentPage={pagination.currentPage}
+              totalPages={pagination.totalPages}
+              onPageChange={setCurrentPage}
+            />
+          </Tab.Pane>
+
+          {/* Batches Tab */}
+          <Tab.Pane eventKey="batches">
+            <ResourceBatchTable onBatchUpdated={refetch} />
+          </Tab.Pane>
+        </Tab.Content>
+      </Tab.Container>
 
       {/* Modals */}
       <CreateResourceModal
