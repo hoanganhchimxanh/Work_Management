@@ -146,29 +146,6 @@ function ChannelRevenue() {
     }
   };
 
-  const handleToggleLock = async (channelId, currentLockStatus) => {
-    try {
-      const token = localStorage.getItem("token");
-      const monthQuery = `${selectedYear}-${selectedMonth}`;
-
-      await axios.patch(
-        `http://localhost:9999/channel-revenue/${channelId}/monthly/${monthQuery}/toggle-lock`,
-        {},
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      // Refresh data
-      await fetchEmployeeChannelsRevenue();
-    } catch (err) {
-      console.error("Error toggling lock:", err);
-      alert(
-        err.response?.data?.message || "Không thể thay đổi trạng thái khóa"
-      );
-    }
-  };
-
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
@@ -310,10 +287,14 @@ function ChannelRevenue() {
               <tr key={channel._id}>
                 <td>{index + 1}</td>
                 <td className="text-start">
-                  <div>{channel.name}</div>
-                  {channel.link && (
-                    <small className="text-muted">{channel.link}</small>
-                  )}
+                  <a
+                    href={channel.link}
+                    target="_blank" //Khi nhấn vào mở tab mới
+                    rel="noopener noreferrer" //Bảo mật
+                    className="text-decoration-none fw-semibold"
+                  >
+                    {channel.name}
+                  </a>
                 </td>
                 <td>
                   {channel.hasNetwork ? (
@@ -343,13 +324,7 @@ function ChannelRevenue() {
                 </td>
                 <td>
                   {channel.revenueId ? (
-                    <Button
-                      variant={channel.locked ? "danger" : "outline-secondary"}
-                      size="sm"
-                      onClick={() =>
-                        handleToggleLock(channel._id, channel.locked)
-                      }
-                    >
+                    <Badge bg={channel.locked ? "danger" : "secondary"}>
                       {channel.locked ? (
                         <>
                           <Lock className="me-1" />
@@ -361,7 +336,7 @@ function ChannelRevenue() {
                           Mở khóa
                         </>
                       )}
-                    </Button>
+                    </Badge>
                   ) : (
                     <span className="text-muted">Chưa có dữ liệu</span>
                   )}
