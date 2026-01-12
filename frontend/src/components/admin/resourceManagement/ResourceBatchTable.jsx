@@ -22,7 +22,7 @@ import {
 } from "react-bootstrap-icons";
 import EditResourceBatchModal from "./EditResourceBatchModal";
 
-function ResourceBatchTable({ onBatchUpdated }) {
+const ResourceBatchTable = React.forwardRef(({ onBatchUpdated }, ref) => {
   const [batches, setBatches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -33,6 +33,10 @@ function ResourceBatchTable({ onBatchUpdated }) {
   // Modal state
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedBatchId, setSelectedBatchId] = useState(null);
+
+  React.useImperativeHandle(ref, () => ({
+    fetchBatches,
+  }));
 
   useEffect(() => {
     fetchBatches();
@@ -382,6 +386,6 @@ function ResourceBatchTable({ onBatchUpdated }) {
       />
     </>
   );
-}
+});
 
 export default ResourceBatchTable;

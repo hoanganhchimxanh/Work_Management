@@ -66,7 +66,7 @@ router.put(
 router.get(
   "/by-owner/:userId",
   authenticateJWT,
-  authorizeRoles(["ADMIN", "EMPLOYEE"]),
+  authorizeRoles(["ADMIN", "EMPLOYEE", "ACCOUNTANT"]),
   channelController.getByOwner
 );
 

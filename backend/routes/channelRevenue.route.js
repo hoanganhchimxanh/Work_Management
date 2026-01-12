@@ -44,7 +44,7 @@ router.post(
 router.patch(
   "/:channelId/monthly/:month/toggle-lock",
   authenticateJWT,
-  authorizeRoles(["ADMIN", "ACCOUNTANT"]),
+  authorizeRoles(["ADMIN"]),
   channelRevenueController.toggleLock
 );
 
