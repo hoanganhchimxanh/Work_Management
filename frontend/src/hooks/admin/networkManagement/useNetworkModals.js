@@ -1,47 +1,55 @@
 import { useState } from "react";
 
 /**
- * Custom hook để quản lý modal states cho Network Management
+ * Custom hook để quản lý các modals của Network
  * @returns {Object} { modals, selectedNetwork, handlers }
  */
 function useNetworkModals() {
-  const [showImportModal, setShowImportModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
+  const [modals, setModals] = useState({
+    showAddModal: false,
+    showImportModal: false,
+    showEditModal: false,
+  });
+
   const [selectedNetwork, setSelectedNetwork] = useState(null);
 
-  /**
-   * Import Modal Handlers
-   */
+  // ========== ADD MODAL ==========
+  const openAddModal = () => {
+    setModals((prev) => ({ ...prev, showAddModal: true }));
+  };
+
+  const closeAddModal = () => {
+    setModals((prev) => ({ ...prev, showAddModal: false }));
+  };
+
+  // ========== IMPORT MODAL ==========
   const openImportModal = () => {
-    setShowImportModal(true);
+    setModals((prev) => ({ ...prev, showImportModal: true }));
   };
 
   const closeImportModal = () => {
-    setShowImportModal(false);
+    setModals((prev) => ({ ...prev, showImportModal: false }));
   };
 
-  /**
-   * Edit Modal Handlers
-   */
+  // ========== EDIT MODAL ==========
   const openEditModal = (network) => {
     setSelectedNetwork(network);
-    setShowEditModal(true);
+    setModals((prev) => ({ ...prev, showEditModal: true }));
   };
 
   const closeEditModal = () => {
-    setShowEditModal(false);
     setSelectedNetwork(null);
+    setModals((prev) => ({ ...prev, showEditModal: false }));
   };
 
   return {
     // Modal states
-    modals: {
-      showImportModal,
-      showEditModal,
-    },
-
-    // Selected network
+    modals,
     selectedNetwork,
+
+    // Add handlers
+    openAddModal,
+    closeAddModal,
 
     // Import handlers
     openImportModal,

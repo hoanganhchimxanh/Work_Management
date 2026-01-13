@@ -21,6 +21,33 @@ function useNetworkActions(getAuthConfig, filters, refetch) {
   };
 
   /**
+   * Create new network
+   */
+  const handleCreate = async (data) => {
+    try {
+      const response = await axios.post(
+        `${config.backendBase}/network/create-new`,
+        data,
+        getAuthConfig()
+      );
+
+      if (response.data.success) {
+        showAlert("Tạo network thành công!");
+        refetch();
+        return true;
+      } else {
+        showAlert("Tạo network thất bại!", "danger");
+        return false;
+      }
+    } catch (error) {
+      console.error("Create error:", error);
+      const errorMsg = error.response?.data?.message || "Lỗi khi tạo network!";
+      showAlert(errorMsg, "danger");
+      return false;
+    }
+  };
+
+  /**
    * Export networks to Excel
    */
   const handleExport = async () => {
@@ -28,7 +55,6 @@ function useNetworkActions(getAuthConfig, filters, refetch) {
       const params = {};
       if (filters.status) params.status = filters.status;
       if (filters.location) params.location = filters.location;
-      if (filters.country) params.country = filters.country;
 
       const response = await axios.get(
         `${config.backendBase}/excel/export-network-excel`,
@@ -149,6 +175,7 @@ function useNetworkActions(getAuthConfig, filters, refetch) {
 
   return {
     // Handlers
+    handleCreate,
     handleExport,
     handleImport,
     handleUpdate,
