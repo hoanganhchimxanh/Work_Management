@@ -2,35 +2,44 @@ const mongoose = require("mongoose");
 
 const networkSchema = new mongoose.Schema(
   {
-    // Thông tin nhân viên quản lý
-    assignedUser: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
+    // PUB-ID
+    pubId: {
+      type: String,
+      unique: true,
     },
 
-    // Lịch kiểm tra (admin reminder)
+    // Employment (thay cho assignedUser)
+    employment: {
+      type: String,
+      default: "",
+    },
+
+    // Reminder (admin reminder)
     reminderDate: {
       type: Date,
       default: null,
     },
 
-    // Thông tin Profile AdSense
+    // Profile AdSense ID
     profileAdsenseId: {
       type: String,
-      required: true,
-      unique: true, // Mã ID duy nhất
+      unique: true,
     },
 
-    // Email của profile AdSense
+    // Email đăng nhập AdSense
     emailAddress: {
       type: String,
-      required: true,
       lowercase: true,
       trim: true,
+      default: "",
     },
 
-    // Email khôi phục
+    // Password
+    password: {
+      type: String,
+    },
+
+    // Recovery Email
     recoveryEmail: {
       type: String,
       lowercase: true,
@@ -38,66 +47,45 @@ const networkSchema = new mongoose.Schema(
       default: "",
     },
 
-    // Ngày tạo của profile AdSense
-    creationDate: {
-      type: Date,
-      required: true,
+    // 2FA
+    twoFA: {
+      type: Boolean,
+      default: false,
     },
 
-    // Thông tin thuế
-    taxName: {
+    // Ngày tạo profile AdSense
+    creationDate: {
+      type: Date,
+      default: null,
+    },
+
+    // Tax Form (thay cho taxName)
+    taxForm: {
       type: String,
       default: "",
     },
 
-    // Vị trí làm việc
+    // Location
     location: {
       type: String,
       enum: ["HOME", "OFFICE", "OTHER"],
       default: "OFFICE",
     },
 
-    // Thông tin kênh chính
-    mainChannel: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Channel",
-      default: null,
-    },
-
-    // Link kênh
+    // Linked Channel
     linkedChannelUrl: {
       type: String,
       default: "",
     },
 
-    // Email brand account của kênh
-    emailChannel: {
-      type: String,
-      lowercase: true,
-      trim: true,
-      default: "",
-    },
-
-    // Ngày tạo kênh
-    channelJoinDate: {
-      type: Date,
-      default: null,
-    },
-
-    // Quốc gia
-    country: {
-      type: String,
-      default: "VN",
-    },
-
-    // Trạng thái
+    // Status
     status: {
       type: String,
       enum: ["ACTIVE", "PROCESSING", "INACTIVE", "LOCKED"],
       default: "ACTIVE",
     },
 
-    // Ghi chú bổ sung
+    // Note
     note: {
       type: String,
       default: "",

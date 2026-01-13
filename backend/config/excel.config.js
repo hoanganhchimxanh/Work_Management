@@ -469,15 +469,20 @@ const excelConfigs = {
 
     columns: [
       {
-        excelKey: "employmentEmail",
-        dbField: "assignedUser",
-        displayName: "Email nhân viên",
-        required: true,
+        excelKey: "pubId",
+        dbField: "pubId",
+        displayName: "PUB-ID",
+        required: false,
+        width: 25,
+        transform: (value) => value?.trim() || undefined,
+      },
+      {
+        excelKey: "employment",
+        dbField: "employment",
+        displayName: "Employment (Nhân viên)",
+        required: false,
         width: 30,
-        isReference: true,
-        referenceModel: "User",
-        referenceField: "personalEmail",
-        referenceKey: "_id",
+        transform: (value) => value?.trim() || "",
       },
       {
         excelKey: "reminder",
@@ -508,6 +513,14 @@ const excelConfigs = {
         transform: (value) => value.trim().toLowerCase(),
       },
       {
+        excelKey: "password",
+        dbField: "password",
+        displayName: "Password",
+        required: false,
+        width: 20,
+        transform: (value) => value?.trim() || "",
+      },
+      {
         excelKey: "recoveryEmail",
         dbField: "recoveryEmail",
         displayName: "Recovery Email",
@@ -521,20 +534,37 @@ const excelConfigs = {
         transform: (value) => (value ? value.trim().toLowerCase() : ""),
       },
       {
-        excelKey: "creationDate",
-        dbField: "creationDate",
-        displayName: "Ngày tạo email",
-        required: true,
-        width: 15,
-        transform: (value) => new Date(value),
+        excelKey: "twoFA",
+        dbField: "twoFA",
+        displayName: "2FA (Yes/No)",
+        required: false,
+        width: 10,
+        validate: (value) => {
+          if (!value) return true;
+          const validValues = ["yes", "no", "true", "false", "1", "0"];
+          return validValues.includes(value.toString().toLowerCase());
+        },
+        transform: (value) => {
+          if (!value) return false;
+          const str = value.toString().toLowerCase();
+          return str === "yes" || str === "true" || str === "1";
+        },
       },
       {
-        excelKey: "taxName",
-        dbField: "taxName",
-        displayName: "Tax Name",
+        excelKey: "creationDate",
+        dbField: "creationDate",
+        displayName: "Ngày tạo Profile",
         required: false,
-        width: 25,
-        transform: (value) => value || "",
+        width: 15,
+        transform: (value) => (value ? new Date(value) : null),
+      },
+      {
+        excelKey: "taxForm",
+        dbField: "taxForm",
+        displayName: "Tax Form",
+        required: false,
+        width: 20,
+        transform: (value) => value?.trim() || "",
       },
       {
         excelKey: "location",
@@ -551,83 +581,58 @@ const excelConfigs = {
       {
         excelKey: "linkedChannel",
         dbField: "linkedChannelUrl",
-        displayName: "Linked Channel",
+        displayName: "Linked Channel URL",
         required: false,
         width: 50,
-        transform: (value) => value || "",
-      },
-      {
-        excelKey: "emailChannel",
-        dbField: "emailChannel",
-        displayName: "Email Channel",
-        required: false,
-        width: 30,
-        validate: (value) => {
-          if (!value) return true;
-          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-          return emailRegex.test(value);
-        },
-        transform: (value) => (value ? value.trim().toLowerCase() : ""),
-      },
-      {
-        excelKey: "joinDate",
-        dbField: "channelJoinDate",
-        displayName: "Ngày tạo kênh",
-        required: false,
-        width: 15,
-        transform: (value) => (value ? new Date(value) : null),
-      },
-      {
-        excelKey: "country",
-        dbField: "country",
-        displayName: "Quốc gia",
-        required: false,
-        width: 10,
-        transform: (value) => value || "VN",
+        transform: (value) => value?.trim() || "",
       },
     ],
 
     exportColumns: [
       { key: "stt", displayName: "STT", width: 5 },
-      { key: "assignedUserName", displayName: "Nhân viên", width: 25 },
-      { key: "assignedUserEmail", displayName: "Email nhân viên", width: 30 },
-      { key: "profileAdsenseId", displayName: "Profile AdSense ID", width: 20 },
+      { key: "pubId", displayName: "PUB-ID", width: 25 },
+      { key: "employment", displayName: "Employment", width: 30 },
+      { key: "profileAdsenseId", displayName: "Profile AdSense ID", width: 25 },
       { key: "emailAddress", displayName: "Email Address", width: 30 },
+      { key: "password", displayName: "Password", width: 15 },
       { key: "recoveryEmail", displayName: "Recovery Email", width: 30 },
-      { key: "creationDate", displayName: "Ngày tạo Email", width: 15 },
-      { key: "taxName", displayName: "Tax Name", width: 25 },
+      { key: "twoFA", displayName: "2FA", width: 10 },
+      { key: "creationDate", displayName: "Ngày tạo Profile", width: 15 },
+      { key: "taxForm", displayName: "Tax Form", width: 20 },
       { key: "location", displayName: "Vị trí", width: 15 },
       { key: "linkedChannelUrl", displayName: "Linked Channel", width: 50 },
-      { key: "emailChannel", displayName: "Email Channel", width: 30 },
-      { key: "channelJoinDate", displayName: "Join Date", width: 15 },
-      { key: "country", displayName: "Quốc gia", width: 10 },
       { key: "status", displayName: "Trạng thái", width: 15 },
-      { key: "reminderDate", displayName: "Nhắc nhở", width: 15 },
-      { key: "note", displayName: "Ghi chú", width: 30 },
+      { key: "reminderDate", displayName: "Ngày nhắc nhở", width: 15 },
+      { key: "note", displayName: "Ghi chú", width: 40 },
     ],
 
     templateData: [
       {
-        employmentEmail: "nguyenvana@gmail.com",
+        pubId: "pub-1234567890123456",
+        employment: "Nguyễn Văn A",
         reminder: "2025-12-31",
         profileAdsenseId: "pub-1234567890123456",
         emailAddress: "adsense@gmail.com",
+        password: "MySecurePassword123",
         recoveryEmail: "recovery@gmail.com",
+        twoFA: "Yes",
         creationDate: "2024-01-01",
-        taxName: "NGUYEN VAN A",
+        taxForm: "W-8BEN",
         location: "OFFICE",
         linkedChannel: "https://youtube.com/@channelname",
-        emailChannel: "channel@gmail.com",
-        joinDate: "2024-01-15",
-        country: "VN",
       },
     ],
 
     instructions: [
       {
-        column: "employmentEmail",
-        description: "Email nhân viên (phải tồn tại trong hệ thống)",
-        required: "Có",
+        column: "pubId",
+        description: "PUB-ID duy nhất (unique, tùy chọn)",
+        required: "Không",
+      },
+      {
+        column: "employment",
+        description: "Tên nhân viên phụ trách",
+        required: "Không",
       },
       {
         column: "reminder",
@@ -645,18 +650,28 @@ const excelConfigs = {
         required: "Có",
       },
       {
+        column: "password",
+        description: "Mật khẩu đăng nhập",
+        required: "Không",
+      },
+      {
         column: "recoveryEmail",
         description: "Email khôi phục",
         required: "Không",
       },
       {
-        column: "creationDate",
-        description: "Ngày tạo email (YYYY-MM-DD)",
-        required: "Có",
+        column: "twoFA",
+        description: "Xác thực 2 yếu tố (Yes/No)",
+        required: "Không",
       },
       {
-        column: "taxName",
-        description: "Tên thuế",
+        column: "creationDate",
+        description: "Ngày tạo Profile (YYYY-MM-DD)",
+        required: "Không",
+      },
+      {
+        column: "taxForm",
+        description: "Loại Tax Form (W-8BEN, W-9, etc.)",
         required: "Không",
       },
       {
@@ -666,22 +681,7 @@ const excelConfigs = {
       },
       {
         column: "linkedChannel",
-        description: "URL kênh YouTube",
-        required: "Không",
-      },
-      {
-        column: "emailChannel",
-        description: "Email brand account của kênh",
-        required: "Không",
-      },
-      {
-        column: "joinDate",
-        description: "Ngày tạo kênh (YYYY-MM-DD)",
-        required: "Không",
-      },
-      {
-        column: "country",
-        description: "Mã quốc gia (VN, US, UK...)",
+        description: "URL kênh YouTube liên kết",
         required: "Không",
       },
     ],
@@ -689,23 +689,20 @@ const excelConfigs = {
     prepareExportData: async (records) => {
       return records.map((network, index) => ({
         stt: index + 1,
-        assignedUserName: network.assignedUser?.fullName || "",
-        assignedUserEmail: network.assignedUser?.personalEmail || "",
+        pubId: network.pubId || "",
+        employment: network.employment || "",
         profileAdsenseId: network.profileAdsenseId,
         emailAddress: network.emailAddress,
-        recoveryEmail: network.recoveryEmail,
+        password: network.password ? "********" : "", // Mask password in export
+        recoveryEmail: network.recoveryEmail || "",
+        twoFA: network.twoFA ? "Yes" : "No",
         creationDate: network.creationDate
           ? new Date(network.creationDate).toLocaleDateString("vi-VN")
           : "",
-        taxName: network.taxName,
-        location: network.location,
-        linkedChannelUrl: network.linkedChannelUrl,
-        emailChannel: network.emailChannel,
-        channelJoinDate: network.channelJoinDate
-          ? new Date(network.channelJoinDate).toLocaleDateString("vi-VN")
-          : "",
-        country: network.country,
-        status: network.status,
+        taxForm: network.taxForm || "",
+        location: network.location || "",
+        linkedChannelUrl: network.linkedChannelUrl || "",
+        status: network.status || "",
         reminderDate: network.reminderDate
           ? new Date(network.reminderDate).toLocaleDateString("vi-VN")
           : "",
@@ -717,7 +714,9 @@ const excelConfigs = {
       status: "ACTIVE",
       note: "",
       location: "OFFICE",
-      country: "VN",
+      twoFA: false,
+      employment: "",
+      password: "",
     },
   },
 };
