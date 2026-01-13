@@ -31,7 +31,7 @@ function useNetworkActions(getAuthConfig, filters, refetch) {
       if (filters.country) params.country = filters.country;
 
       const response = await axios.get(
-        `${config.backendBase}/excel/import-network-excel`,
+        `${config.backendBase}/excel/export-network-excel`,
         {
           params,
           responseType: "blob",
