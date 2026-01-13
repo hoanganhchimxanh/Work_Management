@@ -1,7 +1,17 @@
-import React, { useState, useEffect } from "react";
-import { Modal, Button, Form, Row, Col, Alert, Spinner } from "react-bootstrap";
+import React, { useState } from "react";
+// Thêm InputGroup vào phần import
+import {
+  Modal,
+  Button,
+  Form,
+  Row,
+  Col,
+  Alert,
+  Spinner,
+  InputGroup,
+} from "react-bootstrap";
 
-const EditNetworkModal = ({ show, onHide, network, onSubmit }) => {
+const AddNetworkModal = ({ show, onHide, onSubmit }) => {
   const [formData, setFormData] = useState({
     pubId: "",
     employment: "",
@@ -22,31 +32,8 @@ const EditNetworkModal = ({ show, onHide, network, onSubmit }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Load data khi modal mở và có network
-  useEffect(() => {
-    if (show && network) {
-      setFormData({
-        pubId: network.pubId || "",
-        employment: network.employment || "",
-        profileAdsenseId: network.profileAdsenseId || "",
-        emailAddress: network.emailAddress || "",
-        password: network.password || "",
-        recoveryEmail: network.recoveryEmail || "",
-        twoFA: network.twoFA || false,
-        creationDate: network.creationDate
-          ? new Date(network.creationDate).toISOString().split("T")[0]
-          : "",
-        taxForm: network.taxForm || "",
-        location: network.location || "OFFICE",
-        linkedChannelUrl: network.linkedChannelUrl || "",
-        status: network.status || "ACTIVE",
-        reminderDate: network.reminderDate
-          ? new Date(network.reminderDate).toISOString().split("T")[0]
-          : "",
-        note: network.note || "",
-      });
-    }
-  }, [show, network]);
+  // 1. Thêm state để quản lý việc hiển thị mật khẩu
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -60,7 +47,6 @@ const EditNetworkModal = ({ show, onHide, network, onSubmit }) => {
     e.preventDefault();
     setError("");
 
-    // Validation
     if (!formData.profileAdsenseId.trim()) {
       setError("Profile AdSense ID là bắt buộc!");
       return;
@@ -75,15 +61,15 @@ const EditNetworkModal = ({ show, onHide, network, onSubmit }) => {
     try {
       const payload = {
         ...formData,
+        pubId: formData.pubId || undefined,
         reminderDate: formData.reminderDate || null,
         creationDate: formData.creationDate || null,
       };
 
-      await onSubmit(network._id, payload);
-
-      onHide();
+      await onSubmit(payload);
+      handleClose();
     } catch (err) {
-      setError(err.message || "Lỗi khi cập nhật network!");
+      setError(err.message || "Lỗi khi tạo network!");
     } finally {
       setLoading(false);
     }
@@ -91,6 +77,8 @@ const EditNetworkModal = ({ show, onHide, network, onSubmit }) => {
 
   const handleClose = () => {
     setError("");
+    // 2. Reset lại trạng thái ẩn mật khẩu khi đóng modal
+    setShowPassword(false);
     setFormData({
       pubId: "",
       employment: "",
@@ -113,7 +101,7 @@ const EditNetworkModal = ({ show, onHide, network, onSubmit }) => {
   return (
     <Modal show={show} onHide={handleClose} size="lg" centered>
       <Modal.Header closeButton>
-        <Modal.Title>Chỉnh sửa Network</Modal.Title>
+        <Modal.Title>Thêm Network mới</Modal.Title>
       </Modal.Header>
 
       <Form onSubmit={handleSubmit}>
@@ -125,7 +113,6 @@ const EditNetworkModal = ({ show, onHide, network, onSubmit }) => {
           )}
 
           <Row>
-            {/* PUB-ID */}
             <Col md={6} className="mb-3">
               <Form.Group>
                 <Form.Label>PUB-ID</Form.Label>
@@ -136,30 +123,22 @@ const EditNetworkModal = ({ show, onHide, network, onSubmit }) => {
                   onChange={handleChange}
                   placeholder="pub-1234567890123456"
                 />
-                <Form.Text className="text-muted">
-                  Mã định danh duy nhất (unique)
-                </Form.Text>
               </Form.Group>
             </Col>
 
-            {/* Profile AdSense ID */}
             <Col md={6} className="mb-3">
               <Form.Group>
-                <Form.Label>
-                  Profile AdSense ID <span className="text-danger">*</span>
-                </Form.Label>
+                <Form.Label>Profile AdSense ID</Form.Label>
                 <Form.Control
                   type="text"
                   name="profileAdsenseId"
                   value={formData.profileAdsenseId}
                   onChange={handleChange}
                   placeholder="pub-1234567890123456"
-                  required
                 />
               </Form.Group>
             </Col>
 
-            {/* Employment */}
             <Col md={12} className="mb-3">
               <Form.Group>
                 <Form.Label>Employment (Nhân viên phụ trách)</Form.Label>
@@ -170,47 +149,46 @@ const EditNetworkModal = ({ show, onHide, network, onSubmit }) => {
                   onChange={handleChange}
                   placeholder="Nguyễn Văn A"
                 />
-                <Form.Text className="text-muted">
-                  Tên hoặc thông tin nhân viên quản lý
-                </Form.Text>
               </Form.Group>
             </Col>
 
-            {/* Email Address */}
             <Col md={6} className="mb-3">
               <Form.Group>
-                <Form.Label>
-                  Email Address <span className="text-danger">*</span>
-                </Form.Label>
+                <Form.Label>Email Address</Form.Label>
                 <Form.Control
                   type="email"
                   name="emailAddress"
                   value={formData.emailAddress}
                   onChange={handleChange}
                   placeholder="email@gmail.com"
-                  required
                 />
               </Form.Group>
             </Col>
 
-            {/* Password */}
+            {/* PHẦN THAY ĐỔI: Password với nút Hiện/Ẩn */}
             <Col md={6} className="mb-3">
               <Form.Group>
                 <Form.Label>Password</Form.Label>
-                <Form.Control
-                  type="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  placeholder="••••••••"
-                />
-                <Form.Text className="text-muted">
-                  Để trống nếu không muốn thay đổi
-                </Form.Text>
+                <InputGroup>
+                  <Form.Control
+                    // 3. Thay đổi type dựa trên state showPassword
+                    type={showPassword ? "text" : "password"}
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    placeholder="••••••••"
+                  />
+                  <Button
+                    variant="outline-secondary"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? "Ẩn" : "Hiện"}
+                  </Button>
+                </InputGroup>
               </Form.Group>
             </Col>
 
-            {/* Recovery Email */}
+            {/* ... Các trường còn lại giữ nguyên ... */}
             <Col md={6} className="mb-3">
               <Form.Group>
                 <Form.Label>Recovery Email</Form.Label>
@@ -224,8 +202,7 @@ const EditNetworkModal = ({ show, onHide, network, onSubmit }) => {
               </Form.Group>
             </Col>
 
-            {/* 2FA */}
-            <Col md={6} className="mb-3">
+            <Col md={6} className="mb-3 d-flex align-items-center">
               <Form.Group>
                 <Form.Check
                   type="checkbox"
@@ -237,7 +214,6 @@ const EditNetworkModal = ({ show, onHide, network, onSubmit }) => {
               </Form.Group>
             </Col>
 
-            {/* Ngày tạo */}
             <Col md={6} className="mb-3">
               <Form.Group>
                 <Form.Label>Ngày tạo Profile AdSense</Form.Label>
@@ -250,7 +226,6 @@ const EditNetworkModal = ({ show, onHide, network, onSubmit }) => {
               </Form.Group>
             </Col>
 
-            {/* Tax Form */}
             <Col md={6} className="mb-3">
               <Form.Group>
                 <Form.Label>Tax Form</Form.Label>
@@ -264,7 +239,6 @@ const EditNetworkModal = ({ show, onHide, network, onSubmit }) => {
               </Form.Group>
             </Col>
 
-            {/* Location */}
             <Col md={6} className="mb-3">
               <Form.Group>
                 <Form.Label>Vị trí làm việc</Form.Label>
@@ -280,7 +254,6 @@ const EditNetworkModal = ({ show, onHide, network, onSubmit }) => {
               </Form.Group>
             </Col>
 
-            {/* Linked Channel URL */}
             <Col md={6} className="mb-3">
               <Form.Group>
                 <Form.Label>Linked Channel URL</Form.Label>
@@ -294,7 +267,6 @@ const EditNetworkModal = ({ show, onHide, network, onSubmit }) => {
               </Form.Group>
             </Col>
 
-            {/* Status */}
             <Col md={6} className="mb-3">
               <Form.Group>
                 <Form.Label>Trạng thái</Form.Label>
@@ -311,7 +283,6 @@ const EditNetworkModal = ({ show, onHide, network, onSubmit }) => {
               </Form.Group>
             </Col>
 
-            {/* Reminder Date */}
             <Col md={12} className="mb-3">
               <Form.Group>
                 <Form.Label>Ngày kiểm tra (Reminder)</Form.Label>
@@ -324,7 +295,6 @@ const EditNetworkModal = ({ show, onHide, network, onSubmit }) => {
               </Form.Group>
             </Col>
 
-            {/* Note */}
             <Col md={12} className="mb-3">
               <Form.Group>
                 <Form.Label>Ghi chú</Form.Label>
@@ -354,10 +324,10 @@ const EditNetworkModal = ({ show, onHide, network, onSubmit }) => {
                   size="sm"
                   className="me-2"
                 />
-                Đang cập nhật...
+                Đang tạo...
               </>
             ) : (
-              "Cập nhật"
+              "Tạo Network"
             )}
           </Button>
         </Modal.Footer>
@@ -366,4 +336,4 @@ const EditNetworkModal = ({ show, onHide, network, onSubmit }) => {
   );
 };
 
-export default EditNetworkModal;
+export default AddNetworkModal;

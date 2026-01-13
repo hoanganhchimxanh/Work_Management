@@ -20,9 +20,9 @@ import ItemsPerPageSelector from "../../components/common/ItemsPerPageSelector";
 
 // Custom hooks
 import useAuth from "../../hooks/useAuth";
-import useEmployeeRevenue from "../../hooks/accountant/EmployeeList/useEmployeeRevenue";
-import useMonthYearFilter from "../../hooks/accountant/EmployeeList/useMonthYearFilter";
-import useSearchFilter from "../../hooks/accountant/EmployeeList/useSearchFilter";
+import useEmployeeRevenue from "../../hooks/accountant/employeeList/useEmployeeRevenue";
+import useMonthYearFilter from "../../hooks/accountant/employeeList/useMonthYearFilter";
+import useSearchFilter from "../../hooks/accountant/employeeList/useSearchFilter";
 import usePagination from "../../hooks/usePagination";
 
 function EmployeeList() {

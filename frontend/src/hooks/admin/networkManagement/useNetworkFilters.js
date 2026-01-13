@@ -9,7 +9,6 @@ function useNetworkFilters(networks) {
   // Server-side filters (gửi lên API)
   const [status, setStatus] = useState("");
   const [location, setLocation] = useState("");
-  const [country, setCountry] = useState("");
 
   // Client-side filter (filter ở frontend)
   const [search, setSearch] = useState("");
@@ -24,9 +23,10 @@ function useNetworkFilters(networks) {
 
     return networks.filter((network) => {
       return (
+        network.pubId?.toLowerCase().includes(keyword) ||
         network.profileAdsenseId?.toLowerCase().includes(keyword) ||
         network.emailAddress?.toLowerCase().includes(keyword) ||
-        network.assignedUser?.fullName?.toLowerCase().includes(keyword)
+        network.employment?.toLowerCase().includes(keyword)
       );
     });
   }, [networks, search]);
@@ -45,9 +45,6 @@ function useNetworkFilters(networks) {
       case "location":
         setLocation(value);
         break;
-      case "country":
-        setCountry(value);
-        break;
       default:
         break;
     }
@@ -60,7 +57,6 @@ function useNetworkFilters(networks) {
     setSearch("");
     setStatus("");
     setLocation("");
-    setCountry("");
   };
 
   return {
@@ -69,14 +65,12 @@ function useNetworkFilters(networks) {
       search,
       status,
       location,
-      country,
     },
 
     // Server-side filters (for API)
     serverFilters: {
       status,
       location,
-      country,
     },
 
     // Client-side filters
@@ -92,7 +86,6 @@ function useNetworkFilters(networks) {
     setSearch,
     setStatus,
     setLocation,
-    setCountry,
     resetFilters,
   };
 }

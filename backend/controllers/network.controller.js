@@ -3,7 +3,6 @@ const db = require("../models");
 const Network = db.Network;
 const Channel = db.Channel;
 const User = db.User;
-const XLSX = require("xlsx");
 
 const {
   sendNotification,
@@ -14,39 +13,27 @@ const {
 const createNew = async (req, res, next) => {
   try {
     const {
-      assignedUser,
+      pubId,
+      employment,
       reminderDate,
-      reminderNote,
       profileAdsenseId,
       emailAddress,
+      password,
       recoveryEmail,
+      twoFA,
       creationDate,
-      taxName,
+      taxForm,
       location,
-      mainChannel,
       linkedChannelUrl,
-      emailChannel,
-      channelJoinDate,
-      country,
       status,
       note,
     } = req.body;
 
     // Validate required fields
-    if (!assignedUser || !profileAdsenseId || !emailAddress || !creationDate) {
+    if (!profileAdsenseId || !emailAddress) {
       return res.status(400).json({
         success: false,
-        message:
-          "Thiếu thông tin bắt buộc (assignedUser, profileAdsenseId, emailAddress, creationDate)!",
-      });
-    }
-
-    // Kiểm tra user có tồn tại không
-    const user = await User.findById(assignedUser);
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "Không tìm thấy nhân viên!",
+        message: "Thiếu thông tin bắt buộc (profileAdsenseId, emailAddress)!",
       });
     }
 
@@ -59,56 +46,38 @@ const createNew = async (req, res, next) => {
       });
     }
 
-    // Kiểm tra mainChannel nếu có
-    if (mainChannel) {
-      const channel = await Channel.findById(mainChannel);
-      if (!channel) {
-        return res.status(404).json({
+    // Kiểm tra pubId nếu có (unique)
+    if (pubId) {
+      const existingPubId = await Network.findOne({ pubId });
+      if (existingPubId) {
+        return res.status(400).json({
           success: false,
-          message: "Không tìm thấy kênh chính!",
+          message: "PUB-ID này đã tồn tại!",
         });
       }
     }
 
     const newNetwork = await Network.create({
-      assignedUser,
+      pubId: pubId || undefined,
+      employment: employment || "",
       reminderDate: reminderDate || null,
-      reminderNote: reminderNote || "",
       profileAdsenseId,
       emailAddress,
+      password: password || "",
       recoveryEmail: recoveryEmail || "",
-      creationDate,
-      taxName: taxName || "",
+      twoFA: twoFA || false,
+      creationDate: creationDate || null,
+      taxForm: taxForm || "",
       location: location || "OFFICE",
-      mainChannel: mainChannel || null,
       linkedChannelUrl: linkedChannelUrl || "",
-      emailChannel: emailChannel || "",
-      channelJoinDate: channelJoinDate || null,
-      country: country || "VN",
       status: status || "ACTIVE",
       note: note || "",
     });
 
-    const populatedNetwork = await Network.findById(newNetwork._id)
-      .populate("assignedUser", "fullName personalEmail role")
-      .populate("mainChannel", "name link")
-      .lean();
-
-    // 🔔 SEND NOTIFICATION
-    if (userIds.length === 1) {
-      await sendNotification({
-        userId: userIds[0],
-        title: "Bạn đã được gán quản lý kênh mới",
-        message: `Bạn được làm quản lý cho kênh "${name}".`,
-        // type: "TEAM",
-        metadata: {},
-      });
-    }
-
     res.status(201).json({
       success: true,
       message: "Tạo network thành công!",
-      data: populatedNetwork,
+      data: newNetwork,
     });
   } catch (err) {
     next(err);
@@ -118,22 +87,18 @@ const createNew = async (req, res, next) => {
 // Lấy tất cả Networks
 const getAll = async (req, res, next) => {
   try {
-    const { status, assignedUser, country, location } = req.query;
+    const { status, employment, location, pubId } = req.query;
 
     // Build filter
     const filter = {};
     if (status) filter.status = status;
-    if (assignedUser) filter.assignedUser = assignedUser;
-    if (country) filter.country = country;
+    if (employment) filter.employment = { $regex: employment, $options: "i" };
     if (location) filter.location = location;
+    if (pubId) filter.pubId = { $regex: pubId, $options: "i" };
 
-    const networks = await Network.find(filter)
-      .populate("assignedUser", "fullName personalEmail role team")
-      .populate("mainChannel", "name link status")
-      .sort({ createdAt: -1 })
-      .lean();
+    const networks = await Network.find(filter).sort({ createdAt: -1 }).lean();
 
-    // Đếm số kênh thuộc mỗi network
+    // Đếm số kênh thuộc mỗi network (nếu còn dùng Channel model với network field)
     const networksWithCount = await Promise.all(
       networks.map(async (network) => {
         const channelCount = await Channel.countDocuments({
@@ -162,10 +127,7 @@ const getById = async (req, res, next) => {
   try {
     const networkId = req.params.id;
 
-    const network = await Network.findById(networkId)
-      .populate("assignedUser", "fullName personalEmail role team")
-      .populate("mainChannel", "name link status")
-      .lean();
+    const network = await Network.findById(networkId).lean();
 
     if (!network) {
       return res.status(404).json({
@@ -174,7 +136,7 @@ const getById = async (req, res, next) => {
       });
     }
 
-    // Lấy tất cả channels thuộc network này
+    // Lấy tất cả channels thuộc network này (nếu còn dùng)
     const channels = await Channel.find({ network: networkId })
       .populate("assignedUser", "fullName personalEmail")
       .lean();
@@ -224,41 +186,18 @@ const updateNetwork = async (req, res, next) => {
       }
     }
 
-    // Kiểm tra user nếu thay đổi
-    if (updateData.assignedUser) {
-      const user = await User.findById(updateData.assignedUser);
-      if (!user) {
-        return res.status(404).json({
+    // Kiểm tra pubId nếu thay đổi
+    if (updateData.pubId && updateData.pubId !== network.pubId) {
+      const existingPubId = await Network.findOne({
+        pubId: updateData.pubId,
+        _id: { $ne: networkId },
+      });
+
+      if (existingPubId) {
+        return res.status(400).json({
           success: false,
-          message: "Không tìm thấy nhân viên!",
+          message: "PUB-ID này đã được sử dụng!",
         });
-      }
-    }
-
-    // Kiểm tra mainChannel nếu thay đổi
-    if (updateData.mainChannel) {
-      const channel = await Channel.findById(updateData.mainChannel);
-      if (!channel) {
-        return res.status(404).json({
-          success: false,
-          message: "Không tìm thấy kênh chính!",
-        });
-      }
-
-      // Đánh dấu channel là main channel
-      channel.isMainChannel = true;
-      channel.network = networkId;
-      await channel.save();
-
-      // Bỏ đánh dấu channel cũ
-      if (
-        network.mainChannel &&
-        network.mainChannel.toString() !== updateData.mainChannel
-      ) {
-        await Channel.updateOne(
-          { _id: network.mainChannel },
-          { isMainChannel: false }
-        );
       }
     }
 
@@ -271,10 +210,7 @@ const updateNetwork = async (req, res, next) => {
 
     await network.save();
 
-    const updatedNetwork = await Network.findById(networkId)
-      .populate("assignedUser", "fullName personalEmail role")
-      .populate("mainChannel", "name link")
-      .lean();
+    const updatedNetwork = await Network.findById(networkId).lean();
 
     res.json({
       success: true,
@@ -355,17 +291,6 @@ const assignChannel = async (req, res, next) => {
     channel.network = networkId;
     await channel.save();
 
-    // 🔔 SEND NOTIFICATION
-    if (userIds.length === 1) {
-      await sendNotification({
-        userId: userIds[0],
-        title: "Bạn đã được gán quản lý kênh mới",
-        message: `Bạn được làm quản lý cho kênh "${name}".`,
-        // type: "TEAM",
-        metadata: {},
-      });
-    }
-
     res.json({
       success: true,
       message: "Gán kênh vào network thành công!",
@@ -396,27 +321,8 @@ const removeChannel = async (req, res, next) => {
       });
     }
 
-    // Không cho phép gỡ kênh chính
-    if (channel.isMainChannel) {
-      return res.status(400).json({
-        success: false,
-        message: "Không thể gỡ kênh chính khỏi network!",
-      });
-    }
-
     channel.network = null;
     await channel.save();
-
-    // 🔔 SEND NOTIFICATION
-    if (userIds.length === 1) {
-      await sendNotification({
-        userId: userIds[0],
-        title: "Bạn đã được gán quản lý kênh mới",
-        message: `Bạn được làm quản lý cho kênh "${name}".`,
-        // type: "TEAM",
-        metadata: {},
-      });
-    }
 
     res.json({
       success: true,
@@ -453,11 +359,12 @@ const getNetworkStats = async (req, res, next) => {
       success: true,
       data: {
         networkId: network._id,
+        pubId: network.pubId,
         profileAdsenseId: network.profileAdsenseId,
         emailAddress: network.emailAddress,
+        employment: network.employment,
         totalChannels: channels.length,
         statusBreakdown: statusStats,
-        assignedUser: network.assignedUser,
       },
     });
   } catch (err) {

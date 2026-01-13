@@ -13,6 +13,15 @@ const NetworkTable = ({ networks, loading, onEdit, onDelete, onRefresh }) => {
     return <Badge bg={variants[status] || "secondary"}>{status}</Badge>;
   };
 
+  const getLocationBadge = (location) => {
+    const variants = {
+      HOME: "primary",
+      OFFICE: "info",
+      OTHER: "secondary",
+    };
+    return <Badge bg={variants[location] || "secondary"}>{location}</Badge>;
+  };
+
   const formatDate = (date) => {
     if (!date) return "N/A";
     return new Date(date).toLocaleDateString("vi-VN");
@@ -33,18 +42,18 @@ const NetworkTable = ({ networks, loading, onEdit, onDelete, onRefresh }) => {
         <thead>
           <tr>
             <th style={{ width: "50px" }}>STT</th>
+            <th>PUB-ID</th>
             <th>Profile AdSense ID</th>
-            <th>Nhân viên quản lý</th>
+            <th>Employment</th>
             <th>Email Address</th>
+            <th>Password</th>
             <th>Recovery Email</th>
-            <th>Tên thuế</th>
-            <th>Kênh liên kết</th>
-            <th>Email kênh liên kết</th>
-            <th>Ngày tạo kênh</th>
-            <th>Vị trí làm việc</th>
-            <th>Quốc gia</th>
-            <th>Ngày tạo network</th>
-            <th>Ngày kiểm tra</th>
+            <th>2FA</th>
+            <th>Tax Form</th>
+            <th>Linked Channel</th>
+            <th>Location</th>
+            <th>Ngày tạo</th>
+            <th>Ngày nhắc</th>
             <th>Trạng thái</th>
             <th>Note</th>
             <th style={{ width: "120px" }}>Thao tác</th>
@@ -53,7 +62,7 @@ const NetworkTable = ({ networks, loading, onEdit, onDelete, onRefresh }) => {
         <tbody>
           {networks.length === 0 ? (
             <tr>
-              <td colSpan="10" className="text-center py-4">
+              <td colSpan="16" className="text-center py-4">
                 Không tìm thấy network nào
               </td>
             </tr>
@@ -62,31 +71,61 @@ const NetworkTable = ({ networks, loading, onEdit, onDelete, onRefresh }) => {
               <tr key={network._id}>
                 <td>{index + 1}</td>
                 <td>
+                  <small className="text-muted">{network.pubId || "N/A"}</small>
+                </td>
+                <td>
                   <small className="text-muted">
                     {network.profileAdsenseId}
                   </small>
                 </td>
+                <td>{network.employment || "N/A"}</td>
                 <td>
-                  {network.assignedUser?.fullName || "N/A"}
-                  <br />
+                  <small>{network.emailAddress}</small>
+                </td>
+                <td>
                   <small className="text-muted">
-                    {network.assignedUser?.personalEmail}
+                    {network.password ? "••••••••" : "N/A"}
                   </small>
                 </td>
-                <td>{network.emailAddress}</td>
-                <td>{network.recoveryEmail}</td>
-                <td>{network.taxName}</td>
-                <td>{network.linkedChannelUrl}</td>
-                <td>{network.emailChannel}</td>
-                <td>{formatDate(network.channelJoinDate)}</td>
                 <td>
-                  <Badge bg="info">{network.location}</Badge>
+                  <small>{network.recoveryEmail || "N/A"}</small>
                 </td>
-                <td>{network.country}</td>
-                <td>{formatDate(network.creationDate)}</td>
-                <td>{formatDate(network.reminderDate)}</td>
+                <td className="text-center">
+                  {network.twoFA ? (
+                    <Badge bg="success">Có</Badge>
+                  ) : (
+                    <Badge bg="secondary">Không</Badge>
+                  )}
+                </td>
+                <td>
+                  <small>{network.taxForm || "N/A"}</small>
+                </td>
+                <td>
+                  {network.linkedChannelUrl ? (
+                    <a
+                      href={network.linkedChannelUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-truncate d-inline-block"
+                      style={{ maxWidth: "150px" }}
+                    >
+                      {network.linkedChannelUrl}
+                    </a>
+                  ) : (
+                    "N/A"
+                  )}
+                </td>
+                <td>{getLocationBadge(network.location)}</td>
+                <td>
+                  <small>{formatDate(network.creationDate)}</small>
+                </td>
+                <td>
+                  <small>{formatDate(network.reminderDate)}</small>
+                </td>
                 <td>{getStatusBadge(network.status)}</td>
-                <td>{network.note}</td>
+                <td>
+                  <small className="text-muted">{network.note || "N/A"}</small>
+                </td>
                 <td>
                   <div className="d-flex gap-1">
                     <Button

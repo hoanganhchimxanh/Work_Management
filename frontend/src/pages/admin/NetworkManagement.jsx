@@ -4,6 +4,7 @@ import { Container, Alert } from "react-bootstrap";
 // Components
 import NetworkFilters from "../../components/admin/networkManagement/NetworkFilters";
 import NetworkTable from "../../components/admin/networkManagement/NetworkTable";
+import AddNetworkModal from "../../components/admin/networkManagement/AddNetworkModal";
 import NetworkImportModal from "../../components/admin/networkManagement/NetworkImportModal";
 import EditNetworkModal from "../../components/admin/networkManagement/EditNetworkModal";
 
@@ -21,9 +22,8 @@ const NetworkManagement = () => {
   // 2. Server-side Filters (for API)
   const [status, setStatus] = React.useState("");
   const [location, setLocation] = React.useState("");
-  const [country, setCountry] = React.useState("");
 
-  const serverFilters = { status, location, country };
+  const serverFilters = { status, location };
 
   // 3. Fetch Data
   const { networks, loading, error, refetch } = useNetworkData(
@@ -42,11 +42,11 @@ const NetworkManagement = () => {
     // Also update server filters
     if (field === "status") setStatus(value);
     if (field === "location") setLocation(value);
-    if (field === "country") setCountry(value);
   };
 
   // 5. Actions
   const {
+    handleCreate,
     handleExport,
     handleImport,
     handleUpdate,
@@ -59,6 +59,8 @@ const NetworkManagement = () => {
   const {
     modals,
     selectedNetwork,
+    openAddModal,
+    closeAddModal,
     openImportModal,
     closeImportModal,
     openEditModal,
@@ -66,6 +68,11 @@ const NetworkManagement = () => {
   } = useNetworkModals();
 
   // Wrapper handlers for modals
+  const onAddSubmit = async (data) => {
+    const success = await handleCreate(data);
+    if (success) closeAddModal();
+  };
+
   const onImportSubmit = async (file) => {
     const success = await handleImport(file);
     if (success) closeImportModal();
@@ -110,9 +117,16 @@ const NetworkManagement = () => {
         onFilterChange={onFilterChange}
         onExport={handleExport}
         onImport={openImportModal}
+        onAdd={openAddModal}
       />
 
       {/* Modals */}
+      <AddNetworkModal
+        show={modals.showAddModal}
+        onHide={closeAddModal}
+        onSubmit={onAddSubmit}
+      />
+
       <NetworkImportModal
         show={modals.showImportModal}
         onHide={closeImportModal}
