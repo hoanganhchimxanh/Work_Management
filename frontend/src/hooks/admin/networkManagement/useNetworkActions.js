@@ -31,7 +31,7 @@ function useNetworkActions(getAuthConfig, filters, refetch) {
       if (filters.country) params.country = filters.country;
 
       const response = await axios.get(
-        `${config.backendBase}/network/export-excel`,
+        `${config.backendBase}/excel/export-network-excel`,
         {
           params,
           responseType: "blob",
@@ -66,12 +66,16 @@ function useNetworkActions(getAuthConfig, filters, refetch) {
       const formData = new FormData();
       formData.append("file", file);
 
-      await axios.post(`${config.backendBase}/network/import-excel`, formData, {
-        headers: {
-          ...getAuthConfig().headers,
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      await axios.post(
+        `${config.backendBase}/excel/import-network-excel`,
+        formData,
+        {
+          headers: {
+            ...getAuthConfig().headers,
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
 
       showAlert("Import network thành công!");
       refetch();
