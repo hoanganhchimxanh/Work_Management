@@ -14,6 +14,10 @@ import {
 import { Search, ArrowRightCircle } from "react-bootstrap-icons";
 import { useNavigate } from "react-router-dom";
 
+// Components
+import TablePagination from "../../components/common/TablePagination";
+import ItemsPerPageSelector from "../../components/common/ItemsPerPageSelector";
+
 // Custom hooks
 import useAuth from "../../hooks/useAuth";
 import useEmployeeRevenue from "../../hooks/accountant/EmployeeList/useEmployeeRevenue";
@@ -24,7 +28,10 @@ import usePagination from "../../hooks/usePagination";
 function EmployeeList() {
   const navigate = useNavigate();
 
-  // Month/Year filter
+  // 1. Authentication
+  const { getAuthConfig } = useAuth();
+
+  // 2. Month/Year filter
   const {
     selectedMonth,
     selectedYear,
@@ -35,18 +42,26 @@ function EmployeeList() {
     setYear,
   } = useMonthYearFilter();
 
-  // Employee revenue data
+  // 3. Employee revenue data
   const { employees, loading, error, clearError } = useEmployeeRevenue(
     selectedMonth,
     selectedYear
   );
 
-  // Search filter
+  // 4. Search filter
   const { searchTerm, setSearchTerm, filteredItems } = useSearchFilter(
     employees,
     (employee, term) =>
       employee.fullName.toLowerCase().includes(term.toLowerCase())
   );
+
+  // 5. Pagination
+  const {
+    paginatedItems: paginatedEmployees,
+    pagination,
+    setCurrentPage,
+    setItemsPerPage,
+  } = usePagination(filteredItems, 10);
 
   // Handlers
   const handleViewRevenue = (employee) => {
@@ -105,8 +120,13 @@ function EmployeeList() {
 
   return (
     <Container fluid className="py-4">
-      <h3 className="mb-4">Danh Sách Nhân Viên & Doanh Thu</h3>
+      <Row className="mb-4">
+        <Col>
+          <h3>Danh Sách Nhân Viên & Doanh Thu</h3>
+        </Col>
+      </Row>
 
+      {/* Alerts */}
       {error && (
         <Alert variant="danger" dismissible onClose={clearError}>
           {error}
@@ -170,76 +190,107 @@ function EmployeeList() {
         </Col>
       </Row>
 
+      {/* Table Controls */}
+      <Row className="mb-3">
+        <Col>
+          <div className="d-flex justify-content-between align-items-center">
+            <h6 className="mb-0 text-muted">
+              Danh sách nhân viên ({pagination.totalItems})
+            </h6>
+
+            <ItemsPerPageSelector
+              value={pagination.itemsPerPage}
+              onChange={setItemsPerPage}
+            />
+          </div>
+        </Col>
+      </Row>
+
       {/* Table */}
-      <Table
-        striped
-        bordered
-        hover
-        responsive
-        className="text-center align-middle"
-      >
-        <thead>
-          <tr>
-            <th style={{ width: "60px" }}>STT</th>
-            <th>Tên nhân viên</th>
-            <th>Email cá nhân</th>
-            <th>Email đăng nhập</th>
-            <th>Team</th>
-            <th>Số kênh</th>
-            <th>Tổng doanh thu</th>
-            <th>Trạng thái</th>
-            <th style={{ width: "140px" }}>Xem chi tiết</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredItems.length > 0 ? (
-            filteredItems.map((employee, index) => (
-              <tr key={employee.userId}>
-                <td>{index + 1}</td>
-                <td
-                  className="text-start fw-medium"
-                  style={{ cursor: "pointer" }}
-                  onClick={() => handleViewRevenue(employee)}
-                >
-                  <span className="text-primary text-decoration-underline">
-                    {employee.fullName}
-                  </span>
-                </td>
-                <td>{employee.personalEmail}</td>
-                <td>{employee.loginEmail || "–"}</td>
-                <td>{employee.team || "–"}</td>
-                <td>
-                  <Badge bg="info">{employee.channelCount}</Badge>
-                </td>
-                <td className="fw-bold text-success">
-                  {formatCurrency(employee.totalRevenue)}
-                </td>
-                <td>{getStatusBadge(employee.status)}</td>
-                <td>
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={() => handleViewRevenue(employee)}
-                  >
-                    <ArrowRightCircle className="me-1" />
-                    Xem kênh
-                  </Button>
-                </td>
+      <Row className="mb-3">
+        <Col>
+          <Table
+            striped
+            bordered
+            hover
+            responsive
+            className="text-center align-middle"
+          >
+            <thead>
+              <tr>
+                <th style={{ width: "60px" }}>STT</th>
+                <th>Tên nhân viên</th>
+                <th>Email cá nhân</th>
+                <th>Email đăng nhập</th>
+                <th>Team</th>
+                <th>Số kênh</th>
+                <th>Tổng doanh thu</th>
+                <th>Trạng thái</th>
+                <th style={{ width: "140px" }}>Xem chi tiết</th>
               </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan={9} className="text-muted py-4">
-                Không tìm thấy nhân viên nào phù hợp.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </Table>
+            </thead>
+            <tbody>
+              {paginatedEmployees.length > 0 ? (
+                paginatedEmployees.map((employee, index) => (
+                  <tr key={employee.userId}>
+                    <td>{pagination.startIndex + index + 1}</td>
+                    <td
+                      className="text-start fw-medium"
+                      style={{ cursor: "pointer" }}
+                      onClick={() => handleViewRevenue(employee)}
+                    >
+                      <span className="text-primary text-decoration-underline">
+                        {employee.fullName}
+                      </span>
+                    </td>
+                    <td>{employee.personalEmail}</td>
+                    <td>{employee.loginEmail || "—"}</td>
+                    <td>{employee.team || "—"}</td>
+                    <td>
+                      <Badge bg="info">{employee.channelCount}</Badge>
+                    </td>
+                    <td className="fw-bold text-success">
+                      {formatCurrency(employee.totalRevenue)}
+                    </td>
+                    <td>{getStatusBadge(employee.status)}</td>
+                    <td>
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={() => handleViewRevenue(employee)}
+                      >
+                        <ArrowRightCircle className="me-1" />
+                        Xem kênh
+                      </Button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={9} className="text-muted py-4">
+                    Không tìm thấy nhân viên nào phù hợp.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </Table>
+        </Col>
+      </Row>
+
+      {/* Pagination */}
+      <Row className="mb-4">
+        <Col>
+          <TablePagination
+            currentPage={pagination.currentPage}
+            totalPages={pagination.totalPages}
+            onPageChange={setCurrentPage}
+          />
+        </Col>
+      </Row>
 
       {/* Summary */}
       {filteredItems.length > 0 && (
-        <Row className="mt-4">
+        <Row>
           <Col md={6}>
             <Alert variant="info">
               <strong>Tổng số nhân viên:</strong> {filteredItems.length}
