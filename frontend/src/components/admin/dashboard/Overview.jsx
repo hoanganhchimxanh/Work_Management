@@ -16,6 +16,7 @@ import {
   PeopleFill,
   BroadcastPin,
   Diagram3Fill,
+  ExclamationCircle,
 } from "react-bootstrap-icons";
 
 function Overview({
@@ -49,17 +50,17 @@ function Overview({
   const getChartTitle = () => {
     switch (dateRange) {
       case "7":
-        return "Tăng trường doanh thu 7 ngày gần nhất";
+        return "Tăng trưởng doanh thu 7 ngày gần nhất";
       case "28":
-        return "Tăng trường doanh thu 28 ngày gần nhất";
+        return "Tăng trưởng doanh thu 28 ngày gần nhất";
       case "90":
-        return "Tăng trường doanh thu theo tuần (90 ngày)";
+        return "Tăng trưởng doanh thu theo tuần (90 ngày)";
       case "365":
-        return "Tăng trường doanh thu theo tháng (365 ngày)";
+        return "Tăng trưởng doanh thu theo tháng (365 ngày)";
       case "lifetime":
-        return "Tăng trường doanh thu toàn thời gian";
+        return "Tăng trưởng doanh thu toàn thời gian";
       default:
-        return "Tăng trường doanh thu";
+        return "Tăng trưởng doanh thu";
     }
   };
 
@@ -79,6 +80,26 @@ function Overview({
         return "";
     }
   };
+
+  // Kiểm tra xem có dữ liệu doanh thu không
+  const hasRevenueData =
+    revenueData &&
+    revenueData.length > 0 &&
+    revenueData.some((item) => item.revenue > 0);
+
+  // Empty state component cho biểu đồ
+  const EmptyChartState = () => (
+    <div
+      className="d-flex flex-column align-items-center justify-content-center text-muted"
+      style={{ height: 350 }}
+    >
+      <ExclamationCircle size={48} className="mb-3 opacity-50" />
+      <h6 className="mb-2">Không có dữ liệu</h6>
+      <p className="text-center small mb-0">
+        Yêu cầu cập nhật số liệu từ người dùng
+      </p>
+    </div>
+  );
 
   return (
     <>
@@ -173,40 +194,49 @@ function Overview({
           <Card className="border-0 shadow-sm">
             <Card.Body>
               <h5 className="fw-bold mb-4">{getChartTitle()}</h5>
-              <ResponsiveContainer width="100%" height={350}>
-                <LineChart
-                  data={revenueData}
-                  margin={{
-                    right: 20,
-                    left: 10,
-                  }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis
-                    dataKey="date"
-                    angle={dateRange === "lifetime" ? -45 : 0}
-                    textAnchor={dateRange === "lifetime" ? "end" : "middle"}
-                    height={dateRange === "lifetime" ? 80 : 60}
-                    interval={dateRange === "lifetime" ? "preserveStartEnd" : 0}
-                    tick={{ fontSize: 11 }}
-                  />
-                  <YAxis
-                    tickFormatter={formatShortCurrency}
-                    tick={{ fontSize: 11 }}
-                  />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="revenue"
-                    name="Doanh thu"
-                    stroke="#0d6efd"
-                    strokeWidth={2}
-                    dot={{ r: dateRange === "7" || dateRange === "28" ? 4 : 0 }}
-                    activeDot={{ r: 6 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+
+              {hasRevenueData ? (
+                <ResponsiveContainer width="100%" height={350}>
+                  <LineChart
+                    data={revenueData}
+                    margin={{
+                      right: 20,
+                      left: 10,
+                    }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis
+                      dataKey="date"
+                      angle={dateRange === "lifetime" ? -45 : 0}
+                      textAnchor={dateRange === "lifetime" ? "end" : "middle"}
+                      height={dateRange === "lifetime" ? 80 : 60}
+                      interval={
+                        dateRange === "lifetime" ? "preserveStartEnd" : 0
+                      }
+                      tick={{ fontSize: 11 }}
+                    />
+                    <YAxis
+                      tickFormatter={formatShortCurrency}
+                      tick={{ fontSize: 11 }}
+                    />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend />
+                    <Line
+                      type="monotone"
+                      dataKey="revenue"
+                      name="Doanh thu"
+                      stroke="#0d6efd"
+                      strokeWidth={2}
+                      dot={{
+                        r: dateRange === "7" || dateRange === "28" ? 4 : 0,
+                      }}
+                      activeDot={{ r: 6 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <EmptyChartState />
+              )}
             </Card.Body>
           </Card>
         </Col>
