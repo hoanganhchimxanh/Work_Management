@@ -10,8 +10,8 @@ const networkSchema = new mongoose.Schema(
 
     // Employment (thay cho assignedUser)
     employment: {
-      type: String,
-      default: "",
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
     },
 
     // Reminder (admin reminder)
@@ -81,14 +81,28 @@ const networkSchema = new mongoose.Schema(
     // Status
     status: {
       type: String,
-      enum: ["ACTIVE", "PROCESSING", "INACTIVE", "LOCKED"],
+      enum: [
+        "ACTIVE", // Hoạt động bình thường
+        "STRIKE", // Bị gậy / vi phạm
+        "DEMONETIZED", // Tắt kiếm tiền (TKT)
+        "DEAD", // Die / account chết
+      ],
       default: "ACTIVE",
     },
 
     // Note
     note: {
       type: String,
-      default: "",
+      enum: [
+        "PENDING_ACTIVATION", // Chờ active
+        "REJECTED", // Từ chối
+        "PENDING_IDENTITY_VERIFICATION", // Chờ XMDT
+        "IDENTITY_VERIFICATION_REVIEW", // XMDT chờ duyệt
+        "PENDING_32", // Chờ 32 (mã nội bộ)
+        "PENDING_PIN", // Chờ PIN
+        "ACTIVATED", // Active
+      ],
+      default: "PENDING_ACTIVATION",
     },
   },
   {

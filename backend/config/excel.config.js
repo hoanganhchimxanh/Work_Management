@@ -504,13 +504,14 @@ const excelConfigs = {
         excelKey: "emailAddress",
         dbField: "emailAddress",
         displayName: "Email Address",
-        required: true,
+        required: false,
         width: 30,
         validate: (value) => {
+          if (!value) return true;
           const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
           return emailRegex.test(value);
         },
-        transform: (value) => value.trim().toLowerCase(),
+        transform: (value) => value?.trim().toLowerCase() || "",
       },
       {
         excelKey: "password",
@@ -586,6 +587,38 @@ const excelConfigs = {
         width: 50,
         transform: (value) => value?.trim() || "",
       },
+      {
+        excelKey: "status",
+        dbField: "status",
+        displayName: "Trạng thái",
+        required: false,
+        width: 15,
+        validate: (value) => {
+          const validStatuses = ["ACTIVE", "STRIKE", "DEMONETIZED", "DEAD"];
+          return !value || validStatuses.includes(value.toUpperCase());
+        },
+        transform: (value) => value?.toUpperCase() || "ACTIVE",
+      },
+      {
+        excelKey: "note",
+        dbField: "note",
+        displayName: "Ghi chú",
+        required: false,
+        width: 30,
+        validate: (value) => {
+          const validNotes = [
+            "PENDING_ACTIVATION",
+            "REJECTED",
+            "PENDING_IDENTITY_VERIFICATION",
+            "IDENTITY_VERIFICATION_REVIEW",
+            "PENDING_32",
+            "PENDING_PIN",
+            "ACTIVATED",
+          ];
+          return !value || validNotes.includes(value.toUpperCase());
+        },
+        transform: (value) => value?.toUpperCase() || "PENDING_ACTIVATION",
+      },
     ],
 
     exportColumns: [
@@ -602,8 +635,8 @@ const excelConfigs = {
       { key: "location", displayName: "Vị trí", width: 15 },
       { key: "linkedChannelUrl", displayName: "Linked Channel", width: 50 },
       { key: "status", displayName: "Trạng thái", width: 15 },
+      { key: "note", displayName: "Ghi chú", width: 30 },
       { key: "reminderDate", displayName: "Ngày nhắc nhở", width: 15 },
-      { key: "note", displayName: "Ghi chú", width: 40 },
     ],
 
     templateData: [
@@ -620,6 +653,8 @@ const excelConfigs = {
         taxForm: "W-8BEN",
         location: "OFFICE",
         linkedChannel: "https://youtube.com/@channelname",
+        status: "ACTIVE",
+        note: "PENDING_ACTIVATION",
       },
     ],
 
@@ -647,7 +682,7 @@ const excelConfigs = {
       {
         column: "emailAddress",
         description: "Email của Profile AdSense",
-        required: "Có",
+        required: "Không",
       },
       {
         column: "password",
@@ -684,15 +719,26 @@ const excelConfigs = {
         description: "URL kênh YouTube liên kết",
         required: "Không",
       },
+      {
+        column: "status",
+        description: "ACTIVE / STRIKE / DEMONETIZED / DEAD",
+        required: "Không",
+      },
+      {
+        column: "note",
+        description:
+          "PENDING_ACTIVATION / REJECTED / PENDING_IDENTITY_VERIFICATION / IDENTITY_VERIFICATION_REVIEW / PENDING_32 / PENDING_PIN / ACTIVATED",
+        required: "Không",
+      },
     ],
 
     prepareExportData: async (records) => {
       return records.map((network, index) => ({
         stt: index + 1,
         pubId: network.pubId || "",
-        employment: network.employment || "",
+        employment: network.employment?.fullName || network.employment || "",
         profileAdsenseId: network.profileAdsenseId,
-        emailAddress: network.emailAddress,
+        emailAddress: network.emailAddress || "",
         password: network.password ? "********" : "", // Mask password in export
         recoveryEmail: network.recoveryEmail || "",
         twoFA: network.twoFA ? "Yes" : "No",
@@ -703,20 +749,21 @@ const excelConfigs = {
         location: network.location || "",
         linkedChannelUrl: network.linkedChannelUrl || "",
         status: network.status || "",
+        note: network.note || "",
         reminderDate: network.reminderDate
           ? new Date(network.reminderDate).toLocaleDateString("vi-VN")
           : "",
-        note: network.note || "",
       }));
     },
 
     defaults: {
       status: "ACTIVE",
-      note: "",
+      note: "PENDING_ACTIVATION",
       location: "OFFICE",
       twoFA: false,
       employment: "",
       password: "",
+      emailAddress: "",
     },
   },
 };

@@ -1,9 +1,10 @@
 import React from "react";
-import { Container, Row, Col, Button, Alert } from "react-bootstrap";
+import { Container, Row, Col, Button, Alert, Tabs, Tab } from "react-bootstrap";
 
 // Components
 import UserTable from "../../components/admin/userManagement/UserTable";
 import TeamTable from "../../components/admin/userManagement/TeamTable";
+import EmployeeTable from "../../components/admin/userManagement/EmployeeTable";
 import UserModal from "../../components/admin/userManagement/UserModal";
 import TeamModal from "../../components/admin/userManagement/TeamModal";
 import UserImportModal from "../../components/admin/userManagement/UserImportModal";
@@ -17,12 +18,16 @@ import useUserManagementData from "../../hooks/admin/userManagement/useUserManag
 import useUserManagementModals from "../../hooks/admin/userManagement/useUserManagementModals";
 import useUserManagementActions from "../../hooks/admin/userManagement/useUserManagementActions";
 import usePagination from "../../hooks/usePagination";
+import useTabNavigation from "../../hooks/useTabNavigation";
 
 function UserManagement() {
   // 1. Authentication
   const { getAuthConfig } = useAuth();
 
-  // 2. Fetch Data
+  // 2. Tab Navigation
+  const { activeTab, setActiveTab } = useTabNavigation("account");
+
+  // 3. Fetch Data
   const {
     users,
     teams,
@@ -35,7 +40,7 @@ function UserManagement() {
     refetchAll,
   } = useUserManagementData(getAuthConfig);
 
-  // 3. Pagination for Users
+  // 4. Pagination for Users
   const {
     paginatedItems: paginatedUsers,
     pagination: userPagination,
@@ -43,7 +48,7 @@ function UserManagement() {
     setItemsPerPage: setUserItemsPerPage,
   } = usePagination(users, 10);
 
-  // 4. Pagination for Teams
+  // 5. Pagination for Teams
   const {
     paginatedItems: paginatedTeams,
     pagination: teamPagination,
@@ -51,7 +56,7 @@ function UserManagement() {
     setItemsPerPage: setTeamItemsPerPage,
   } = usePagination(teams, 10);
 
-  // 5. Modals
+  // 6. Modals
   const {
     modals,
     selected,
@@ -65,7 +70,7 @@ function UserManagement() {
     closeTeamImportModal,
   } = useUserManagementModals();
 
-  // 6. Actions
+  // 7. Actions
   const {
     handleUserImport,
     handleUserExport,
@@ -135,137 +140,151 @@ function UserManagement() {
         </Alert>
       )}
 
-      {/* User Management Section */}
-      <Row className="mb-3">
-        <Col>
-          <div className="d-flex justify-content-between align-items-center">
-            <h5>Quản lý người dùng</h5>
+      <Tabs
+        activeKey={activeTab}
+        onSelect={(k) => setActiveTab(k)}
+        className="mb-3"
+      >
+        {/* Tab 1: Quản lý tài khoản hệ thống */}
+        <Tab eventKey="account" title="Quản lý tài khoản hệ thống">
+          {/* User Management Section */}
+          <Row className="mb-3">
+            <Col>
+              <div className="d-flex justify-content-between align-items-center">
+                <h5>Quản lý người dùng</h5>
 
-            <div className="d-flex gap-2">
-              <Button variant="success" onClick={handleUserExport}>
-                <i className="bi bi-download me-2"></i>
-                Export Excel
-              </Button>
+                <div className="d-flex gap-2">
+                  <Button variant="success" onClick={handleUserExport}>
+                    <i className="bi bi-download me-2"></i>
+                    Export Excel
+                  </Button>
 
-              <Button variant="success" onClick={openUserImportModal}>
-                <i className="bi bi-upload me-2"></i>
-                Import Excel
-              </Button>
+                  <Button variant="success" onClick={openUserImportModal}>
+                    <i className="bi bi-upload me-2"></i>
+                    Import Excel
+                  </Button>
 
-              <Button variant="primary" onClick={() => openUserModal()}>
-                <i className="bi bi-plus-circle me-2"></i>
-                Thêm người dùng
-              </Button>
-            </div>
-          </div>
-        </Col>
-      </Row>
+                  <Button variant="primary" onClick={() => openUserModal()}>
+                    <i className="bi bi-plus-circle me-2"></i>
+                    Thêm người dùng
+                  </Button>
+                </div>
+              </div>
+            </Col>
+          </Row>
 
-      {/* User Table Controls */}
-      <Row className="mb-3">
-        <Col>
-          <div className="d-flex justify-content-between align-items-center">
-            <h6 className="mb-0 text-muted">
-              Danh sách người dùng ({userPagination.totalItems})
-            </h6>
+          {/* User Table Controls */}
+          <Row className="mb-3">
+            <Col>
+              <div className="d-flex justify-content-between align-items-center">
+                <h6 className="mb-0 text-muted">
+                  Danh sách người dùng ({userPagination.totalItems})
+                </h6>
 
-            <ItemsPerPageSelector
-              value={userPagination.itemsPerPage}
-              onChange={setUserItemsPerPage}
-            />
-          </div>
-        </Col>
-      </Row>
+                <ItemsPerPageSelector
+                  value={userPagination.itemsPerPage}
+                  onChange={setUserItemsPerPage}
+                />
+              </div>
+            </Col>
+          </Row>
 
-      <Row className="mb-3">
-        <Col>
-          <UserTable
-            users={paginatedUsers}
-            loading={loadingUsers}
-            onEdit={openUserModal}
-            onRefresh={refetchUsers}
-            teams={teams}
-          />
-        </Col>
-      </Row>
+          <Row className="mb-3">
+            <Col>
+              <UserTable
+                users={paginatedUsers}
+                loading={loadingUsers}
+                onEdit={openUserModal}
+                onRefresh={refetchUsers}
+                teams={teams}
+              />
+            </Col>
+          </Row>
 
-      {/* User Pagination */}
-      <Row className="mb-5">
-        <Col>
-          <TablePagination
-            currentPage={userPagination.currentPage}
-            totalPages={userPagination.totalPages}
-            onPageChange={setUserCurrentPage}
-          />
-        </Col>
-      </Row>
+          {/* User Pagination */}
+          <Row className="mb-5">
+            <Col>
+              <TablePagination
+                currentPage={userPagination.currentPage}
+                totalPages={userPagination.totalPages}
+                onPageChange={setUserCurrentPage}
+              />
+            </Col>
+          </Row>
 
-      <hr />
+          <hr />
 
-      {/* Team Management Section */}
-      <Row className="mb-3">
-        <Col>
-          <div className="d-flex justify-content-between align-items-center">
-            <h5>Quản lý đội nhóm</h5>
+          {/* Team Management Section */}
+          <Row className="mb-3">
+            <Col>
+              <div className="d-flex justify-content-between align-items-center">
+                <h5>Quản lý đội nhóm</h5>
 
-            <div className="d-flex gap-2">
-              <Button variant="success" onClick={handleTeamExport}>
-                <i className="bi bi-download me-2"></i>
-                Export Excel
-              </Button>
+                <div className="d-flex gap-2">
+                  <Button variant="success" onClick={handleTeamExport}>
+                    <i className="bi bi-download me-2"></i>
+                    Export Excel
+                  </Button>
 
-              <Button variant="success" onClick={openTeamImportModal}>
-                <i className="bi bi-upload me-2"></i>
-                Import Excel
-              </Button>
+                  <Button variant="success" onClick={openTeamImportModal}>
+                    <i className="bi bi-upload me-2"></i>
+                    Import Excel
+                  </Button>
 
-              <Button variant="primary" onClick={() => openTeamModal()}>
-                <i className="bi bi-plus-circle me-2"></i>
-                Tạo đội nhóm
-              </Button>
-            </div>
-          </div>
-        </Col>
-      </Row>
+                  <Button variant="primary" onClick={() => openTeamModal()}>
+                    <i className="bi bi-plus-circle me-2"></i>
+                    Tạo đội nhóm
+                  </Button>
+                </div>
+              </div>
+            </Col>
+          </Row>
 
-      {/* Team Table Controls */}
-      <Row className="mb-3">
-        <Col>
-          <div className="d-flex justify-content-between align-items-center">
-            <h6 className="mb-0 text-muted">
-              Danh sách đội nhóm ({teamPagination.totalItems})
-            </h6>
+          {/* Team Table Controls */}
+          <Row className="mb-3">
+            <Col>
+              <div className="d-flex justify-content-between align-items-center">
+                <h6 className="mb-0 text-muted">
+                  Danh sách đội nhóm ({teamPagination.totalItems})
+                </h6>
 
-            <ItemsPerPageSelector
-              value={teamPagination.itemsPerPage}
-              onChange={setTeamItemsPerPage}
-            />
-          </div>
-        </Col>
-      </Row>
+                <ItemsPerPageSelector
+                  value={teamPagination.itemsPerPage}
+                  onChange={setTeamItemsPerPage}
+                />
+              </div>
+            </Col>
+          </Row>
 
-      <Row className="mb-3">
-        <Col>
-          <TeamTable
-            teams={paginatedTeams}
-            loading={loadingTeams}
-            onEdit={openTeamModal}
-            onRefresh={refetchTeams}
-            onDeleted={handleTeamDeleted}
-          />
-        </Col>
-      </Row>
+          <Row className="mb-3">
+            <Col>
+              <TeamTable
+                teams={paginatedTeams}
+                loading={loadingTeams}
+                onEdit={openTeamModal}
+                onRefresh={refetchTeams}
+                onDeleted={handleTeamDeleted}
+              />
+            </Col>
+          </Row>
 
-      {/* Team Pagination */}
-      <Row>
-        <Col>
-          <TablePagination
-            currentPage={teamPagination.currentPage}
-            totalPages={teamPagination.totalPages}
-            onPageChange={setTeamCurrentPage}
-          />
-        </Col>
-      </Row>
+          {/* Team Pagination */}
+          <Row>
+            <Col>
+              <TablePagination
+                currentPage={teamPagination.currentPage}
+                totalPages={teamPagination.totalPages}
+                onPageChange={setTeamCurrentPage}
+              />
+            </Col>
+          </Row>
+        </Tab>
+
+        {/* Tab 2: Quản lý nhân sự */}
+        <Tab eventKey="employee" title="Quản lý nhân sự">
+          <EmployeeTable />
+        </Tab>
+      </Tabs>
 
       {/* User Modals */}
       <UserModal
