@@ -30,10 +30,19 @@ const createNew = async (req, res, next) => {
     } = req.body;
 
     // Validate required fields
-    if (!profileAdsenseId || !emailAddress) {
+    if (!profileAdsenseId || !employment) {
       return res.status(400).json({
         success: false,
-        message: "Thiếu thông tin bắt buộc (profileAdsenseId, emailAddress)!",
+        message: "Thiếu thông tin bắt buộc (profileAdsenseId, employment)!",
+      });
+    }
+
+    // Kiểm tra user có tồn tại không
+    const user = await User.findById(employment);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy nhân viên!",
       });
     }
 
@@ -46,7 +55,7 @@ const createNew = async (req, res, next) => {
       });
     }
 
-    // Kiểm tra pubId nếu có (unique)
+    // Kiểm tra pubId nếu có
     if (pubId) {
       const existingPubId = await Network.findOne({ pubId });
       if (existingPubId) {
@@ -59,10 +68,10 @@ const createNew = async (req, res, next) => {
 
     const newNetwork = await Network.create({
       pubId: pubId || undefined,
-      employment: employment || "",
+      employment,
       reminderDate: reminderDate || null,
       profileAdsenseId,
-      emailAddress,
+      emailAddress: emailAddress || "",
       password: password || "",
       recoveryEmail: recoveryEmail || "",
       twoFA: twoFA || false,
@@ -71,13 +80,28 @@ const createNew = async (req, res, next) => {
       location: location || "OFFICE",
       linkedChannelUrl: linkedChannelUrl || "",
       status: status || "ACTIVE",
-      note: note || "",
+      note: note || "PENDING_ACTIVATION",
+    });
+
+    const populatedNetwork = await Network.findById(newNetwork._id)
+      .populate("employment", "fullName personalEmail role")
+      .lean();
+
+    // 🔔 SEND NOTIFICATION
+    await sendNotification({
+      userId: employment,
+      title: "Bạn đã được gán quản lý network mới",
+      message: `Bạn được làm quản lý cho network "${profileAdsenseId}".`,
+      metadata: {
+        networkId: newNetwork._id,
+        profileAdsenseId,
+      },
     });
 
     res.status(201).json({
       success: true,
       message: "Tạo network thành công!",
-      data: newNetwork,
+      data: populatedNetwork,
     });
   } catch (err) {
     next(err);
@@ -87,18 +111,21 @@ const createNew = async (req, res, next) => {
 // Lấy tất cả Networks
 const getAll = async (req, res, next) => {
   try {
-    const { status, employment, location, pubId } = req.query;
+    const { status, employment, location, note } = req.query;
 
     // Build filter
     const filter = {};
     if (status) filter.status = status;
-    if (employment) filter.employment = { $regex: employment, $options: "i" };
+    if (employment) filter.employment = employment;
     if (location) filter.location = location;
-    if (pubId) filter.pubId = { $regex: pubId, $options: "i" };
+    if (note) filter.note = note;
 
-    const networks = await Network.find(filter).sort({ createdAt: -1 }).lean();
+    const networks = await Network.find(filter)
+      .populate("employment", "fullName personalEmail role team")
+      .sort({ createdAt: -1 })
+      .lean();
 
-    // Đếm số kênh thuộc mỗi network (nếu còn dùng Channel model với network field)
+    // Đếm số kênh thuộc mỗi network
     const networksWithCount = await Promise.all(
       networks.map(async (network) => {
         const channelCount = await Channel.countDocuments({
@@ -127,7 +154,9 @@ const getById = async (req, res, next) => {
   try {
     const networkId = req.params.id;
 
-    const network = await Network.findById(networkId).lean();
+    const network = await Network.findById(networkId)
+      .populate("employment", "fullName personalEmail role team")
+      .lean();
 
     if (!network) {
       return res.status(404).json({
@@ -136,7 +165,7 @@ const getById = async (req, res, next) => {
       });
     }
 
-    // Lấy tất cả channels thuộc network này (nếu còn dùng)
+    // Lấy tất cả channels thuộc network này
     const channels = await Channel.find({ network: networkId })
       .populate("assignedUser", "fullName personalEmail")
       .lean();
@@ -201,6 +230,17 @@ const updateNetwork = async (req, res, next) => {
       }
     }
 
+    // Kiểm tra user nếu thay đổi
+    if (updateData.employment) {
+      const user = await User.findById(updateData.employment);
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: "Không tìm thấy nhân viên!",
+        });
+      }
+    }
+
     // Cập nhật các field
     Object.keys(updateData).forEach((key) => {
       if (updateData[key] !== undefined) {
@@ -210,7 +250,9 @@ const updateNetwork = async (req, res, next) => {
 
     await network.save();
 
-    const updatedNetwork = await Network.findById(networkId).lean();
+    const updatedNetwork = await Network.findById(networkId)
+      .populate("employment", "fullName personalEmail role")
+      .lean();
 
     res.json({
       success: true,
@@ -291,6 +333,19 @@ const assignChannel = async (req, res, next) => {
     channel.network = networkId;
     await channel.save();
 
+    // 🔔 SEND NOTIFICATION
+    if (channel.assignedUser) {
+      await sendNotification({
+        userId: channel.assignedUser,
+        title: "Kênh của bạn đã được gán vào network",
+        message: `Kênh "${channel.name}" đã được gán vào network "${network.profileAdsenseId}".`,
+        metadata: {
+          channelId: channel._id,
+          networkId: network._id,
+        },
+      });
+    }
+
     res.json({
       success: true,
       message: "Gán kênh vào network thành công!",
@@ -323,6 +378,18 @@ const removeChannel = async (req, res, next) => {
 
     channel.network = null;
     await channel.save();
+
+    // 🔔 SEND NOTIFICATION
+    if (channel.assignedUser) {
+      await sendNotification({
+        userId: channel.assignedUser,
+        title: "Kênh của bạn đã được gỡ khỏi network",
+        message: `Kênh "${channel.name}" đã được gỡ khỏi network.`,
+        metadata: {
+          channelId: channel._id,
+        },
+      });
+    }
 
     res.json({
       success: true,
@@ -362,9 +429,11 @@ const getNetworkStats = async (req, res, next) => {
         pubId: network.pubId,
         profileAdsenseId: network.profileAdsenseId,
         emailAddress: network.emailAddress,
-        employment: network.employment,
+        status: network.status,
+        note: network.note,
         totalChannels: channels.length,
         statusBreakdown: statusStats,
+        employment: network.employment,
       },
     });
   } catch (err) {

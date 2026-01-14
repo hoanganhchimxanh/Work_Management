@@ -6,11 +6,45 @@ const NetworkTable = ({ networks, loading, onEdit, onDelete, onRefresh }) => {
   const getStatusBadge = (status) => {
     const variants = {
       ACTIVE: "success",
-      PROCESSING: "warning",
-      INACTIVE: "secondary",
-      LOCKED: "danger",
+      STRIKE: "warning",
+      DEMONETIZED: "danger",
+      DEAD: "dark",
     };
-    return <Badge bg={variants[status] || "secondary"}>{status}</Badge>;
+    const labels = {
+      ACTIVE: "Hoạt động",
+      STRIKE: "Bị gậy",
+      DEMONETIZED: "TKT",
+      DEAD: "Die",
+    };
+    return (
+      <Badge bg={variants[status] || "secondary"}>
+        {labels[status] || status}
+      </Badge>
+    );
+  };
+
+  const getNoteBadge = (note) => {
+    const variants = {
+      PENDING_ACTIVATION: "warning",
+      REJECTED: "danger",
+      PENDING_IDENTITY_VERIFICATION: "info",
+      IDENTITY_VERIFICATION_REVIEW: "primary",
+      PENDING_32: "secondary",
+      PENDING_PIN: "info",
+      ACTIVATED: "success",
+    };
+    const labels = {
+      PENDING_ACTIVATION: "Chờ active",
+      REJECTED: "Từ chối",
+      PENDING_IDENTITY_VERIFICATION: "Chờ XMDT",
+      IDENTITY_VERIFICATION_REVIEW: "XMDT chờ duyệt",
+      PENDING_32: "Chờ 32",
+      PENDING_PIN: "Chờ PIN",
+      ACTIVATED: "Active",
+    };
+    return (
+      <Badge bg={variants[note] || "secondary"}>{labels[note] || note}</Badge>
+    );
   };
 
   const getLocationBadge = (location) => {
@@ -19,7 +53,16 @@ const NetworkTable = ({ networks, loading, onEdit, onDelete, onRefresh }) => {
       OFFICE: "info",
       OTHER: "secondary",
     };
-    return <Badge bg={variants[location] || "secondary"}>{location}</Badge>;
+    const labels = {
+      HOME: "Nhà",
+      OFFICE: "Văn phòng",
+      OTHER: "Khác",
+    };
+    return (
+      <Badge bg={variants[location] || "secondary"}>
+        {labels[location] || location}
+      </Badge>
+    );
   };
 
   const formatDate = (date) => {
@@ -78,9 +121,11 @@ const NetworkTable = ({ networks, loading, onEdit, onDelete, onRefresh }) => {
                     {network.profileAdsenseId}
                   </small>
                 </td>
-                <td>{network.employment || "N/A"}</td>
                 <td>
-                  <small>{network.emailAddress}</small>
+                  {network.employment?.fullName || network.employment || "N/A"}
+                </td>
+                <td>
+                  <small>{network.emailAddress || "N/A"}</small>
                 </td>
                 <td>
                   <small className="text-muted">
@@ -123,9 +168,7 @@ const NetworkTable = ({ networks, loading, onEdit, onDelete, onRefresh }) => {
                   <small>{formatDate(network.reminderDate)}</small>
                 </td>
                 <td>{getStatusBadge(network.status)}</td>
-                <td>
-                  <small className="text-muted">{network.note || "N/A"}</small>
-                </td>
+                <td>{getNoteBadge(network.note)}</td>
                 <td>
                   <div className="d-flex gap-1">
                     <Button
