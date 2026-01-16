@@ -18,6 +18,8 @@ const bugReportRouter = require("./bugReport.route");
 const channelRevenueRouter = require("./channelRevenue.route");
 const resourceBatchRouter = require("./resourceBatch.route");
 
+const user2Router = require("./user2.route");
+
 // ============== MOUNT ROUTES ==============
 router.use("/user", userRouter);
 router.use("/account", accountRouter);
@@ -35,6 +37,8 @@ router.use("/resource", resourceRouter);
 router.use("/bug-report", bugReportRouter);
 router.use("/channel-revenue", channelRevenueRouter);
 router.use("/resource-batch", resourceBatchRouter);
+
+router.use("/user2", user2Router);
 
 // Route gốc (tùy chọn - để kiểm tra)
 router.get("/", (req, res) => {

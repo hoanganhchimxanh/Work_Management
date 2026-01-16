@@ -19,6 +19,7 @@ import KPITaskManagement from "./pages/admin/KPITaskManagement";
 import NetworkManagement from "./pages/admin/NetworkManagement";
 import ChannelManagement from "./pages/admin/ChannelManagement";
 import AdminNotification from "./pages/admin/NotificationPage";
+import User2Management from "./pages/admin/User2Management";
 
 // Employee pages
 import EmployeeLayout from "./layouts/EmployeeLayout";
@@ -83,7 +84,7 @@ function App() {
           }
         >
           <Route path="dashboard" element={<Dashboard />} />
-          <Route path="users" element={<UserManagement />} />
+          <Route path="users" element={<User2Management />} />
           <Route path="resources" element={<ResourceManagement />} />
           <Route path="kpi_tasks" element={<KPITaskManagement />} />
           <Route path="networks" element={<NetworkManagement />} />
