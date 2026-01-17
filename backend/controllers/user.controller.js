@@ -221,9 +221,9 @@ const getPersonal = async (req, res, next) => {
         status: user.status,
         team: user.team
           ? {
-              _id: user.team._id,
-              name: user.team.name,
-            }
+            _id: user.team._id,
+            name: user.team.name,
+          }
           : null,
         joinDate: user.joinDate,
         responsibilities: user.responsibilities,
