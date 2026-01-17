@@ -35,9 +35,9 @@ async function seedAccountant() {
       };
     }
 
-    // Kiểm tra xem có user accountant với email này chưa
+    // Kiểm tra xem có user accountant với phone này chưa
     const existingUser = await User.findOne({
-      personalEmail: "accountant@gmail.com",
+      phoneNumber: "0000000002",
     });
 
     let accountantUser;
@@ -50,11 +50,19 @@ async function seedAccountant() {
       console.log("👤 Creating accountant user...");
       accountantUser = await User.create({
         fullName: "System Accountant",
-        personalEmail: "accountant@gmail.com",
+        phoneNumber: "0000000002",
+        facebookLink: null,
+        bankInfo: {
+          bankName: null,
+          accountNumber: null,
+        },
         role: "ACCOUNTANT",
         status: "ACTIVE",
         isFirstLogin: false, // Không cần đổi mật khẩu lần đầu
         team: null,
+        joinDate: new Date(),
+        responsibilities: "Quản lý tài chính",
+        note: "Tài khoản accountant mặc định",
       });
       console.log(`✓ Accountant user created with ID: ${accountantUser._id}`);
     }
@@ -74,7 +82,7 @@ async function seedAccountant() {
 
     console.log("🎉 Accountant account created successfully!");
     console.log("📧 Email: accountant@company.com");
-    console.log("🔒 Password: accountant1234");
+    console.log("🔑 Password: accountant1234");
     console.log("⚠️  Please change the password after first login!");
 
     return {
@@ -93,7 +101,7 @@ async function seedAccountant() {
     try {
       await Account.deleteOne({ email: "accountant@company.com" });
       await User.deleteOne({
-        personalEmail: "accountant@gmail.com",
+        phoneNumber: "0000000002",
         role: "ACCOUNTANT",
       });
       console.log("🔄 Rollback completed");
