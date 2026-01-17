@@ -5,59 +5,7 @@ const Account = db.Account;
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const generator = require("generate-password");
-const sendEmail = require("../utils/mailer");
-const sendResetPassword = require("../utils/emailTemplates/resetPassword");
-
-// Tạo tài khoản mới thủ công
-const createNewAccount = async (req, res, next) => {
-  try {
-    const { email, password, userId } = req.body;
-
-    // Validate tối thiểu
-    if (!email || !password || !userId) {
-      return res.status(400).json({
-        success: false,
-        message: "email, password và userId là bắt buộc",
-      });
-    }
-
-    // Check user tồn tại
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User không tồn tại",
-      });
-    }
-
-    // Check trùng email
-    const existed = await Account.findOne({ email });
-    if (existed) {
-      return res.status(400).json({
-        success: false,
-        message: "Email đã tồn tại",
-      });
-    }
-
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Create account
-    const account = await Account.create({
-      email,
-      password: hashedPassword,
-      user: userId,
-      isActive: true,
-    });
-
-    res.status(201).json({
-      success: true,
-      data: account,
-    });
-  } catch (err) {
-    next(err);
-  }
-};
+const { sendBulkNotification } = require("../services/notification.service");
 
 // Đăng nhập
 const login = async (req, res, next) => {
@@ -106,7 +54,7 @@ const login = async (req, res, next) => {
         isFirstLogin: account.user.isFirstLogin,
       },
       process.env.JWT_SECRET,
-      { expiresIn: "7d" }
+      { expiresIn: "7d" },
     );
 
     // Trả về token
@@ -125,7 +73,10 @@ const changePassword = async (req, res, next) => {
     const account = await Account.findById(req.params.id).populate("user");
 
     if (!account) {
-      return res.status(404).json({ message: "Không tìm thấy tài khoản!" });
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy tài khoản!",
+      });
     }
 
     const userIdParam = account.user._id.toString();
@@ -133,12 +84,16 @@ const changePassword = async (req, res, next) => {
     const { newPassword } = req.body;
 
     if (!newPassword) {
-      return res.status(400).json({ message: "Thiếu mật khẩu mới!" });
+      return res.status(400).json({
+        success: false,
+        message: "Thiếu mật khẩu mới!",
+      });
     }
 
     // Không cho đổi mật khẩu của người khác
     if (userIdFromToken !== userIdParam) {
       return res.status(403).json({
+        success: false,
         message: "Bạn không thể đổi mật khẩu của người khác!",
       });
     }
@@ -146,7 +101,10 @@ const changePassword = async (req, res, next) => {
     // Lấy user
     const user = await User.findById(userIdParam);
     if (!user) {
-      return res.status(404).json({ message: "User không tồn tại!" });
+      return res.status(404).json({
+        success: false,
+        message: "User không tồn tại!",
+      });
     }
 
     // Mã hoá mật khẩu
@@ -158,26 +116,26 @@ const changePassword = async (req, res, next) => {
     user.isFirstLogin = false;
     await user.save();
 
-    // ✅ TẠO TOKEN MỚI với isFirstLogin = false
+    // Tạo TOKEN MỚI với isFirstLogin = false
     const newToken = jwt.sign(
       {
         accountId: account._id,
         userId: user._id,
         role: user.role,
         isActive: account.isActive,
-        isFirstLogin: false, // Đã đổi mật khẩu
+        isFirstLogin: false,
       },
       process.env.JWT_SECRET,
-      { expiresIn: "7d" }
+      { expiresIn: "7d" },
     );
 
     res.json({
+      success: true,
       message: "Đổi mật khẩu thành công!",
-      token: newToken, // Trả token mới về frontend
+      token: newToken,
     });
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: "Lỗi server!" });
+  } catch (err) {
+    next(err);
   }
 };
 
@@ -187,9 +145,10 @@ const register = async (req, res, next) => {
     const { email, password, userId, isActive } = req.body;
 
     if (!email || !password || !userId) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Thiếu dữ liệu đầu vào!" });
+      return res.status(400).json({
+        success: false,
+        message: "Thiếu dữ liệu đầu vào!",
+      });
     }
 
     // Kiểm tra user có tồn tại không
@@ -217,14 +176,18 @@ const register = async (req, res, next) => {
       email,
       password: hashedPassword,
       user: userId,
-      isActive: isActive !== undefined ? isActive : true, // Mặc định INACTIVE
+      isActive: isActive !== undefined ? isActive : true,
     });
 
     const populatedAccount = await Account.findById(newAccount._id)
-      .populate("user", "fullName personalEmail role")
+      .populate("user", "fullName phoneNumber role")
       .lean();
 
-    res.status(201).json({ success: true, data: populatedAccount });
+    res.status(201).json({
+      success: true,
+      message: "Tạo tài khoản thành công!",
+      data: populatedAccount,
+    });
   } catch (err) {
     next(err);
   }
@@ -268,24 +231,36 @@ const autoResetPassword = async (req, res, next) => {
     account.password = hashedPassword;
     await account.save();
 
-    // Gửi password mới cho nhân viên qua email
-    try {
-      await sendEmail({
-        to: account.user.personalEmail,
-        subject: "Đặt lại mật khẩu - Hệ thống quản lý công việc",
-        text: "",
-        html: sendResetPassword(account.user.personalEmail, newPassword),
-        attachments: [],
+    // Tìm tất cả admin để gửi thông báo
+    const admins = await User.find({ role: "ADMIN" }).lean();
+    const adminIds = admins.map((admin) => admin._id);
+
+    // Gửi thông báo cho tất cả admin
+    if (adminIds.length > 0) {
+      await sendBulkNotification({
+        userIds: adminIds,
+        title: "Yêu cầu reset mật khẩu",
+        message: `Người dùng ${account.user.fullName} (${account.email}) đã reset mật khẩu. Mật khẩu mới: ${newPassword}`,
+        type: "SYSTEM",
+        metadata: {
+          userId: account.user._id,
+          email: account.email,
+          userName: account.user.fullName,
+          newPassword: newPassword,
+          action: "PASSWORD_RESET",
+        },
       });
-      console.log("Mật khẩu mới đã được gửi!");
-    } catch (mailErr) {
-      console.error("Gửi email thất bại:", mailErr);
     }
 
+    // Trả về thông tin (không bao gồm mật khẩu mới vì lý do bảo mật)
     res.json({
       success: true,
-      message: "Reset mật khẩu thành công!",
-      newPassword,
+      message:
+        "Reset mật khẩu thành công! Admin sẽ liên hệ với bạn để cung cấp mật khẩu mới.",
+      data: {
+        email: account.email,
+        userName: account.user.fullName,
+      },
     });
   } catch (err) {
     next(err);
@@ -317,7 +292,7 @@ const updateStatus = async (req, res, next) => {
     await account.save();
 
     const updatedAccount = await Account.findById(accountId)
-      .populate("user", "fullName personalEmail role")
+      .populate("user", "fullName phoneNumber role")
       .lean();
 
     res.json({
@@ -331,7 +306,6 @@ const updateStatus = async (req, res, next) => {
 };
 
 module.exports = {
-  createNewAccount,
   login,
   changePassword,
   register,

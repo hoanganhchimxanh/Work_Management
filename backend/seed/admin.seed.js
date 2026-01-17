@@ -35,9 +35,9 @@ async function seedAdmin() {
       };
     }
 
-    // Kiểm tra xem có user admin với email này chưa
+    // Kiểm tra xem có user admin với phone này chưa
     const existingUser = await User.findOne({
-      personalEmail: "admin@gmail.com",
+      phoneNumber: "0000000001",
     });
 
     let adminUser;
@@ -50,11 +50,19 @@ async function seedAdmin() {
       console.log("👤 Creating admin user...");
       adminUser = await User.create({
         fullName: "System Administrator",
-        personalEmail: "admin@gmail.com",
+        phoneNumber: "0000000001",
+        facebookLink: null,
+        bankInfo: {
+          bankName: null,
+          accountNumber: null,
+        },
         role: "ADMIN",
         status: "ACTIVE",
         isFirstLogin: false, // Không cần đổi mật khẩu lần đầu
         team: null,
+        joinDate: new Date(),
+        responsibilities: "Quản trị hệ thống",
+        note: "Tài khoản admin mặc định",
       });
       console.log(`✓ Admin user created with ID: ${adminUser._id}`);
     }
@@ -74,7 +82,7 @@ async function seedAdmin() {
 
     console.log("🎉 Admin account created successfully!");
     console.log("📧 Email: admin@company.com");
-    console.log("🔒 Password: admin1234");
+    console.log("🔑 Password: admin1234");
     console.log("⚠️  Please change the password after first login!");
 
     return {
@@ -92,7 +100,7 @@ async function seedAdmin() {
     // Rollback nếu có lỗi
     try {
       await Account.deleteOne({ email: "admin@company.com" });
-      await User.deleteOne({ personalEmail: "admin@gmail.com", role: "ADMIN" });
+      await User.deleteOne({ phoneNumber: "0000000001", role: "ADMIN" });
       console.log("🔄 Rollback completed");
     } catch (rollbackError) {
       console.error("⚠️  Rollback failed:", rollbackError.message);

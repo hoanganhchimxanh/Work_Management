@@ -15,55 +15,41 @@ router.use(logRequestTime);
 router.use(express.json());
 
 // ========== BASIC ROUTES ==========
-router.post("/create-new-user", userController.createNewUser);
-router.post("/register", userController.registerByUser);
 router.post(
   "/create-by-admin",
   authenticateJWT,
   authorizeRoles("ADMIN"),
-  userController.createByAdmin
-);
-router.post(
-  "/approve/:userId",
-  authenticateJWT,
-  authorizeRoles("ADMIN"),
-  userController.approveUser
-);
-router.delete(
-  "/reject/:userId",
-  authenticateJWT,
-  authorizeRoles("ADMIN"),
-  userController.rejectUser
+  userController.createByAdmin,
 );
 router.get(
   "/get-all",
   authenticateJWT,
   authorizeRoles(["ADMIN", "ACCOUNTANT"]),
-  userController.getAll
+  userController.getAll,
 );
 router.get(
   "/get-one/:id",
   authenticateJWT,
   authorizeRoles(["ADMIN", "EMPLOYEE", "ACCOUNTANT"]),
-  userController.getPersonal
+  userController.getPersonal,
 );
 router.put(
   "/update/:id",
   authenticateJWT,
   authorizeRoles(["ADMIN", "EMPLOYEE", "ACCOUNTANT"]),
-  userController.updateUser
+  userController.updateUser,
 );
 router.delete(
   "/delete/:id",
   authenticateJWT,
   authorizeRoles("ADMIN"),
-  userController.deleteUser
+  userController.deleteUser,
 );
 router.delete(
   "/delete-self-account",
   authenticateJWT,
   authorizeRoles(["EMPLOYEE", "ACCOUNTANT"]),
-  userController.deleteSelfAccount
+  userController.deleteSelfAccount,
 );
 
 module.exports = router;

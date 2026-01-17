@@ -15,8 +15,6 @@ router.use(logRequestTime);
 router.use(express.json());
 
 // ========== ACCOUNT ROUTES ==========
-router.post("/create-new-account", accountController.createNewAccount);
-router.post("/register", accountController.register);
 router.post("/login", accountController.login);
 router.post("/auto-reset-password", accountController.autoResetPassword);
 
@@ -24,14 +22,14 @@ router.patch(
   "/change-password/:id",
   authenticateJWT,
   authorizeRoles(["ACCOUNTANT", "EMPLOYEE"]),
-  accountController.changePassword
+  accountController.changePassword,
 );
 
 router.put(
   "/update-status",
   authenticateJWT,
   authorizeRoles("ADMIN"),
-  accountController.updateStatus
+  accountController.updateStatus,
 );
 
 module.exports = router;

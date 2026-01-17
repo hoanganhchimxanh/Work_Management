@@ -2,12 +2,12 @@ import React from "react";
 import { Container, Row, Col, Button, Alert, Tabs, Tab } from "react-bootstrap";
 
 // Components
-import UserTable from "../../components/admin/userManagement/UserTable";
-import TeamTable from "../../components/admin/userManagement/TeamTable";
-import UserModal from "../../components/admin/userManagement/UserModal";
-import TeamModal from "../../components/admin/userManagement/TeamModal";
-import UserImportModal from "../../components/admin/userManagement/UserImportModal";
-import TeamImportModal from "../../components/admin/userManagement/TeamImportModal";
+import UserTable from "../../components/admin/user2Management/UserTable";
+import TeamTable from "../../components/admin/user2Management/TeamTable";
+import UserModal from "../../components/admin/user2Management/UserModal";
+import TeamModal from "../../components/admin/user2Management/TeamModal";
+import UserImportModal from "../../components/admin/user2Management/UserImportModal";
+import TeamImportModal from "../../components/admin/user2Management/TeamImportModal";
 import TablePagination from "../../components/common/TablePagination";
 import ItemsPerPageSelector from "../../components/common/ItemsPerPageSelector";
 
@@ -82,7 +82,7 @@ function UserManagement() {
     getAuthConfig,
     refetchUsers,
     refetchTeams,
-    refetchAll,
+    refetchAll
   );
 
   // Combined error handling

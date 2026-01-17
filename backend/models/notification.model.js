@@ -28,7 +28,7 @@ const notificationSchema = new mongoose.Schema(
     // Phân loại thông báo
     type: {
       type: String,
-      enum: ["SYSTEM", "CHANNEL", "USER"],
+      enum: ["SYSTEM", "OTHER"],
       default: "SYSTEM",
       index: true,
     },
@@ -56,7 +56,7 @@ const notificationSchema = new mongoose.Schema(
   },
   {
     timestamps: true, // createdAt, updatedAt
-  }
+  },
 );
 
 /**
