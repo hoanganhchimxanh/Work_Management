@@ -6,6 +6,11 @@ const Team = db.Team;
 const bcrypt = require("bcrypt");
 const generator = require("generate-password");
 
+const {
+  sendNotification,
+  sendBulkNotification,
+} = require("../services/notification.service");
+
 // Tạo người dùng mới (bởi Admin)
 const createByAdmin = async (req, res, next) => {
   try {
@@ -87,6 +92,32 @@ const createByAdmin = async (req, res, next) => {
         email: loginEmail,
         tempPassword: tempPassword,
       };
+
+      // Gửi thông báo cho tất cả admin về tài khoản mới
+      try {
+        const admins = await User.find({ role: "ADMIN" }).lean();
+        const adminIds = admins.map((admin) => admin._id);
+
+        if (adminIds.length > 0) {
+          await sendBulkNotification({
+            userIds: adminIds,
+            title: "Tài khoản mới được tạo",
+            message: `Nhân viên ${fullName} (${phoneNumber}) đã được tạo tài khoản đăng nhập.\nEmail: ${loginEmail}\nMật khẩu tạm: ${tempPassword}`,
+            type: "SYSTEM",
+            metadata: {
+              userId: newUser._id,
+              userName: fullName,
+              phoneNumber: phoneNumber,
+              loginEmail: loginEmail,
+              tempPassword: tempPassword,
+              action: "USER_CREATED",
+            },
+          });
+        }
+      } catch (notifyError) {
+        console.error("Failed to send notification to admins:", notifyError);
+        // Không throw error, vì tạo user đã thành công
+      }
     }
 
     const populatedUser = await User.findById(newUser._id)
