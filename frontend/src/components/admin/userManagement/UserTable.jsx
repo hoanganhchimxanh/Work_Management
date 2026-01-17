@@ -8,7 +8,6 @@ import {
   Row,
   Col,
   InputGroup,
-  Modal,
   Dropdown,
 } from "react-bootstrap";
 import { ThreeDotsVertical } from "react-bootstrap-icons";
@@ -21,15 +20,6 @@ function UserTable({ users, loading, onEdit, onRefresh, teams }) {
   const [filterStatus, setFilterStatus] = useState("ALL");
   const [filterSort, setFilterSort] = useState("NEWEST");
   const [searchTerm, setSearchTerm] = useState("");
-
-  // Approve modal states
-  const [showApproveModal, setShowApproveModal] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [approveData, setApproveData] = useState({
-    role: "EMPLOYEE",
-    team: "",
-  });
-  const [approving, setApproving] = useState(false);
 
   // Send resources modal state
   const [showSendResourcesModal, setShowSendResourcesModal] = useState(false);
@@ -47,7 +37,6 @@ function UserTable({ users, loading, onEdit, onRefresh, teams }) {
 
   const getStatusBadge = (status) => {
     const variants = {
-      PENDING: "warning",
       ACTIVE: "success",
       QUIT: "dark",
     };
@@ -55,6 +44,7 @@ function UserTable({ users, loading, onEdit, onRefresh, teams }) {
   };
 
   const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
     return new Date(dateString).toLocaleDateString("vi-VN");
   };
 
@@ -72,17 +62,23 @@ function UserTable({ users, loading, onEdit, onRefresh, teams }) {
       filtered = filtered.filter(
         (user) =>
           user.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          user.personalEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          user.loginEmail?.toLowerCase().includes(searchTerm.toLowerCase())
+          user.phoneNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          user.loginEmail?.toLowerCase().includes(searchTerm.toLowerCase()),
       );
     }
 
     // Sort
     const sorted = [...filtered].sort((a, b) => {
       if (filterSort === "NEWEST") {
-        return new Date(b.joinedAt) - new Date(a.joinedAt);
+        return (
+          new Date(b.joinDate || b.createdAt) -
+          new Date(a.joinDate || a.createdAt)
+        );
       } else if (filterSort === "OLDEST") {
-        return new Date(a.joinedAt) - new Date(b.joinedAt);
+        return (
+          new Date(a.joinDate || a.createdAt) -
+          new Date(b.joinDate || b.createdAt)
+        );
       } else if (filterSort === "NAME_ASC") {
         return a.fullName.localeCompare(b.fullName);
       } else if (filterSort === "NAME_DESC") {
@@ -94,66 +90,25 @@ function UserTable({ users, loading, onEdit, onRefresh, teams }) {
     return sorted;
   };
 
-  const handleApproveClick = (user) => {
-    setSelectedUser(user);
-    setApproveData({ role: "EMPLOYEE", team: "" });
-    setShowApproveModal(true);
-  };
-
-  const handleApprove = async () => {
-    if (!selectedUser) return;
-
-    try {
-      setApproving(true);
-      const token = localStorage.getItem("token");
-      await axios.post(
-        `${config.backendBase}/user/approve/${selectedUser.userId}`,
-        {
-          role: approveData.role,
-          team: approveData.team || null,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      alert("Phê duyệt thành công! Email đã được gửi đến người dùng.");
-      setShowApproveModal(false);
-      onRefresh();
-    } catch (err) {
-      alert(
-        "Không thể phê duyệt: " + (err.response?.data?.message || err.message)
-      );
-    } finally {
-      setApproving(false);
-    }
-  };
-
-  const handleReject = async (userId) => {
-    const reason = window.prompt("Lý do từ chối (tùy chọn):");
-    if (reason === null) return;
-
-    if (!window.confirm("Bạn có chắc chắn muốn từ chối user này?")) {
+  const handleDelete = async (userId, userName) => {
+    if (
+      !window.confirm(`Bạn có chắc chắn muốn xóa người dùng "${userName}"?`)
+    ) {
       return;
     }
 
     try {
       const token = localStorage.getItem("token");
-      await axios.delete(`${config.backendBase}/user/reject/${userId}`, {
+      await axios.delete(`${config.backendBase}/user/delete/${userId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
-        data: { reason },
       });
 
-      alert("Đã từ chối và xóa user!");
+      alert("Đã xóa người dùng thành công!");
       onRefresh();
     } catch (err) {
-      alert(
-        "Không thể từ chối: " + (err.response?.data?.message || err.message)
-      );
+      alert("Không thể xóa: " + (err.response?.data?.message || err.message));
     }
   };
 
@@ -193,7 +148,7 @@ function UserTable({ users, loading, onEdit, onRefresh, teams }) {
               </InputGroup.Text>
               <Form.Control
                 type="text"
-                placeholder="Tên, email..."
+                placeholder="Tên, số điện thoại, email..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -209,7 +164,6 @@ function UserTable({ users, loading, onEdit, onRefresh, teams }) {
               onChange={(e) => setFilterStatus(e.target.value)}
             >
               <option value="ALL">Tất cả</option>
-              <option value="PENDING">PENDING (Chờ duyệt)</option>
               <option value="ACTIVE">ACTIVE (Đang hoạt động)</option>
               <option value="QUIT">QUIT (Đã nghỉ)</option>
             </Form.Select>
@@ -247,11 +201,11 @@ function UserTable({ users, loading, onEdit, onRefresh, teams }) {
             <tr>
               <th>Họ tên</th>
               <th>Vai trò</th>
-              <th>Email cá nhân</th>
+              <th>Số điện thoại</th>
               <th>Email đăng nhập</th>
               <th>Trạng thái</th>
               <th>Nhóm</th>
-              <th>Ngày tham gia</th>
+              <th>Ngày vào làm</th>
               <th>Số kênh</th>
               <th>Hành động</th>
             </tr>
@@ -269,19 +223,46 @@ function UserTable({ users, loading, onEdit, onRefresh, teams }) {
               filteredUsers.map((user) => (
                 <tr key={user.userId}>
                   <td>
-                    <strong>{user.fullName}</strong>
+                    <div>
+                      <strong>{user.fullName}</strong>
+                      {user.isFirstLogin && (
+                        <Badge
+                          bg="warning"
+                          className="ms-2"
+                          title="Chưa đổi mật khẩu lần đầu"
+                        >
+                          Chưa đổi MK
+                        </Badge>
+                      )}
+                    </div>
+                    {user.responsibilities && (
+                      <small className="text-muted d-block">
+                        {user.responsibilities}
+                      </small>
+                    )}
                   </td>
                   <td>{getRoleBadge(user.role)}</td>
-                  <td>{user.personalEmail}</td>
                   <td>
-                    {user.status === "PENDING" ? (
-                      <Badge bg="secondary">Chưa có</Badge>
-                    ) : user.loginEmail ? (
+                    <div>{user.phoneNumber}</div>
+                    {user.facebookLink && (
+                      <a
+                        href={user.facebookLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="small"
+                      >
+                        <i className="bi bi-facebook me-1"></i>
+                        Facebook
+                      </a>
+                    )}
+                  </td>
+                  <td>
+                    {user.loginEmail ? (
                       <div>
                         <div className="small">{user.loginEmail}</div>
                         {!user.accountIsActive && (
                           <Badge bg="warning" className="mt-1">
-                            Chưa kích hoạt
+                            Đã vô hiệu hóa
                           </Badge>
                         )}
                       </div>
@@ -297,53 +278,43 @@ function UserTable({ users, loading, onEdit, onRefresh, teams }) {
                       <span className="text-muted">Chưa có</span>
                     )}
                   </td>
-                  <td>{formatDate(user.joinedAt)}</td>
+                  <td>{formatDate(user.joinDate)}</td>
                   <td className="text-center">
-                    <Badge bg="info">{user.channelCount}</Badge>
+                    <Badge bg="info">{user.channelCount || 0}</Badge>
                   </td>
                   <td>
-                    {user.status === "PENDING" ? (
-                      <>
-                        <Button
-                          variant="success"
-                          size="sm"
-                          onClick={() => handleApproveClick(user)}
-                          className="me-2"
-                        >
-                          <i className="bi bi-check-circle"></i> Duyệt
-                        </Button>
-                        <Button
-                          variant="danger"
-                          size="sm"
-                          onClick={() => handleReject(user.userId)}
-                        >
-                          <i className="bi bi-x-circle"></i> Từ chối
-                        </Button>
-                      </>
-                    ) : (
-                      <Dropdown>
-                        <Dropdown.Toggle
-                          variant="outline-primary"
-                          size="sm"
-                          id={`dropdown-${user.userId}`}
-                        >
-                          <ThreeDotsVertical />
-                        </Dropdown.Toggle>
+                    <Dropdown>
+                      <Dropdown.Toggle
+                        variant="outline-primary"
+                        size="sm"
+                        id={`dropdown-${user.userId}`}
+                      >
+                        <ThreeDotsVertical />
+                      </Dropdown.Toggle>
 
-                        <Dropdown.Menu>
-                          <Dropdown.Item onClick={() => onEdit(user)}>
-                            <i className="bi bi-pencil me-2"></i>
-                            Chỉnh sửa
-                          </Dropdown.Item>
-                          <Dropdown.Item
-                            onClick={() => handleSendResourcesClick(user)}
-                          >
-                            <i className="bi bi-send me-2"></i>
-                            Gửi tài nguyên
-                          </Dropdown.Item>
-                        </Dropdown.Menu>
-                      </Dropdown>
-                    )}
+                      <Dropdown.Menu>
+                        <Dropdown.Item onClick={() => onEdit(user)}>
+                          <i className="bi bi-pencil me-2"></i>
+                          Chỉnh sửa
+                        </Dropdown.Item>
+                        <Dropdown.Item
+                          onClick={() => handleSendResourcesClick(user)}
+                        >
+                          <i className="bi bi-send me-2"></i>
+                          Gửi tài nguyên
+                        </Dropdown.Item>
+                        <Dropdown.Divider />
+                        <Dropdown.Item
+                          onClick={() =>
+                            handleDelete(user.userId, user.fullName)
+                          }
+                          className="text-danger"
+                        >
+                          <i className="bi bi-trash me-2"></i>
+                          Xóa
+                        </Dropdown.Item>
+                      </Dropdown.Menu>
+                    </Dropdown>
                   </td>
                 </tr>
               ))
@@ -355,88 +326,6 @@ function UserTable({ users, loading, onEdit, onRefresh, teams }) {
           Làm mới
         </Button>
       </div>
-
-      {/* Approve Modal */}
-      <Modal
-        show={showApproveModal}
-        onHide={() => setShowApproveModal(false)}
-        centered
-      >
-        <Modal.Header closeButton>
-          <Modal.Title>Phê duyệt nhân viên</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          {selectedUser && (
-            <>
-              <p>
-                <strong>Họ tên:</strong> {selectedUser.fullName}
-              </p>
-              <p>
-                <strong>Email:</strong> {selectedUser.personalEmail}
-              </p>
-
-              <Form.Group className="mb-3">
-                <Form.Label>Vai trò</Form.Label>
-                <Form.Select
-                  value={approveData.role}
-                  onChange={(e) =>
-                    setApproveData((prev) => ({
-                      ...prev,
-                      role: e.target.value,
-                    }))
-                  }
-                >
-                  <option value="EMPLOYEE">EMPLOYEE</option>
-                  <option value="ACCOUNTANT">ACCOUNTANT</option>
-                  <option value="ADMIN">ADMIN</option>
-                </Form.Select>
-              </Form.Group>
-
-              <Form.Group className="mb-3">
-                <Form.Label>Nhóm</Form.Label>
-                <Form.Select
-                  value={approveData.team}
-                  onChange={(e) =>
-                    setApproveData((prev) => ({
-                      ...prev,
-                      team: e.target.value,
-                    }))
-                  }
-                >
-                  <option value="">-- Không thuộc nhóm nào --</option>
-                  {teams &&
-                    teams.map((team) => (
-                      <option key={team._id} value={team._id}>
-                        {team.name}
-                      </option>
-                    ))}
-                </Form.Select>
-              </Form.Group>
-
-              <p className="text-muted small">
-                Sau khi phê duyệt, hệ thống sẽ tự động tạo tài khoản đăng nhập
-                và gửi thông tin qua email cá nhân của nhân viên.
-              </p>
-            </>
-          )}
-        </Modal.Body>
-        <Modal.Footer>
-          <Button
-            variant="secondary"
-            onClick={() => setShowApproveModal(false)}
-            disabled={approving}
-          >
-            Hủy
-          </Button>
-          <Button
-            variant="success"
-            onClick={handleApprove}
-            disabled={approving}
-          >
-            {approving ? "Đang xử lý..." : "Xác nhận phê duyệt"}
-          </Button>
-        </Modal.Footer>
-      </Modal>
 
       {/* Send Resources Modal */}
       <SendResourcesModal

@@ -4,7 +4,6 @@ import { Container, Row, Col, Button, Alert, Tabs, Tab } from "react-bootstrap";
 // Components
 import UserTable from "../../components/admin/userManagement/UserTable";
 import TeamTable from "../../components/admin/userManagement/TeamTable";
-import EmployeeTable from "../../components/admin/userManagement/EmployeeTable";
 import UserModal from "../../components/admin/userManagement/UserModal";
 import TeamModal from "../../components/admin/userManagement/TeamModal";
 import UserImportModal from "../../components/admin/userManagement/UserImportModal";
@@ -83,7 +82,7 @@ function UserManagement() {
     getAuthConfig,
     refetchUsers,
     refetchTeams,
-    refetchAll
+    refetchAll,
   );
 
   // Combined error handling
@@ -278,11 +277,6 @@ function UserManagement() {
               />
             </Col>
           </Row>
-        </Tab>
-
-        {/* Tab 2: Quản lý nhân sự */}
-        <Tab eventKey="employee" title="Quản lý nhân sự">
-          <EmployeeTable />
         </Tab>
       </Tabs>
 

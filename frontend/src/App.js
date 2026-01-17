@@ -2,7 +2,6 @@ import "./App.css";
 import { Routes, Route } from "react-router-dom";
 // Public pages
 import Login from "./pages/Login";
-import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
 import ChangePassword from "./pages/ChangePassword";
 import Unauthorized from "./pages/Unauthorized";
@@ -19,7 +18,6 @@ import KPITaskManagement from "./pages/admin/KPITaskManagement";
 import NetworkManagement from "./pages/admin/NetworkManagement";
 import ChannelManagement from "./pages/admin/ChannelManagement";
 import AdminNotification from "./pages/admin/NotificationPage";
-import User2Management from "./pages/admin/User2Management";
 
 // Employee pages
 import EmployeeLayout from "./layouts/EmployeeLayout";
@@ -46,7 +44,7 @@ import PublicRoute from "./components/PublicRoute";
 
 // View components
 import SalarySlipCard from "./components/accountant/salaryManagement/SalarySlipCard";
-// import ChannelMonthRevenue from "./components/admin/channelManagement/ChannelMonthRevenue";
+import ChannelMonthRevenue from "./components/admin/channelManagement/ChannelMonthRevenueModal";
 
 function App() {
   return (
@@ -55,13 +53,12 @@ function App() {
       <Route path="/test" element={<TestPage />} />
       <Route path="*" element={<NotFound />} />
       <Route path="/salary-slip" element={<SalarySlipCard />} />
-      {/* <Route path="/channel-month-revenue" element={<ChannelMonthRevenue />} /> */}
+      <Route path="/channel-month-revenue" element={<ChannelMonthRevenue />} />
 
       {/* PUBLIC ROUTES - Ai cũng truy cập được */}
       <Route element={<PublicRoute />}>
         <Route path="/" element={<Login />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
       </Route>
 
@@ -84,7 +81,7 @@ function App() {
           }
         >
           <Route path="dashboard" element={<Dashboard />} />
-          <Route path="users" element={<User2Management />} />
+          <Route path="users" element={<UserManagement />} />
           <Route path="resources" element={<ResourceManagement />} />
           <Route path="kpi_tasks" element={<KPITaskManagement />} />
           <Route path="networks" element={<NetworkManagement />} />
