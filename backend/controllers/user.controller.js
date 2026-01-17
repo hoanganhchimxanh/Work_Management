@@ -5,165 +5,88 @@ const Channel = db.Channel;
 const Team = db.Team;
 const bcrypt = require("bcrypt");
 const generator = require("generate-password");
-const sendEmail = require("../utils/mailer");
-const sendNewAccountTemplate = require("../utils/emailTemplates/sendNewAccount");
-const sendRejectTemplate = require("../utils/emailTemplates/sendReject");
-
-// Tạo người dùng mới thủ công
-const createNewUser = async (req, res, next) => {
-  try {
-    const { fullName, personalEmail, role, team } = req.body;
-
-    // Validate tối thiểu
-    if (!fullName || !personalEmail) {
-      return res.status(400).json({
-        success: false,
-        message: "fullName và personalEmail là bắt buộc",
-      });
-    }
-
-    // Check trùng email
-    const existed = await User.findOne({ personalEmail });
-    if (existed) {
-      return res.status(400).json({
-        success: false,
-        message: "Email đã tồn tại",
-      });
-    }
-
-    // Create user
-    const user = await User.create({
-      fullName,
-      personalEmail,
-      role: role || "EMPLOYEE",
-      status: "ACTIVE",
-      team: team || null,
-      isFirstLogin: true,
-    });
-
-    res.status(201).json({
-      success: true,
-      data: user,
-    });
-  } catch (err) {
-    next(err);
-  }
-};
-
-// Tạo người dùng mới (bởi user tự đăng ký)
-const registerByUser = async (req, res, next) => {
-  try {
-    const { fullName, personalEmail } = req.body;
-
-    if (!fullName || !personalEmail) {
-      return res.status(400).json({
-        success: false,
-        message: "Thiếu thông tin bắt buộc!",
-      });
-    }
-
-    // Kiểm tra email đã tồn tại chưa
-    const existingUser = await User.findOne({ personalEmail });
-    if (existingUser) {
-      return res.status(400).json({
-        success: false,
-        message: "Email cá nhân này đã được đăng ký!",
-      });
-    }
-
-    // Tạo user với status PENDING
-    const newUser = await User.create({
-      fullName,
-      personalEmail,
-      role: "EMPLOYEE", // Mặc định
-      status: "PENDING", // Chờ admin duyệt
-      team: null,
-      isFirstLogin: true,
-    });
-
-    res.status(201).json({
-      success: true,
-      message: "Đăng ký thành công! Vui lòng chờ admin phê duyệt.",
-      data: {
-        userId: newUser._id,
-        fullName: newUser.fullName,
-        personalEmail: newUser.personalEmail,
-        status: newUser.status,
-      },
-    });
-  } catch (err) {
-    next(err);
-  }
-};
 
 // Tạo người dùng mới (bởi Admin)
 const createByAdmin = async (req, res, next) => {
   try {
-    const { fullName, personalEmail, role, team } = req.body;
+    const {
+      fullName,
+      phoneNumber,
+      facebookLink,
+      bankInfo,
+      role,
+      team,
+      joinDate,
+      responsibilities,
+      note,
+      loginEmail,
+    } = req.body;
 
-    if (!fullName || !personalEmail) {
+    if (!fullName || !phoneNumber) {
       return res.status(400).json({
         success: false,
         message: "Thiếu thông tin bắt buộc!",
       });
     }
 
-    // Kiểm tra email đã tồn tại chưa
-    const existingUser = await User.findOne({ personalEmail });
+    // Kiểm tra số điện thoại đã tồn tại chưa
+    const existingUser = await User.findOne({ phoneNumber });
     if (existingUser) {
       return res.status(400).json({
         success: false,
-        message: "Email cá nhân này đã được sử dụng!",
+        message: "Số điện thoại này đã được sử dụng!",
       });
     }
 
     // Tạo user với status ACTIVE
     const newUser = await User.create({
       fullName,
-      personalEmail,
+      phoneNumber,
+      facebookLink: facebookLink || null,
+      bankInfo: bankInfo || { bankName: null, accountNumber: null },
       role: role || "EMPLOYEE",
       status: "ACTIVE",
       team: team || null,
+      joinDate: joinDate || new Date(),
+      responsibilities: responsibilities || null,
+      note: note || null,
       isFirstLogin: true,
     });
 
-    // Tạo tài khoản đăng nhập tự động
-    const loginEmail = `${personalEmail.split("@")[0]}@company.com`;
-    const tempPassword = generator.generate({
-      length: 10,
-      numbers: true,
-      uppercase: true,
-      lowercase: true,
-      symbols: false,
-      strict: true,
-    });
+    // Tạo tài khoản đăng nhập tự động (nếu có loginEmail)
+    let accountData = null;
+    if (loginEmail) {
+      // Kiểm tra email đăng nhập đã tồn tại chưa
+      const existingAccount = await Account.findOne({ email: loginEmail });
+      if (existingAccount) {
+        return res.status(400).json({
+          success: false,
+          message: "Email đăng nhập đã được sử dụng!",
+        });
+      }
 
-    const hashedPassword = await bcrypt.hash(tempPassword, 10);
-
-    // Tạo account - không cần lưu vào biến nếu không dùng
-    await Account.create({
-      email: loginEmail,
-      password: hashedPassword,
-      user: newUser._id,
-      isActive: true, // ✅ Đã sửa thành true
-    });
-
-    // Gửi mail về cho người dùng
-    try {
-      await sendEmail({
-        to: newUser.personalEmail,
-        subject: "Tài khoản đăng nhập hệ thống của bạn",
-        text: "",
-        html: sendNewAccountTemplate(
-          newUser.fullName,
-          loginEmail,
-          tempPassword
-        ),
-        attachments: [],
+      const tempPassword = generator.generate({
+        length: 10,
+        numbers: true,
+        uppercase: true,
+        lowercase: true,
+        symbols: false,
+        strict: true,
       });
-      console.log("Email tạo tài khoản đã được gửi!");
-    } catch (mailErr) {
-      console.error("Gửi email thất bại:", mailErr);
+
+      const hashedPassword = await bcrypt.hash(tempPassword, 10);
+
+      await Account.create({
+        email: loginEmail,
+        password: hashedPassword,
+        user: newUser._id,
+        isActive: true,
+      });
+
+      accountData = {
+        email: loginEmail,
+        tempPassword: tempPassword,
+      };
     }
 
     const populatedUser = await User.findById(newUser._id)
@@ -175,139 +98,8 @@ const createByAdmin = async (req, res, next) => {
       message: "Tạo nhân viên thành công!",
       data: {
         user: populatedUser,
-        account: {
-          email: loginEmail,
-        },
+        account: accountData,
       },
-    });
-  } catch (err) {
-    next(err);
-  }
-};
-
-// Admin phê duyệt user đăng ký
-const approveUser = async (req, res, next) => {
-  try {
-    const { userId } = req.params;
-    const { role, team } = req.body;
-
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "Không tìm thấy người dùng!",
-      });
-    }
-
-    if (user.status !== "PENDING") {
-      return res.status(400).json({
-        success: false,
-        message: "User này không ở trạng thái PENDING!",
-      });
-    }
-
-    // Cập nhật user thành ACTIVE
-    user.status = "ACTIVE";
-    user.role = role || "EMPLOYEE";
-    user.team = team || null;
-    await user.save();
-
-    // Tạo tài khoản đăng nhập
-    const loginEmail = `${user.personalEmail.split("@")[0]}@company.com`;
-    const tempPassword = generator.generate({
-      length: 10,
-      numbers: true,
-      uppercase: true,
-      lowercase: true,
-      symbols: false,
-      strict: true,
-    });
-
-    const hashedPassword = await bcrypt.hash(tempPassword, 10);
-
-    // Tạo account - không cần lưu vào biến nếu không dùng
-    await Account.create({
-      email: loginEmail,
-      password: hashedPassword,
-      user: user._id,
-      isActive: true, // ✅ Đã sửa thành true
-    });
-
-    // Gửi email cho user
-    try {
-      await sendEmail({
-        to: user.personalEmail,
-        subject: "Tài khoản đăng nhập hệ thống của bạn",
-        text: "",
-        html: sendNewAccountTemplate(user.fullName, loginEmail, tempPassword),
-        attachments: [],
-      });
-      console.log("Email tạo tài khoản đã được gửi!");
-    } catch (mailErr) {
-      console.error("Gửi email thất bại:", mailErr);
-    }
-
-    const populatedUser = await User.findById(user._id)
-      .populate("team", "name")
-      .lean();
-
-    res.json({
-      success: true,
-      message: "Phê duyệt thành công!",
-      data: {
-        user: populatedUser,
-        account: {
-          email: loginEmail,
-        },
-      },
-    });
-  } catch (err) {
-    next(err);
-  }
-};
-
-// Admin từ chối user đăng ký
-const rejectUser = async (req, res, next) => {
-  try {
-    const { userId } = req.params;
-    const { reason } = req.body;
-
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "Không tìm thấy người dùng!",
-      });
-    }
-
-    if (user.status !== "PENDING") {
-      return res.status(400).json({
-        success: false,
-        message: "User này không ở trạng thái PENDING!",
-      });
-    }
-
-    // Gửi email thông báo từ chối
-    try {
-      await sendEmail({
-        to: user.personalEmail,
-        subject: "Thông báo về đơn đăng ký của bạn",
-        text: "",
-        html: sendRejectTemplate(user.fullName),
-        attachments: [],
-      });
-      console.log("Email từ chối đã được gửi!");
-    } catch (mailErr) {
-      console.error("Gửi email thất bại:", mailErr);
-      // Vẫn tiếp tục xóa user ngay cả khi gửi email thất bại
-    }
-
-    // Xóa user
-    await User.findByIdAndDelete(userId);
-
-    res.json({
-      success: true,
-      message: "Đã từ chối và xóa user!",
     });
   } catch (err) {
     next(err);
@@ -338,18 +130,23 @@ const getAll = async (req, res, next) => {
         return {
           userId: user._id,
           fullName: user.fullName,
+          phoneNumber: user.phoneNumber,
+          facebookLink: user.facebookLink,
+          bankInfo: user.bankInfo,
           role: user.role,
-          personalEmail: user.personalEmail,
           loginEmail: account ? account.email : null,
           hasAccount: !!account,
           accountIsActive: account ? account.isActive : false,
           status: user.status,
           team: user.team ? user.team.name : null,
+          joinDate: user.joinDate,
+          responsibilities: user.responsibilities,
+          note: user.note,
           isFirstLogin: user.isFirstLogin,
           channelCount: channels.length,
-          joinedAt: user.createdAt,
+          createdAt: user.createdAt,
         };
-      })
+      }),
     );
 
     res.json({ success: true, data: usersWithDetails });
@@ -383,8 +180,10 @@ const getPersonal = async (req, res, next) => {
       data: {
         userId: user._id,
         fullName: user.fullName,
+        phoneNumber: user.phoneNumber,
+        facebookLink: user.facebookLink,
+        bankInfo: user.bankInfo,
         role: user.role,
-        personalEmail: user.personalEmail,
         loginEmail: account ? account.email : null,
         hasAccount: !!account,
         accountIsActive: account ? account.isActive : false,
@@ -395,6 +194,9 @@ const getPersonal = async (req, res, next) => {
               name: user.team.name,
             }
           : null,
+        joinDate: user.joinDate,
+        responsibilities: user.responsibilities,
+        note: user.note,
         isFirstLogin: user.isFirstLogin,
         channels: channels.map((ch) => ({
           channelId: ch._id,
@@ -406,7 +208,7 @@ const getPersonal = async (req, res, next) => {
           subscriber: ch.subscriber,
         })),
         channelCount: channels.length,
-        joinedAt: user.createdAt,
+        createdAt: user.createdAt,
       },
     });
   } catch (err) {
@@ -418,7 +220,18 @@ const getPersonal = async (req, res, next) => {
 const updateUser = async (req, res, next) => {
   try {
     const userId = req.params.id;
-    const { fullName, personalEmail, role, status, team } = req.body;
+    const {
+      fullName,
+      phoneNumber,
+      facebookLink,
+      bankInfo,
+      role,
+      status,
+      team,
+      joinDate,
+      responsibilities,
+      note,
+    } = req.body;
 
     const user = await User.findById(userId);
     if (!user) {
@@ -430,10 +243,16 @@ const updateUser = async (req, res, next) => {
 
     // Cập nhật các field nếu có
     if (fullName) user.fullName = fullName;
-    if (personalEmail) user.personalEmail = personalEmail;
+    if (phoneNumber) user.phoneNumber = phoneNumber;
+    if (facebookLink !== undefined) user.facebookLink = facebookLink;
+    if (bankInfo) user.bankInfo = bankInfo;
     if (role) user.role = role;
     if (status) user.status = status;
     if (team !== undefined) user.team = team;
+    if (joinDate !== undefined) user.joinDate = joinDate;
+    if (responsibilities !== undefined)
+      user.responsibilities = responsibilities;
+    if (note !== undefined) user.note = note;
 
     await user.save();
 
@@ -514,7 +333,7 @@ const deleteSelfAccount = async (req, res, next) => {
       if (account) {
         const isPasswordValid = await bcrypt.compare(
           confirmPassword,
-          account.password
+          account.password,
         );
         if (!isPasswordValid) {
           await session.abortTransaction();
@@ -530,23 +349,23 @@ const deleteSelfAccount = async (req, res, next) => {
     // 4. Lấy thông tin liên quan để log
     const relatedData = {
       channels: await Channel.countDocuments({ assignedUser: userId }).session(
-        session
+        session,
       ),
-      networks: await Network.countDocuments({ assignedUser: userId }).session(
-        session
-      ),
+      networks: await db.Network.countDocuments({
+        assignedUser: userId,
+      }).session(session),
       resources: await db.Resource.countDocuments({
         assignedUser: userId,
       }).session(session),
       tasks: await db.Task.countDocuments({ assignedToUser: userId }).session(
-        session
+        session,
       ),
       kpis: await db.KPI.countDocuments({ user: userId }).session(session),
     };
 
     console.log(
-      `[DELETE ACCOUNT] User ${user.fullName} (${user.personalEmail}):`,
-      relatedData
+      `[DELETE ACCOUNT] User ${user.fullName} (${user.phoneNumber}):`,
+      relatedData,
     );
 
     // 5. Xóa Account
@@ -556,21 +375,21 @@ const deleteSelfAccount = async (req, res, next) => {
     await Channel.updateMany(
       { assignedUser: userId },
       { $unset: { assignedUser: "" } },
-      { session }
+      { session },
     );
 
     // 7. Xử lý Network - Gỡ assignedUser (không xóa network)
-    await Network.updateMany(
+    await db.Network.updateMany(
       { assignedUser: userId },
       { $unset: { assignedUser: "" } },
-      { session }
+      { session },
     );
 
     // 8. Xử lý Resource - Gỡ assignedUser và chuyển về AVAILABLE
     await db.Resource.updateMany(
       { assignedUser: userId },
       { $unset: { assignedUser: "" }, status: "AVAILABLE" },
-      { session }
+      { session },
     );
 
     // 9. Xử lý Team
@@ -578,21 +397,21 @@ const deleteSelfAccount = async (req, res, next) => {
     await Team.updateMany(
       { members: userId },
       { $pull: { members: userId } },
-      { session }
+      { session },
     );
 
     // Gỡ user khỏi leader (set null)
     await Team.updateMany(
       { leader: userId },
       { $unset: { leader: "" } },
-      { session }
+      { session },
     );
 
     // 10. Xử lý Task - Gỡ assignedToUser (không xóa task)
     await db.Task.updateMany(
       { assignedToUser: userId },
       { $unset: { assignedToUser: "" } },
-      { session }
+      { session },
     );
 
     // 11. Xóa KPI cá nhân (không xóa KPI của team)
@@ -611,28 +430,6 @@ const deleteSelfAccount = async (req, res, next) => {
     await session.commitTransaction();
     session.endSession();
 
-    // 15. Gửi email thông báo (optional)
-    try {
-      await sendEmail({
-        to: user.personalEmail,
-        subject: "Xác nhận xóa tài khoản",
-        text: "",
-        html: `
-          <h2>Tài khoản của bạn đã được xóa</h2>
-          <p>Xin chào ${user.fullName},</p>
-          <p>Tài khoản của bạn tại hệ thống đã được xóa thành công vào lúc ${new Date().toLocaleString(
-            "vi-VN"
-          )}.</p>
-          <p>Nếu đây không phải là hành động của bạn, vui lòng liên hệ với quản trị viên ngay lập tức.</p>
-          <br>
-          <p>Trân trọng,<br>Đội ngũ quản lý</p>
-        `,
-        attachments: [],
-      });
-    } catch (mailErr) {
-      console.error("Gửi email thông báo thất bại:", mailErr);
-    }
-
     res.json({
       success: true,
       message: "Xóa tài khoản thành công!",
@@ -640,7 +437,7 @@ const deleteSelfAccount = async (req, res, next) => {
         deletedUser: {
           userId: user._id,
           fullName: user.fullName,
-          personalEmail: user.personalEmail,
+          phoneNumber: user.phoneNumber,
         },
         relatedDataRemoved: relatedData,
       },
@@ -654,11 +451,7 @@ const deleteSelfAccount = async (req, res, next) => {
 };
 
 module.exports = {
-  createNewUser,
-  registerByUser,
   createByAdmin,
-  approveUser,
-  rejectUser,
   getAll,
   getPersonal,
   updateUser,
