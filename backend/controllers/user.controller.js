@@ -93,26 +93,30 @@ const createByAdmin = async (req, res, next) => {
         tempPassword: tempPassword,
       };
 
-      // Gửi thông báo cho tất cả admin về tài khoản mới
+      // Gửi thông báo cho từng admin về tài khoản mới
       try {
         const admins = await User.find({ role: "ADMIN" }).lean();
-        const adminIds = admins.map((admin) => admin._id);
 
-        if (adminIds.length > 0) {
-          await sendBulkNotification({
-            userIds: adminIds,
-            title: "Tài khoản mới được tạo",
-            message: `Nhân viên ${fullName} (${phoneNumber}) đã được tạo tài khoản đăng nhập.\nEmail: ${loginEmail}\nMật khẩu tạm: ${tempPassword}`,
-            type: "SYSTEM",
-            metadata: {
-              userId: newUser._id,
-              userName: fullName,
-              phoneNumber: phoneNumber,
-              loginEmail: loginEmail,
-              tempPassword: tempPassword,
-              action: "USER_CREATED",
-            },
-          });
+        if (admins.length > 0) {
+          // Gửi notification riêng lẻ cho từng admin
+          const notificationPromises = admins.map((admin) =>
+            sendNotification({
+              userId: admin._id,
+              title: "Tài khoản mới được tạo",
+              message: `Nhân viên ${fullName} (${phoneNumber}) đã được tạo tài khoản đăng nhập.\nEmail: ${loginEmail}\nMật khẩu tạm: ${tempPassword}`,
+              type: "SYSTEM",
+              metadata: {
+                userId: newUser._id,
+                userName: fullName,
+                phoneNumber: phoneNumber,
+                loginEmail: loginEmail,
+                tempPassword: tempPassword,
+                action: "USER_CREATED",
+              },
+            }),
+          );
+
+          await Promise.all(notificationPromises);
         }
       } catch (notifyError) {
         console.error("Failed to send notification to admins:", notifyError);
@@ -221,9 +225,9 @@ const getPersonal = async (req, res, next) => {
         status: user.status,
         team: user.team
           ? {
-            _id: user.team._id,
-            name: user.team.name,
-          }
+              _id: user.team._id,
+              name: user.team.name,
+            }
           : null,
         joinDate: user.joinDate,
         responsibilities: user.responsibilities,
