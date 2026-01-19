@@ -32,7 +32,7 @@ const getAuthenticatedClient = async (channelId, userId) => {
   const oauth2Client = new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
-    process.env.GOOGLE_REDIRECT_URI
+    process.env.GOOGLE_REDIRECT_URI,
   );
 
   oauth2Client.setCredentials({
@@ -97,7 +97,7 @@ const syncChannelAnalytics = async (req, res, next) => {
           subscribersLost: subLost,
           syncedAt: new Date(),
         },
-        { new: true, upsert: true }
+        { new: true, upsert: true },
       );
 
       savedRecords.push(record);
@@ -131,7 +131,7 @@ const getChannelAnalytics = async (req, res, next) => {
 
     // Lấy channel
     const channel = await Channel.findById(channelId)
-      .populate("assignedUser", "fullName personalEmail role team")
+      .populate("assignedUser", "fullName phoneNumber role team")
       .populate("network", "profileAdsenseId emailAddress")
       .lean();
 
@@ -217,7 +217,7 @@ const getChannelAnalytics = async (req, res, next) => {
           ? {
               userId: channel.assignedUser._id,
               fullName: channel.assignedUser.fullName,
-              personalEmail: channel.assignedUser.personalEmail,
+              phoneNumber: channel.assignedUser.phoneNumber,
               role: channel.assignedUser.role,
             }
           : null,
@@ -333,7 +333,7 @@ const getAllChannelsAnalytics = async (req, res, next) => {
           assignedUser: {
             userId: "$assignedUser._id",
             fullName: "$assignedUser.fullName",
-            personalEmail: "$assignedUser.personalEmail",
+            phoneNumber: "$assignedUser.phoneNumber",
             role: "$assignedUser.role",
           },
           team: {
@@ -362,7 +362,7 @@ const getAllChannelsAnalytics = async (req, res, next) => {
         totalRevenue: 0,
         totalSubsGained: 0,
         totalSubsLost: 0,
-      }
+      },
     );
 
     res.json({
@@ -404,7 +404,7 @@ const syncAllChannels = async (req, res, next) => {
       try {
         const { oauth2Client, youtubeChannelId } = await getAuthenticatedClient(
           auth.channel._id,
-          auth.user._id
+          auth.user._id,
         );
 
         const youtubeAnalytics = google.youtubeAnalytics({
@@ -437,7 +437,7 @@ const syncAllChannels = async (req, res, next) => {
               subscribersLost: subLost,
               syncedAt: new Date(),
             },
-            { upsert: true }
+            { upsert: true },
           );
         }
 

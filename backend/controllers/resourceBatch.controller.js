@@ -21,7 +21,7 @@ const getAllBatches = async (req, res) => {
     const [batches, total] = await Promise.all([
       ResourceBatch.find(filter)
         .populate("resources", "email status assignedUser assignedChannel")
-        .populate("assignedUser", "fullName personalEmail")
+        .populate("assignedUser", "fullName phoneNumber")
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(parseInt(limit)),
@@ -67,11 +67,11 @@ const getBatchById = async (req, res) => {
         path: "resources",
         select: "email status assignedUser assignedChannel recoveryEmail note",
         populate: [
-          { path: "assignedUser", select: "fullName personalEmail" },
+          { path: "assignedUser", select: "fullName phoneNumber" },
           { path: "assignedChannel", select: "name link" },
         ],
       })
-      .populate("assignedUser", "fullName personalEmail role");
+      .populate("assignedUser", "fullName phoneNumber role");
 
     if (!batch) {
       return res.status(404).json({
@@ -84,7 +84,7 @@ const getBatchById = async (req, res) => {
     const stats = {
       totalResources: batch.resources.length,
       availableResources: batch.resources.filter(
-        (r) => r.status === "AVAILABLE"
+        (r) => r.status === "AVAILABLE",
       ).length,
       assignedResources: batch.resources.filter((r) => r.status === "ASSIGNED")
         .length,
@@ -153,7 +153,7 @@ const createBatch = async (req, res) => {
 
     const populatedBatch = await ResourceBatch.findById(newBatch._id)
       .populate("resources", "email status assignedUser assignedChannel")
-      .populate("assignedUser", "fullName personalEmail");
+      .populate("assignedUser", "fullName phoneNumber");
 
     res.status(201).json({
       success: true,
@@ -214,7 +214,7 @@ const updateBatch = async (req, res) => {
       runValidators: true,
     })
       .populate("resources", "email status assignedUser assignedChannel")
-      .populate("assignedUser", "fullName personalEmail");
+      .populate("assignedUser", "fullName phoneNumber");
 
     if (!updatedBatch) {
       return res.status(404).json({
@@ -302,7 +302,7 @@ const getBatchResources = async (req, res) => {
     }
 
     const batch = await ResourceBatch.findById(id).select(
-      "resources excelFileName assignedUser"
+      "resources excelFileName assignedUser",
     );
 
     if (!batch) {
@@ -321,7 +321,7 @@ const getBatchResources = async (req, res) => {
 
     const [resources, total] = await Promise.all([
       Resource.find(filter)
-        .populate("assignedUser", "fullName personalEmail")
+        .populate("assignedUser", "fullName phoneNumber")
         .populate("assignedChannel", "name link")
         .skip(skip)
         .limit(parseInt(limit))
@@ -448,7 +448,7 @@ const getBatchStats = async (req, res) => {
       data: {
         totalBatches: result.statusBreakdown.reduce(
           (sum, item) => sum + item.count,
-          0
+          0,
         ),
         totalResources: result.totalResources[0]?.total || 0,
         statusBreakdown: result.statusBreakdown,
@@ -524,12 +524,12 @@ const assignUserToBatch = async (req, res) => {
           assignedUser: userId,
           status: "ASSIGNED",
         },
-      }
+      },
     );
 
     const updatedBatch = await ResourceBatch.findById(id)
       .populate("resources", "email status assignedUser assignedChannel")
-      .populate("assignedUser", "fullName personalEmail");
+      .populate("assignedUser", "fullName phoneNumber");
 
     res.status(200).json({
       success: true,

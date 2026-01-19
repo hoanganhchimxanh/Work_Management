@@ -56,7 +56,7 @@ const addNew = async (req, res, next) => {
     });
 
     const populatedChannel = await Channel.findById(newChannel._id)
-      .populate("assignedUser", "fullName personalEmail")
+      .populate("assignedUser", "fullName phoneNumber")
       .populate("network", "name")
       .lean();
 
@@ -74,7 +74,7 @@ const addNew = async (req, res, next) => {
 const getAll = async (req, res, next) => {
   try {
     const channels = await Channel.find()
-      .populate("assignedUser", "fullName personalEmail")
+      .populate("assignedUser", "fullName phoneNumber")
       .populate("network", "name status")
       .lean();
 
@@ -93,7 +93,7 @@ const getById = async (req, res, next) => {
     const channelId = req.params.id;
 
     const channel = await Channel.findById(channelId)
-      .populate("assignedUser", "fullName personalEmail role")
+      .populate("assignedUser", "fullName phoneNumber role")
       .populate("network", "name status")
       .lean();
 
@@ -149,7 +149,7 @@ const editChannelInfo = async (req, res, next) => {
     await channel.save();
 
     const updatedChannel = await Channel.findById(channelId)
-      .populate("assignedUser", "fullName personalEmail")
+      .populate("assignedUser", "fullName phoneNumber")
       .populate("network", "name")
       .lean();
 
@@ -223,7 +223,7 @@ const assignOwner = async (req, res, next) => {
     await channel.save();
 
     const updatedChannel = await Channel.findById(channelId)
-      .populate("assignedUser", "fullName personalEmail")
+      .populate("assignedUser", "fullName phoneNumber")
       .populate("network", "name")
       .lean();
 
@@ -272,7 +272,7 @@ const getByNetwork = async (req, res, next) => {
     const networkId = req.params.networkId;
 
     const channels = await Channel.find({ network: networkId })
-      .populate("assignedUser", "fullName personalEmail")
+      .populate("assignedUser", "fullName phoneNumber")
       .lean();
 
     res.json({

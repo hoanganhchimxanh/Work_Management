@@ -70,7 +70,7 @@ function TeamModal({ show, onHide, team, users, onSaved }) {
         // Update team
         await axios.put(
           `${config.backendBase}/team/edit-team-info/${team._id}`,
-          payload
+          payload,
         );
       } else {
         // Create new team
@@ -87,7 +87,7 @@ function TeamModal({ show, onHide, team, users, onSaved }) {
 
   const availableUsers = users?.filter((u) => u.status === "ACTIVE") || [];
   const selectedLeader = availableUsers.find(
-    (u) => (u._id || u.userId) === formData.leader
+    (u) => (u._id || u.userId) === formData.leader,
   );
 
   return (
@@ -132,7 +132,7 @@ function TeamModal({ show, onHide, team, users, onSaved }) {
             </Form.Select>
             {selectedLeader && (
               <Form.Text className="text-muted">
-                Email: {selectedLeader.personalEmail}
+                Email: {selectedLeader.phoneNumber}
               </Form.Text>
             )}
           </Form.Group>
@@ -181,7 +181,7 @@ function TeamModal({ show, onHide, team, users, onSaved }) {
               <div className="mt-2">
                 {formData.members.map((memberId) => {
                   const member = users?.find(
-                    (u) => (u._id || u.userId) === memberId
+                    (u) => (u._id || u.userId) === memberId,
                   );
                   return member ? (
                     <Badge key={memberId} bg="info" className="me-2 mb-2">

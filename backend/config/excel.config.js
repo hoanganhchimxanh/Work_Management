@@ -19,8 +19,8 @@ const excelConfigs = {
         width: 25,
       },
       {
-        excelKey: "personalEmail",
-        dbField: "personalEmail",
+        excelKey: "phoneNumber",
+        dbField: "phoneNumber",
         displayName: "Email cá nhân",
         required: true,
         width: 30,
@@ -59,7 +59,7 @@ const excelConfigs = {
     exportColumns: [
       { key: "stt", displayName: "STT", width: 5 },
       { key: "fullName", displayName: "Họ và tên", width: 25 },
-      { key: "personalEmail", displayName: "Email cá nhân", width: 30 },
+      { key: "phoneNumber", displayName: "Email cá nhân", width: 30 },
       { key: "loginEmail", displayName: "Email đăng nhập", width: 30 },
       { key: "role", displayName: "Vai trò", width: 12 },
       { key: "status", displayName: "Trạng thái", width: 12 },
@@ -73,13 +73,13 @@ const excelConfigs = {
     templateData: [
       {
         fullName: "Nguyễn Văn A",
-        personalEmail: "nguyenvana@gmail.com",
+        phoneNumber: "nguyenvana@gmail.com",
         role: "EMPLOYEE",
         teamName: "Team Marketing",
       },
       {
         fullName: "Trần Thị B",
-        personalEmail: "tranthib@gmail.com",
+        phoneNumber: "tranthib@gmail.com",
         role: "EMPLOYEE",
         teamName: "Team Content",
       },
@@ -93,7 +93,7 @@ const excelConfigs = {
         required: "Có",
       },
       {
-        column: "personalEmail",
+        column: "phoneNumber",
         description: "Email cá nhân (duy nhất)",
         required: "Có",
       },
@@ -112,7 +112,7 @@ const excelConfigs = {
     // Xử lý sau khi import thành công
     afterImport: async (record, session, models) => {
       // Tạo account cho user
-      const loginEmail = `${record.personalEmail.split("@")[0]}@company.com`;
+      const loginEmail = `${record.phoneNumber.split("@")[0]}@company.com`;
       const tempPassword = generator.generate({
         length: 10,
         numbers: true,
@@ -133,7 +133,7 @@ const excelConfigs = {
             isActive: false,
           },
         ],
-        { session }
+        { session },
       );
 
       return { loginEmail, tempPassword };
@@ -150,7 +150,7 @@ const excelConfigs = {
           return {
             stt: index + 1,
             fullName: user.fullName,
-            personalEmail: user.personalEmail,
+            phoneNumber: user.phoneNumber,
             loginEmail: account?.email || "",
             role: user.role,
             status: user.status,
@@ -159,7 +159,7 @@ const excelConfigs = {
             isFirstLogin: user.isFirstLogin ? "Có" : "Không",
             joinedAt: new Date(user.createdAt).toLocaleDateString("vi-VN"),
           };
-        })
+        }),
       );
       return results;
     },
@@ -193,7 +193,7 @@ const excelConfigs = {
         width: 30,
         isReference: true,
         referenceModel: "User",
-        referenceField: "personalEmail",
+        referenceField: "phoneNumber",
         referenceKey: "_id",
       },
       {
@@ -206,7 +206,7 @@ const excelConfigs = {
         delimiter: ",",
         isReference: true,
         referenceModel: "User",
-        referenceField: "personalEmail",
+        referenceField: "phoneNumber",
         referenceKey: "_id",
       },
       {
@@ -272,14 +272,14 @@ const excelConfigs = {
     afterImport: async (record, session, models) => {
       // Gán team cho users
       const userIds = [record.leader, ...(record.members || [])].filter(
-        Boolean
+        Boolean,
       );
 
       if (userIds.length > 0) {
         await models.User.updateMany(
           { _id: { $in: userIds } },
           { team: record._id },
-          { session }
+          { session },
         );
       }
     },
@@ -290,11 +290,10 @@ const excelConfigs = {
         name: team.name,
         status: team.status,
         leaderName: team.leader?.fullName || "",
-        leaderEmail: team.leader?.personalEmail || "",
+        leaderEmail: team.leader?.phoneNumber || "",
         memberCount: team.members?.length || 0,
         memberNames: team.members?.map((m) => m.fullName).join(", ") || "",
-        memberEmails:
-          team.members?.map((m) => m.personalEmail).join(", ") || "",
+        memberEmails: team.members?.map((m) => m.phoneNumber).join(", ") || "",
         createdAt: new Date(team.createdAt).toLocaleDateString("vi-VN"),
       }));
     },
@@ -358,7 +357,7 @@ const excelConfigs = {
         width: 35,
         isReference: true,
         referenceModel: "User",
-        referenceField: "personalEmail",
+        referenceField: "phoneNumber",
         referenceKey: "_id",
       },
       {
@@ -439,7 +438,7 @@ const excelConfigs = {
         recoveryEmail: resource.recoveryEmail,
         status: resource.status,
         assignedUserName: resource.assignedUser?.fullName || "",
-        assignedUserEmail: resource.assignedUser?.personalEmail || "",
+        assignedUserEmail: resource.assignedUser?.phoneNumber || "",
         assignedChannelName: resource.assignedChannel?.name || "",
         assignedChannelLink: resource.assignedChannel?.link || "",
         note: resource.note || "",

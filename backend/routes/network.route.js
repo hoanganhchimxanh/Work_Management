@@ -20,7 +20,7 @@ router.post(
   "/create-new",
   authenticateJWT,
   authorizeRoles("ADMIN"),
-  networkController.createNew
+  networkController.createNew,
 );
 
 // Lấy tất cả networks
@@ -28,7 +28,7 @@ router.get(
   "/get-all",
   authenticateJWT,
   authorizeRoles(["ADMIN", "ACCOUNTANT"]),
-  networkController.getAll
+  networkController.getAll,
 );
 
 // Lấy network theo ID
@@ -36,7 +36,7 @@ router.get(
   "/get-by-id/:id",
   authenticateJWT,
   authorizeRoles(["ADMIN", "ACCOUNTANT"]),
-  networkController.getById
+  networkController.getById,
 );
 
 // Cập nhật network
@@ -44,7 +44,7 @@ router.put(
   "/update/:id",
   authenticateJWT,
   authorizeRoles("ADMIN"),
-  networkController.updateNetwork
+  networkController.updateNetwork,
 );
 
 // Xóa network
@@ -52,7 +52,7 @@ router.delete(
   "/delete/:id",
   authenticateJWT,
   authorizeRoles("ADMIN"),
-  networkController.deleteNetwork
+  networkController.deleteNetwork,
 );
 
 // Gán kênh vào network
@@ -60,7 +60,7 @@ router.post(
   "/assign-channel/:id",
   authenticateJWT,
   authorizeRoles("ADMIN"),
-  networkController.assignChannel
+  networkController.assignChannel,
 );
 
 // Gỡ kênh khỏi network
@@ -68,7 +68,7 @@ router.post(
   "/remove-channel/:id",
   authenticateJWT,
   authorizeRoles("ADMIN"),
-  networkController.removeChannel
+  networkController.removeChannel,
 );
 
 // Thống kê network
@@ -76,7 +76,40 @@ router.get(
   "/stats/:id",
   authenticateJWT,
   authorizeRoles(["ADMIN", "ACCOUNTANT"]),
-  networkController.getNetworkStats
+  networkController.getNetworkStats,
+);
+
+// ========== ADSENSE LOCATION ROUTES ==========
+// Lấy danh sách địa chỉ duy nhất
+router.get(
+  "/locations/unique",
+  authenticateJWT,
+  authorizeRoles(["ADMIN", "ACCOUNTANT"]),
+  networkController.getUniqueLocations,
+);
+
+// Lấy tất cả network theo địa chỉ
+router.get(
+  "/locations/:location",
+  authenticateJWT,
+  authorizeRoles(["ADMIN", "ACCOUNTANT"]),
+  networkController.getNetworksByLocation,
+);
+
+// Cập nhật địa chỉ hàng loạt
+router.put(
+  "/locations/bulk-update",
+  authenticateJWT,
+  authorizeRoles("ADMIN"),
+  networkController.bulkUpdateLocation,
+);
+
+// Xóa địa chỉ khỏi tất cả network
+router.delete(
+  "/locations/remove",
+  authenticateJWT,
+  authorizeRoles("ADMIN"),
+  networkController.removeLocationFromNetworks,
 );
 
 module.exports = router;

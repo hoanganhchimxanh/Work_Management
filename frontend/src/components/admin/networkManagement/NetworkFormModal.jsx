@@ -122,7 +122,7 @@ const NetworkFormModal = ({ show, network, users, onHide, onSave }) => {
                       key={user._id || user.userId}
                       value={user._id || user.userId}
                     >
-                      {user.fullName} ({user.personalEmail})
+                      {user.fullName} ({user.phoneNumber})
                     </option>
                   ))}
                 </Form.Select>

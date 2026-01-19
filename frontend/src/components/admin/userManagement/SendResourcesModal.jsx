@@ -47,7 +47,7 @@ const SendResourcesModal = ({ show, user, onHide, onSent }) => {
             Authorization: `Bearer ${token}`,
           },
           body: formData,
-        }
+        },
       );
 
       const data = await response.json();
@@ -98,7 +98,7 @@ const SendResourcesModal = ({ show, user, onHide, onSent }) => {
                 <strong>Người nhận:</strong> {user.fullName}
               </p>
               <p className="mb-0">
-                <strong>Email:</strong> {user.personalEmail}
+                <strong>Email:</strong> {user.phoneNumber}
               </p>
             </div>
           )}

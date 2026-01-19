@@ -67,7 +67,7 @@ const createNew = async (req, res, next) => {
     });
 
     const populatedTask = await Task.findById(newTask._id)
-      .populate("assignedToUser", "fullName personalEmail role")
+      .populate("assignedToUser", "fullName phoneNumber role")
       .populate("assignedToTeam", "name")
       .lean();
 
@@ -78,7 +78,7 @@ const createNew = async (req, res, next) => {
       userIds = [assignedToUser];
     } else if (assignedToTeam) {
       const teamMembers = await User.find({ team: assignedToTeam }).select(
-        "_id"
+        "_id",
       );
       userIds = teamMembers.map((m) => m._id);
     }
@@ -135,7 +135,7 @@ const getAll = async (req, res, next) => {
     if (status) filter.status = status;
 
     const tasks = await Task.find(filter)
-      .populate("assignedToUser", "fullName personalEmail role")
+      .populate("assignedToUser", "fullName phoneNumber role")
       .populate("assignedToTeam", "name")
       .sort({ createdAt: -1 })
       .lean();
@@ -155,7 +155,7 @@ const getById = async (req, res, next) => {
     const taskId = req.params.id;
 
     const task = await Task.findById(taskId)
-      .populate("assignedToUser", "fullName personalEmail role")
+      .populate("assignedToUser", "fullName phoneNumber role")
       .populate("assignedToTeam", "name")
       .lean();
 
@@ -203,7 +203,7 @@ const updateTask = async (req, res, next) => {
     await task.save();
 
     const updatedTask = await Task.findById(taskId)
-      .populate("assignedToUser", "fullName personalEmail role")
+      .populate("assignedToUser", "fullName phoneNumber role")
       .populate("assignedToTeam", "name")
       .lean();
 
@@ -320,7 +320,7 @@ const updateStatus = async (req, res, next) => {
     await task.save();
 
     const updatedTask = await Task.findById(taskId)
-      .populate("assignedToUser", "fullName personalEmail role")
+      .populate("assignedToUser", "fullName phoneNumber role")
       .populate("assignedToTeam", "name")
       .lean();
 
@@ -412,7 +412,7 @@ const deleteTask = async (req, res, next) => {
       userIds = [assignedToUser];
     } else if (assignedToTeam) {
       const teamMembers = await User.find({ team: assignedToTeam }).select(
-        "_id"
+        "_id",
       );
       userIds = teamMembers.map((m) => m._id);
     }
@@ -469,7 +469,7 @@ const getMyTasks = async (req, res, next) => {
     }
 
     const tasks = await Task.find(filter)
-      .populate("assignedToUser", "fullName personalEmail role")
+      .populate("assignedToUser", "fullName phoneNumber role")
       .populate("assignedToTeam", "name")
       .sort({ createdAt: -1 })
       .lean();
@@ -497,7 +497,7 @@ const getTeamTasks = async (req, res, next) => {
     }
 
     const tasks = await Task.find({ assignedToTeam: teamId })
-      .populate("assignedToUser", "fullName personalEmail")
+      .populate("assignedToUser", "fullName phoneNumber")
       .sort({ createdAt: -1 })
       .lean();
 

@@ -47,7 +47,7 @@ const ResourceBatchTable = React.forwardRef(({ onBatchUpdated }, ref) => {
       setLoading(true);
       setError(null);
       const response = await axios.get(
-        `${config.backendBase}/resource-batch/get-all`
+        `${config.backendBase}/resource-batch/get-all`,
       );
       setBatches(response.data.data || []);
     } catch (err) {
@@ -66,7 +66,7 @@ const ResourceBatchTable = React.forwardRef(({ onBatchUpdated }, ref) => {
     try {
       setLoadingResources((prev) => ({ ...prev, [batchId]: true }));
       const response = await axios.get(
-        `${config.backendBase}/resource-batch/${batchId}/resources`
+        `${config.backendBase}/resource-batch/${batchId}/resources`,
       );
       setBatchResources((prev) => ({
         ...prev,
@@ -218,11 +218,11 @@ const ResourceBatchTable = React.forwardRef(({ onBatchUpdated }, ref) => {
                             {batch.assignedUser?.fullName || (
                               <span className="text-muted">Chưa gán</span>
                             )}
-                            {batch.assignedUser?.personalEmail && (
+                            {batch.assignedUser?.phoneNumber && (
                               <>
                                 <br />
                                 <small className="text-muted">
-                                  {batch.assignedUser.personalEmail}
+                                  {batch.assignedUser.phoneNumber}
                                 </small>
                               </>
                             )}
@@ -237,7 +237,7 @@ const ResourceBatchTable = React.forwardRef(({ onBatchUpdated }, ref) => {
                           />
                           {format(
                             new Date(batch.createdAt),
-                            "dd/MM/yyyy HH:mm"
+                            "dd/MM/yyyy HH:mm",
                           )}
                         </div>
                       </td>
@@ -327,7 +327,7 @@ const ResourceBatchTable = React.forwardRef(({ onBatchUpdated }, ref) => {
                                             </td>
                                             <td>
                                               {getResourceStatusBadge(
-                                                resource.status
+                                                resource.status,
                                               )}
                                             </td>
                                             <td>
@@ -352,7 +352,7 @@ const ResourceBatchTable = React.forwardRef(({ onBatchUpdated }, ref) => {
                                               </small>
                                             </td>
                                           </tr>
-                                        )
+                                        ),
                                       )}
                                     </tbody>
                                   </Table>

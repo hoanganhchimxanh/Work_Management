@@ -75,7 +75,7 @@ const createNew = async (req, res, next) => {
 
     // Populate để trả về thông tin đầy đủ
     const populatedResource = await Resource.findById(newResource._id)
-      .populate("assignedUser", "fullName personalEmail role")
+      .populate("assignedUser", "fullName phoneNumber role")
       .populate("assignedChannel", "name link status")
       .lean();
 
@@ -112,7 +112,7 @@ const getAll = async (req, res, next) => {
     if (assignedUser) filter.assignedUser = assignedUser;
 
     const resources = await Resource.find(filter)
-      .populate("assignedUser", "fullName personalEmail role")
+      .populate("assignedUser", "fullName phoneNumber role")
       .populate("assignedChannel", "name link status")
       .sort({ createdAt: -1 })
       .lean();
@@ -133,7 +133,7 @@ const getById = async (req, res, next) => {
     const resourceId = req.params.id;
 
     const resource = await Resource.findById(resourceId)
-      .populate("assignedUser", "fullName personalEmail role team")
+      .populate("assignedUser", "fullName phoneNumber role team")
       .populate("assignedChannel", "name link status network")
       .lean();
 
@@ -226,7 +226,7 @@ const updateResource = async (req, res, next) => {
     await resource.save();
 
     const updatedResource = await Resource.findById(resourceId)
-      .populate("assignedUser", "fullName personalEmail role")
+      .populate("assignedUser", "fullName phoneNumber role")
       .populate("assignedChannel", "name link status")
       .lean();
 
@@ -330,7 +330,7 @@ const assignToUser = async (req, res, next) => {
     await resource.save();
 
     const updatedResource = await Resource.findById(resourceId)
-      .populate("assignedUser", "fullName personalEmail role")
+      .populate("assignedUser", "fullName phoneNumber role")
       .populate("assignedChannel", "name link status")
       .lean();
 
@@ -393,7 +393,7 @@ const assignToChannel = async (req, res, next) => {
     await resource.save();
 
     const updatedResource = await Resource.findById(resourceId)
-      .populate("assignedUser", "fullName personalEmail role")
+      .populate("assignedUser", "fullName phoneNumber role")
       .populate("assignedChannel", "name link status")
       .lean();
 
@@ -453,7 +453,7 @@ const bulkAssignToUser = async (req, res, next) => {
 
     // Kiểm tra trạng thái resources
     const unavailableResources = resources.filter(
-      (r) => r.status !== "AVAILABLE"
+      (r) => r.status !== "AVAILABLE",
     );
 
     if (unavailableResources.length > 0) {
@@ -473,14 +473,14 @@ const bulkAssignToUser = async (req, res, next) => {
       {
         assignedUser: userId,
         status: "ASSIGNED",
-      }
+      },
     );
 
     // Lấy lại resources đã cập nhật
     const updatedResources = await Resource.find({
       _id: { $in: resourceIds },
     })
-      .populate("assignedUser", "fullName personalEmail role")
+      .populate("assignedUser", "fullName phoneNumber role")
       .lean();
 
     res.json({
@@ -514,7 +514,7 @@ const unassign = async (req, res, next) => {
     await resource.save();
 
     const updatedResource = await Resource.findById(resourceId)
-      .populate("assignedUser", "fullName personalEmail role")
+      .populate("assignedUser", "fullName phoneNumber role")
       .populate("assignedChannel", "name link status")
       .lean();
 
@@ -618,7 +618,7 @@ const disableResource = async (req, res, next) => {
     await resource.save();
 
     const updatedResource = await Resource.findById(resourceId)
-      .populate("assignedUser", "fullName personalEmail role")
+      .populate("assignedUser", "fullName phoneNumber role")
       .populate("assignedChannel", "name link status")
       .lean();
 
@@ -652,7 +652,7 @@ const enableResource = async (req, res, next) => {
     await resource.save();
 
     const updatedResource = await Resource.findById(resourceId)
-      .populate("assignedUser", "fullName personalEmail role")
+      .populate("assignedUser", "fullName phoneNumber role")
       .populate("assignedChannel", "name link status")
       .lean();
 

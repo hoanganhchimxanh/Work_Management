@@ -10,7 +10,7 @@ const getOAuth2Client = () => {
   return new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
-    process.env.GOOGLE_REDIRECT_URI
+    process.env.GOOGLE_REDIRECT_URI,
   );
 };
 
@@ -54,7 +54,7 @@ const getAuthUrl = async (req, res, next) => {
 
     // State để lưu thông tin channel và user
     const state = Buffer.from(JSON.stringify({ channelId, userId })).toString(
-      "base64"
+      "base64",
     );
 
     const authUrl = oauth2Client.generateAuthUrl({
@@ -87,7 +87,7 @@ const handleCallback = async (req, res, next) => {
 
     // Decode state để lấy channelId và userId
     const { channelId, userId } = JSON.parse(
-      Buffer.from(state, "base64").toString()
+      Buffer.from(state, "base64").toString(),
     );
 
     const oauth2Client = getOAuth2Client();
@@ -333,7 +333,7 @@ const getAllAuthorizedChannels = async (req, res, next) => {
     const authorizedChannels = await YoutubeAuth.find({
       status: "ACTIVE",
     })
-      .populate("user", "fullName personalEmail")
+      .populate("user", "fullName phoneNumber")
       .populate("channel", "name link subscriber status")
       .lean();
 
@@ -342,7 +342,7 @@ const getAllAuthorizedChannels = async (req, res, next) => {
       data: authorizedChannels.map((auth) => ({
         userId: auth.user._id,
         userName: auth.user.fullName,
-        userEmail: auth.user.personalEmail,
+        userEmail: auth.user.phoneNumber,
         channelId: auth.channel._id,
         channelName: auth.channel.name,
         channelLink: auth.channel.link,

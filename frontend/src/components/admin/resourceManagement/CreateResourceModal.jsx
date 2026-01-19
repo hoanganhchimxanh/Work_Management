@@ -173,7 +173,7 @@ function CreateResourceModal({ show, onHide, onCreate, users, channels }) {
                   key={user.userId || user._id}
                   value={user.userId || user._id}
                 >
-                  {user.fullName} ({user.personalEmail})
+                  {user.fullName} ({user.phoneNumber})
                 </option>
               ))}
             </Form.Select>

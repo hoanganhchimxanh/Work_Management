@@ -95,7 +95,7 @@ function ResourceTable({
                         {resource.assignedUser.fullName}
                       </div>
                       <small className="text-muted">
-                        {resource.assignedUser.personalEmail}
+                        {resource.assignedUser.phoneNumber}
                       </small>
                     </div>
                   ) : (

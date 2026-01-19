@@ -25,10 +25,10 @@ function ChannelRevenue() {
 
   // State cho bộ lọc tháng/năm
   const [selectedMonth, setSelectedMonth] = useState(
-    stateData.month || String(new Date().getMonth() + 1).padStart(2, "0")
+    stateData.month || String(new Date().getMonth() + 1).padStart(2, "0"),
   );
   const [selectedYear, setSelectedYear] = useState(
-    stateData.year || String(new Date().getFullYear())
+    stateData.year || String(new Date().getFullYear()),
   );
 
   // State cho data
@@ -74,7 +74,7 @@ function ChannelRevenue() {
         `http://localhost:9999/user/get-one/${employeeId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
-        }
+        },
       );
 
       setEmployeeInfo(userResponse.data.data);
@@ -84,7 +84,7 @@ function ChannelRevenue() {
         `http://localhost:9999/channel/by-owner/${employeeId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
-        }
+        },
       );
 
       const userChannels = channelsResponse.data.data;
@@ -101,7 +101,7 @@ function ChannelRevenue() {
                   startMonth: monthQuery,
                   endMonth: monthQuery,
                 },
-              }
+              },
             );
 
             const revenueData = revenueResponse.data.data;
@@ -119,7 +119,7 @@ function ChannelRevenue() {
           } catch (err) {
             console.error(
               `Error fetching revenue for channel ${channel._id}:`,
-              err
+              err,
             );
             return {
               ...channel,
@@ -131,7 +131,7 @@ function ChannelRevenue() {
               networkName: channel.network?.name || null,
             };
           }
-        })
+        }),
       );
 
       setChannels(channelsWithRevenue);
@@ -139,7 +139,7 @@ function ChannelRevenue() {
       console.error("Error fetching employee channels revenue:", err);
       setError(
         err.response?.data?.message ||
-          "Không thể tải dữ liệu. Vui lòng thử lại."
+          "Không thể tải dữ liệu. Vui lòng thử lại.",
       );
     } finally {
       setLoading(false);
@@ -158,7 +158,7 @@ function ChannelRevenue() {
 
   const totalEstimated = channels.reduce(
     (sum, ch) => sum + ch.estimatedRevenue,
-    0
+    0,
   );
   const totalActual = channels.reduce((sum, ch) => sum + ch.actualRevenue, 0);
 
@@ -209,7 +209,7 @@ function ChannelRevenue() {
           <Card.Body>
             <Row>
               <Col md={4}>
-                <strong>Email:</strong> {employeeInfo.personalEmail}
+                <strong>Email:</strong> {employeeInfo.phoneNumber}
               </Col>
               <Col md={4}>
                 <strong>Team:</strong> {employeeInfo.team?.name || "—"}
@@ -309,8 +309,8 @@ function ChannelRevenue() {
                       channel.status === "ACTIVE"
                         ? "success"
                         : channel.status === "HIDDEN"
-                        ? "warning"
-                        : "secondary"
+                          ? "warning"
+                          : "secondary"
                     }
                   >
                     {channel.status}

@@ -69,7 +69,7 @@ Hoặc tạo thủ công qua MongoDB:
 // Admin User
 {
   fullName: "Admin User",
-  personalEmail: "admin@example.com",
+  phoneNumber: "admin@example.com",
   role: "ADMIN",
   status: "ACTIVE",
   isFirstLogin: false
@@ -116,7 +116,7 @@ Content-Type: application/json
       "userId": "507f1f77bcf86cd799439012",
       "fullName": "Admin User",
       "role": "ADMIN",
-      "personalEmail": "admin@example.com",
+      "phoneNumber": "admin@example.com",
       "isFirstLogin": false,
       "status": "ACTIVE"
     }
@@ -156,7 +156,7 @@ Content-Type: application/json
 
 {
   "fullName": "Nguyen Van A",
-  "personalEmail": "nguyenvana@gmail.com",
+  "phoneNumber": "nguyenvana@gmail.com",
   "role": "EMPLOYEE",
   "team": null
 }
@@ -172,7 +172,7 @@ Content-Type: application/json
     "user": {
       "_id": "67890abcd1234567890",
       "fullName": "Nguyen Van A",
-      "personalEmail": "nguyenvana@gmail.com",
+      "phoneNumber": "nguyenvana@gmail.com",
       "role": "EMPLOYEE",
       "status": "ACTIVE",
       "team": null,
@@ -188,8 +188,8 @@ Content-Type: application/json
 
 **Auto-generated:**
 
-- Login email: `{personalEmail_username}@company.com`
-- Temporary password: Gửi qua email `personalEmail` (random 10 chars)
+- Login email: `{phoneNumber_username}@company.com`
+- Temporary password: Gửi qua email `phoneNumber` (random 10 chars)
 - Account status: `isActive: false` (phải đổi password lần đầu)
 
 **Action:**
@@ -294,7 +294,7 @@ Content-Type: application/json
     "owner": {
       "_id": "507f1f77bcf86cd799439012",
       "fullName": "Admin User",
-      "personalEmail": "admin@example.com"
+      "phoneNumber": "admin@example.com"
     },
     "network": null,
     "status": "ACTIVE",
@@ -349,7 +349,7 @@ Content-Type: application/json
     "owner": {
       "_id": "67890abcd1234567890",
       "fullName": "Nguyen Van A",
-      "personalEmail": "nguyenvana@gmail.com"
+      "phoneNumber": "nguyenvana@gmail.com"
     },
     "network": null,
     "status": "ACTIVE",
@@ -1461,30 +1461,25 @@ Authorization: Bearer {{EMPLOYEE_TOKEN}}
 ### Quick Start (15 phút):
 
 1. ✅ **Authentication** (2 phút)
-
    - Login Admin → Save `ADMIN_TOKEN`
    - Create Employee → Save `EMPLOYEE_USER_ID`
    - Employee change password
    - Login Employee → Save `EMPLOYEE_TOKEN`
 
 2. ✅ **Setup Channels** (2 phút)
-
    - Create Main Channel → Save `MAIN_CHANNEL_ID`
    - Create Tech Channel → Save `CHANNEL_ID`
 
 3. ✅ **Setup Network** (1 phút)
-
    - Create Network with mainChannel → Save `NETWORK_ID`
    - Assign Tech Channel to Network
 
 4. ✅ **YouTube Integration** (5 phút)
-
    - Get OAuth URL (Employee)
    - Authorize in Browser
    - Check Auth Status
 
 5. ✅ **Sync Data** (3 phút)
-
    - Sync Analytics (30 days)
    - Get Analytics Data
    - Verify totals
@@ -1668,7 +1663,7 @@ pm.sendRequest(
         });
       }
     });
-  }
+  },
 );
 ```
 
