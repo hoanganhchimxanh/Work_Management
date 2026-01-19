@@ -129,7 +129,7 @@ const NetworkTable = ({ networks, loading, onEdit, onDelete, onRefresh }) => {
                 </td>
                 <td>
                   <small className="text-muted">
-                    {network.password ? "••••••••" : "N/A"}
+                    {network.password || "N/A"}
                   </small>
                 </td>
                 <td>
