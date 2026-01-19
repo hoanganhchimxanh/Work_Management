@@ -10,7 +10,7 @@ const getAuthHeader = () => ({
 export const fetchNotifications = (page = 1, limit = 20) =>
   axios.get(
     `${config.backendBase}/notification?page=${page}&limit=${limit}`,
-    getAuthHeader()
+    getAuthHeader(),
   );
 
 export const fetchUnreadCount = () =>
@@ -20,14 +20,14 @@ export const markNotificationRead = (id) =>
   axios.patch(
     `${config.backendBase}/notification/${id}/read`,
     {},
-    getAuthHeader()
+    getAuthHeader(),
   );
 
 export const markAllRead = () =>
   axios.patch(
     `${config.backendBase}/notification/read-all`,
     {},
-    getAuthHeader()
+    getAuthHeader(),
   );
 
 /**

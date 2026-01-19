@@ -1,5 +1,4 @@
-import React, { useState } from "react";
-// Thêm InputGroup vào phần import
+import React, { useState, useEffect } from "react";
 import {
   Modal,
   Button,
@@ -10,6 +9,7 @@ import {
   Spinner,
   InputGroup,
 } from "react-bootstrap";
+import axios from "axios";
 
 const AddNetworkModal = ({ show, onHide, onSubmit }) => {
   const [formData, setFormData] = useState({
@@ -26,14 +26,79 @@ const AddNetworkModal = ({ show, onHide, onSubmit }) => {
     linkedChannelUrl: "",
     status: "ACTIVE",
     reminderDate: "",
-    note: "",
+    note: "PENDING_ACTIVATION",
   });
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
-  // 1. Thêm state để quản lý việc hiển thị mật khẩu
   const [showPassword, setShowPassword] = useState(false);
+
+  // State để lưu danh sách nhân viên
+  const [employees, setEmployees] = useState([]);
+  const [loadingEmployees, setLoadingEmployees] = useState(false);
+
+  // Lấy danh sách nhân viên khi modal được mở
+  useEffect(() => {
+    if (show) {
+      fetchEmployees();
+    }
+  }, [show]);
+
+  const fetchEmployees = async () => {
+    setLoadingEmployees(true);
+    setError(""); // Reset error trước khi fetch
+
+    try {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        setError("Không tìm thấy token xác thực!");
+        setLoadingEmployees(false);
+        return;
+      }
+
+      // FIX: Thêm http:// vào URL
+      const response = await axios.get("http://localhost:9999/user/get-all", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        params: {
+          status: "ACTIVE", // Chỉ lấy nhân viên đang hoạt động
+        },
+      });
+
+      console.log("Response từ API:", response.data); // Debug log
+
+      if (response.data.success) {
+        setEmployees(response.data.data || []);
+        console.log(
+          "Đã load được",
+          response.data.data?.length || 0,
+          "nhân viên",
+        );
+      } else {
+        setError("Không thể tải danh sách nhân viên!");
+      }
+    } catch (err) {
+      console.error("Lỗi khi tải danh sách nhân viên:", err);
+
+      // Hiển thị thông báo lỗi chi tiết hơn
+      if (err.response) {
+        // Server trả về error
+        setError(
+          `Lỗi server: ${err.response.data?.message || err.response.statusText}`,
+        );
+      } else if (err.request) {
+        // Request được gửi nhưng không nhận được response
+        setError("Không thể kết nối đến server. Vui lòng kiểm tra kết nối!");
+      } else {
+        // Lỗi khác
+        setError(`Lỗi: ${err.message}`);
+      }
+    } finally {
+      setLoadingEmployees(false);
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -51,8 +116,8 @@ const AddNetworkModal = ({ show, onHide, onSubmit }) => {
       setError("Profile AdSense ID là bắt buộc!");
       return;
     }
-    if (!formData.emailAddress.trim()) {
-      setError("Email Address là bắt buộc!");
+    if (!formData.employment) {
+      setError("Vui lòng chọn nhân viên phụ trách!");
       return;
     }
 
@@ -77,7 +142,6 @@ const AddNetworkModal = ({ show, onHide, onSubmit }) => {
 
   const handleClose = () => {
     setError("");
-    // 2. Reset lại trạng thái ẩn mật khẩu khi đóng modal
     setShowPassword(false);
     setFormData({
       pubId: "",
@@ -93,8 +157,9 @@ const AddNetworkModal = ({ show, onHide, onSubmit }) => {
       linkedChannelUrl: "",
       status: "ACTIVE",
       reminderDate: "",
-      note: "",
+      note: "PENDING_ACTIVATION",
     });
+    setEmployees([]); // Clear danh sách nhân viên khi đóng modal
     onHide();
   };
 
@@ -128,27 +193,62 @@ const AddNetworkModal = ({ show, onHide, onSubmit }) => {
 
             <Col md={6} className="mb-3">
               <Form.Group>
-                <Form.Label>Profile AdSense ID</Form.Label>
+                <Form.Label>
+                  Profile AdSense ID <span className="text-danger">*</span>
+                </Form.Label>
                 <Form.Control
                   type="text"
                   name="profileAdsenseId"
                   value={formData.profileAdsenseId}
                   onChange={handleChange}
                   placeholder="pub-1234567890123456"
+                  required
                 />
               </Form.Group>
             </Col>
 
             <Col md={12} className="mb-3">
               <Form.Group>
-                <Form.Label>Employment (Nhân viên phụ trách)</Form.Label>
-                <Form.Control
-                  type="text"
+                <Form.Label>
+                  Nhân viên phụ trách <span className="text-danger">*</span>
+                </Form.Label>
+                <Form.Select
                   name="employment"
                   value={formData.employment}
                   onChange={handleChange}
-                  placeholder="Nguyễn Văn A"
-                />
+                  disabled={loadingEmployees}
+                  required
+                >
+                  <option value="">
+                    {loadingEmployees
+                      ? "Đang tải..."
+                      : employees.length === 0
+                        ? "Không có nhân viên nào"
+                        : "-- Chọn nhân viên --"}
+                  </option>
+                  {employees.map((emp) => (
+                    <option key={emp.userId} value={emp.userId}>
+                      {emp.fullName} - {emp.phoneNumber}
+                      {emp.team && ` (${emp.team})`}
+                    </option>
+                  ))}
+                </Form.Select>
+                {loadingEmployees && (
+                  <Form.Text className="text-muted">
+                    <Spinner
+                      as="span"
+                      animation="border"
+                      size="sm"
+                      className="me-2"
+                    />
+                    Đang tải danh sách nhân viên...
+                  </Form.Text>
+                )}
+                {!loadingEmployees && employees.length > 0 && (
+                  <Form.Text className="text-success">
+                    ✓ Đã tải {employees.length} nhân viên
+                  </Form.Text>
+                )}
               </Form.Group>
             </Col>
 
@@ -165,13 +265,11 @@ const AddNetworkModal = ({ show, onHide, onSubmit }) => {
               </Form.Group>
             </Col>
 
-            {/* PHẦN THAY ĐỔI: Password với nút Hiện/Ẩn */}
             <Col md={6} className="mb-3">
               <Form.Group>
                 <Form.Label>Password</Form.Label>
                 <InputGroup>
                   <Form.Control
-                    // 3. Thay đổi type dựa trên state showPassword
                     type={showPassword ? "text" : "password"}
                     name="password"
                     value={formData.password}
@@ -188,7 +286,6 @@ const AddNetworkModal = ({ show, onHide, onSubmit }) => {
               </Form.Group>
             </Col>
 
-            {/* ... Các trường còn lại giữ nguyên ... */}
             <Col md={6} className="mb-3">
               <Form.Group>
                 <Form.Label>Recovery Email</Form.Label>
@@ -276,9 +373,32 @@ const AddNetworkModal = ({ show, onHide, onSubmit }) => {
                   onChange={handleChange}
                 >
                   <option value="ACTIVE">ACTIVE</option>
-                  <option value="PROCESSING">PROCESSING</option>
-                  <option value="INACTIVE">INACTIVE</option>
-                  <option value="LOCKED">LOCKED</option>
+                  <option value="STRIKE">STRIKE</option>
+                  <option value="DEMONETIZED">DEMONETIZED</option>
+                  <option value="DEAD">DEAD</option>
+                </Form.Select>
+              </Form.Group>
+            </Col>
+
+            <Col md={6} className="mb-3">
+              <Form.Group>
+                <Form.Label>Ghi chú trạng thái</Form.Label>
+                <Form.Select
+                  name="note"
+                  value={formData.note}
+                  onChange={handleChange}
+                >
+                  <option value="PENDING_ACTIVATION">Chờ active</option>
+                  <option value="REJECTED">Từ chối</option>
+                  <option value="PENDING_IDENTITY_VERIFICATION">
+                    Chờ XMDT
+                  </option>
+                  <option value="IDENTITY_VERIFICATION_REVIEW">
+                    XMDT chờ duyệt
+                  </option>
+                  <option value="PENDING_32">Chờ 32</option>
+                  <option value="PENDING_PIN">Chờ PIN</option>
+                  <option value="ACTIVATED">Active</option>
                 </Form.Select>
               </Form.Group>
             </Col>
@@ -294,20 +414,6 @@ const AddNetworkModal = ({ show, onHide, onSubmit }) => {
                 />
               </Form.Group>
             </Col>
-
-            <Col md={12} className="mb-3">
-              <Form.Group>
-                <Form.Label>Ghi chú</Form.Label>
-                <Form.Control
-                  as="textarea"
-                  rows={3}
-                  name="note"
-                  value={formData.note}
-                  onChange={handleChange}
-                  placeholder="Ghi chú thêm..."
-                />
-              </Form.Group>
-            </Col>
           </Row>
         </Modal.Body>
 
@@ -315,7 +421,11 @@ const AddNetworkModal = ({ show, onHide, onSubmit }) => {
           <Button variant="secondary" onClick={handleClose} disabled={loading}>
             Hủy
           </Button>
-          <Button variant="primary" type="submit" disabled={loading}>
+          <Button
+            variant="primary"
+            type="submit"
+            disabled={loading || loadingEmployees}
+          >
             {loading ? (
               <>
                 <Spinner

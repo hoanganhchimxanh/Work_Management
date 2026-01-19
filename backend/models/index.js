@@ -11,7 +11,6 @@ const Resource = require("./resource.model");
 const Notification = require("./notification.model");
 const ChannelRevenue = require("./channelRevenue.model");
 const ResourceBatch = require("./resourceBatch.model");
-const Employee = require("./employee.model");
 
 module.exports = {
   User,
@@ -27,5 +26,4 @@ module.exports = {
   Notification,
   ChannelRevenue,
   ResourceBatch,
-  Employee,
 };
