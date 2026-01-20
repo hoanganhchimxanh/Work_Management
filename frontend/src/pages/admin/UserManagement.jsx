@@ -2,12 +2,12 @@ import React from "react";
 import { Container, Row, Col, Button, Alert, Tabs, Tab } from "react-bootstrap";
 
 // Components
-import UserTable from "../../components/admin/userManagement/UserTable";
-import TeamTable from "../../components/admin/userManagement/TeamTable";
-import UserModal from "../../components/admin/userManagement/UserModal";
-import TeamModal from "../../components/admin/userManagement/TeamModal";
-import UserImportModal from "../../components/admin/userManagement/UserImportModal";
-import TeamImportModal from "../../components/admin/userManagement/TeamImportModal";
+import UserTable from "../../components/admin/userManagement/tables/UserTable";
+import TeamTable from "../../components/admin/userManagement/tables/TeamTable";
+import UserModal from "../../components/admin/userManagement/modals/UserModal";
+import TeamModal from "../../components/admin/userManagement/modals/TeamModal";
+import UserImportModal from "../../components/admin/userManagement/modals/UserImportModal";
+import TeamImportModal from "../../components/admin/userManagement/modals/TeamImportModal";
 import TablePagination from "../../components/common/TablePagination";
 import ItemsPerPageSelector from "../../components/common/ItemsPerPageSelector";
 

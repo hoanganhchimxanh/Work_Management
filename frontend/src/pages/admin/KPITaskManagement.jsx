@@ -2,10 +2,10 @@ import React from "react";
 import { Container, Row, Col, Button, Alert, Tabs, Tab } from "react-bootstrap";
 
 // Components
-import KPITable from "../../components/admin/kpiTaskManagement/KPITable";
-import TaskTable from "../../components/admin/kpiTaskManagement/TaskTable";
-import KPIModal from "../../components/admin/kpiTaskManagement/KPIModal";
-import TaskModal from "../../components/admin/kpiTaskManagement/TaskModal";
+import KPITable from "../../components/admin/kpiTaskManagement/tables/KPITable";
+import TaskTable from "../../components/admin/kpiTaskManagement/tables/TaskTable";
+import KPIModal from "../../components/admin/kpiTaskManagement/modals/KPIModal";
+import TaskModal from "../../components/admin/kpiTaskManagement/modals/TaskModal";
 
 // Custom hooks
 import useAuth from "../../hooks/useAuth";

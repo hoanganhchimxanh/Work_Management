@@ -2,12 +2,12 @@ import React from "react";
 import { Container, Alert, Tabs, Tab } from "react-bootstrap";
 
 // Components
-import NetworkFilters from "../../components/admin/networkManagement/NetworkFilters";
-import NetworkTable from "../../components/admin/networkManagement/NetworkTable";
-import AddNetworkModal from "../../components/admin/networkManagement/AddNetworkModal";
-import NetworkImportModal from "../../components/admin/networkManagement/NetworkImportModal";
-import EditNetworkModal from "../../components/admin/networkManagement/EditNetworkModal";
-import AddressTable from "../../components/admin/networkManagement/AddressTable";
+import NetworkFilters from "../../components/admin/networkManagement/filters/NetworkFilters";
+import NetworkTable from "../../components/admin/networkManagement/tables/NetworkTable";
+import AddNetworkModal from "../../components/admin/networkManagement/modals/AddNetworkModal";
+import NetworkImportModal from "../../components/admin/networkManagement/modals/NetworkImportModal";
+import EditNetworkModal from "../../components/admin/networkManagement/modals/EditNetworkModal";
+import AddressTable from "../../components/admin/networkManagement/tables/AddressTable";
 
 // Custom hooks
 import useAuth from "../../hooks/useAuth";
@@ -33,7 +33,7 @@ const NetworkManagement = () => {
   // 4. Fetch Data
   const { networks, loading, error, refetch } = useNetworkData(
     serverFilters,
-    getAuthConfig
+    getAuthConfig,
   );
 
   // 5. Client-side Filters (for search)

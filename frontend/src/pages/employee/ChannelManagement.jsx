@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useContext } from "react";
 import { Container, Alert, Spinner } from "react-bootstrap";
 import { AuthContext } from "../../contexts/AuthContext";
-import ChannelActionButtons from "../../components/employee/channelManagement/ChannelActionButtons";
-import ChannelTable from "../../components/employee/channelManagement/ChannelTable";
-import AddChannelModal from "../../components/employee/channelManagement/AddChannelModal";
-import EditChannelModal from "../../components/employee/channelManagement/EditChannelModal";
+import ChannelActionButtons from "../../components/employee/channelManagement/others/ChannelActionButtons";
+import ChannelTable from "../../components/employee/channelManagement/tables/ChannelTable";
+import AddChannelModal from "../../components/employee/channelManagement/modals/AddChannelModal";
+import EditChannelModal from "../../components/employee/channelManagement/modals/EditChannelModal";
 import useChannels from "../../hooks/employee/channelManagement/useChannels";
 import useYouTubeAuth from "../../hooks/employee/channelManagement/useYoutubeAuth";
 import usePagination from "../../hooks/usePagination";

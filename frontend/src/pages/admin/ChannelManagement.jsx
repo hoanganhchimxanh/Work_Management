@@ -3,8 +3,8 @@ import { Container, Row, Col, Button, Spinner, Alert } from "react-bootstrap";
 import axios from "axios";
 
 import config from "../../configs/api";
-import ChannelFilter from "../../components/admin/channelManagement/ChannelFilter";
-import ChannelTable from "../../components/admin/channelManagement/ChannelTable";
+import ChannelFilter from "../../components/admin/channelManagement/others/ChannelFilter";
+import ChannelTable from "../../components/admin/channelManagement/tables/ChannelTable";
 
 function ChannelManagement() {
   const [channels, setChannels] = useState([]);
@@ -52,14 +52,14 @@ function ChannelManagement() {
                 endDate: new Date().toISOString().split("T")[0],
               },
               headers: { Authorization: `Bearer ${token}` },
-            }
+            },
           ),
         ]);
 
       // Merge analytics vào channel
       const channelsWithAnalytics = channelsRes.data.data.map((channel) => {
         const analytics = analyticsRes.data.data.channels.find(
-          (a) => a.channelId === channel._id
+          (a) => a.channelId === channel._id,
         );
 
         return {
@@ -85,7 +85,7 @@ function ChannelManagement() {
 
     if (searchName) {
       filtered = filtered.filter((ch) =>
-        ch.name.toLowerCase().includes(searchName.toLowerCase())
+        ch.name.toLowerCase().includes(searchName.toLowerCase()),
       );
     }
 

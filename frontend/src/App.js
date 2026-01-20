@@ -43,8 +43,8 @@ import RoleBasedRoute from "./components/RoleBasedRoute";
 import PublicRoute from "./components/PublicRoute";
 
 // View components
-import SalarySlipCard from "./components/accountant/salaryManagement/SalarySlipCard";
-import ChannelMonthRevenue from "./components/admin/channelManagement/ChannelMonthRevenueModal";
+import SalarySlipCard from "./components/accountant/salaryManagement/others/SalarySlipCard";
+import ChannelMonthRevenue from "./components/admin/channelManagement/modals/ChannelMonthRevenueModal";
 
 function App() {
   return (

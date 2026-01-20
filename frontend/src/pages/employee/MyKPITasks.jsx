@@ -10,8 +10,8 @@ import {
   ToastContainer,
 } from "react-bootstrap";
 import axios from "axios";
-import EmployeeKPITable from "../../components/employee/kpiTaskManagement/EmpolyeeKPITable";
-import EmployeeTaskTable from "../../components/employee/kpiTaskManagement/EmployeeTaskTable";
+import EmployeeKPITable from "../../components/employee/kpiTaskManagement/tables/EmpolyeeKPITable";
+import EmployeeTaskTable from "../../components/employee/kpiTaskManagement/tables/EmployeeTaskTable";
 import config from "../../configs/api";
 
 function MyKPITasks() {
@@ -52,7 +52,7 @@ function MyKPITasks() {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
       setKPIs(response.data.data);
       setError(null);
@@ -95,15 +95,15 @@ function MyKPITasks() {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
 
       if (response.data.success) {
         // Update local state
         setTasks((prevTasks) =>
           prevTasks.map((task) =>
-            task._id === taskId ? { ...task, status: newStatus } : task
-          )
+            task._id === taskId ? { ...task, status: newStatus } : task,
+          ),
         );
 
         // Show success notification
@@ -115,7 +115,7 @@ function MyKPITasks() {
         };
         showNotification(
           `Đã cập nhật trạng thái thành: ${statusLabels[newStatus]}`,
-          "success"
+          "success",
         );
       }
     } catch (err) {
@@ -123,7 +123,7 @@ function MyKPITasks() {
       showNotification(
         err.response?.data?.message ||
           "Không thể cập nhật trạng thái công việc",
-        "danger"
+        "danger",
       );
     }
   };
