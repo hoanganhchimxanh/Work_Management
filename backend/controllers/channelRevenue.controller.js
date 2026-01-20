@@ -38,7 +38,7 @@ const getChannelMonthlyRevenue = async (req, res, next) => {
         totalEstimated: acc.totalEstimated + rev.estimatedRevenue,
         totalActual: acc.totalActual + rev.actualRevenue,
       }),
-      { totalEstimated: 0, totalActual: 0 }
+      { totalEstimated: 0, totalActual: 0 },
     );
 
     res.json({
@@ -360,7 +360,7 @@ const getAllChannelsRevenueSummary = async (req, res, next) => {
             $first: {
               userId: "$assignedUser._id",
               fullName: "$assignedUser.fullName",
-              personalEmail: "$assignedUser.personalEmail",
+              phoneNumber: "$assignedUser.phoneNumber",
               team: "$assignedUser.team",
               status: "$assignedUser.status",
             },
@@ -380,7 +380,7 @@ const getAllChannelsRevenueSummary = async (req, res, next) => {
         totalEstimated: acc.totalEstimated + item.totalEstimated,
         totalActual: acc.totalActual + item.totalActual,
       }),
-      { totalEstimated: 0, totalActual: 0 }
+      { totalEstimated: 0, totalActual: 0 },
     );
 
     res.json({

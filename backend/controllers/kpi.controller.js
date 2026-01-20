@@ -73,7 +73,7 @@ const createNew = async (req, res, next) => {
     });
 
     const populatedKPI = await KPI.findById(newKPI._id)
-      .populate("user", "fullName personalEmail role")
+      .populate("user", "fullName phoneNumber role")
       .populate("team", "name")
       .lean();
 
@@ -125,7 +125,7 @@ const getAll = async (req, res, next) => {
     if (team) filter.team = team;
 
     const kpis = await KPI.find(filter)
-      .populate("user", "fullName personalEmail role")
+      .populate("user", "fullName phoneNumber role")
       .populate("team", "name")
       .sort({ startDate: -1 })
       .lean();
@@ -166,7 +166,7 @@ const getById = async (req, res, next) => {
     const kpiId = req.params.id;
 
     const kpi = await KPI.findById(kpiId)
-      .populate("user", "fullName personalEmail role")
+      .populate("user", "fullName phoneNumber role")
       .populate("team", "name")
       .lean();
 
@@ -232,7 +232,7 @@ const updateKPI = async (req, res, next) => {
     await kpi.save();
 
     const updatedKPI = await KPI.findById(kpiId)
-      .populate("user", "fullName personalEmail role")
+      .populate("user", "fullName phoneNumber role")
       .populate("team", "name")
       .lean();
 
@@ -289,7 +289,7 @@ const getMyKPIs = async (req, res, next) => {
     }
 
     const kpis = await KPI.find(filter)
-      .populate("user", "fullName personalEmail role")
+      .populate("user", "fullName phoneNumber role")
       .populate("team", "name")
       .sort({ startDate: -1 })
       .lean();
@@ -330,7 +330,7 @@ const getTeamKPIs = async (req, res, next) => {
     }
 
     const kpis = await KPI.find({ team: teamId })
-      .populate("user", "fullName personalEmail")
+      .populate("user", "fullName phoneNumber")
       .sort({ startDate: -1 })
       .lean();
 
@@ -366,7 +366,7 @@ const getAllWithProgress = async (req, res, next) => {
     if (team) filter.team = team;
 
     const kpis = await KPI.find(filter)
-      .populate("user", "fullName personalEmail role")
+      .populate("user", "fullName phoneNumber role")
       .populate("team", "name")
       .sort({ startDate: -1 })
       .lean();
@@ -520,7 +520,7 @@ const getMyKPIsWithProgress = async (req, res, next) => {
     }
 
     const kpis = await KPI.find(filter)
-      .populate("user", "fullName personalEmail role")
+      .populate("user", "fullName phoneNumber role")
       .populate("team", "name")
       .sort({ startDate: -1 })
       .lean();

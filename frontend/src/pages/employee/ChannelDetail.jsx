@@ -48,13 +48,13 @@ function ChannelDetail() {
         `${
           config.backendBase
         }/youtube-analytics/get-analytics/${channelId}?startDate=${formatDate(
-          startDate
+          startDate,
         )}&endDate=${formatDate(endDate)}`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
-        }
+        },
       );
 
       const data = await response.json();
@@ -182,7 +182,7 @@ function ChannelDetail() {
               <Col md={6}>
                 <p className="text-muted mb-1">Email cá nhân</p>
                 <p className="fw-bold">
-                  {channelData.assignedUser.personalEmail}
+                  {channelData.assignedUser.phoneNumber}
                 </p>
               </Col>
               {channelData.team && (

@@ -68,7 +68,7 @@ function BulkAssignUserModal({
                 ?.filter((user) => user.status === "ACTIVE")
                 .map((user) => (
                   <option key={user.userId} value={user.userId}>
-                    {user.fullName} ({user.personalEmail})
+                    {user.fullName} ({user.phoneNumber})
                     {user.role && ` - ${user.role}`}
                   </option>
                 ))}

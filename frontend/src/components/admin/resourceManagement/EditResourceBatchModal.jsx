@@ -37,7 +37,7 @@ function EditResourceBatchModal({ show, onHide, batchId, onBatchUpdated }) {
       setLoading(true);
       setError(null);
       const response = await axios.get(
-        `${config.backendBase}/resource-batch/get-by-id/${batchId}`
+        `${config.backendBase}/resource-batch/get-by-id/${batchId}`,
       );
       const data = response.data.data;
 
@@ -96,7 +96,7 @@ function EditResourceBatchModal({ show, onHide, batchId, onBatchUpdated }) {
             {
               userId: newAssignedUser,
               force: true, // Force để overwrite nếu cần, có thể thêm checkbox để chọn
-            }
+            },
           );
         } else {
           // Unassign: Cập nhật batch trước
@@ -104,7 +104,7 @@ function EditResourceBatchModal({ show, onHide, batchId, onBatchUpdated }) {
             `${config.backendBase}/resource-batch/update/${batchId}`,
             {
               assignedUser: null,
-            }
+            },
           );
 
           // Sau đó cập nhật tất cả resources (loop vì chưa có bulk API)
@@ -114,7 +114,7 @@ function EditResourceBatchModal({ show, onHide, batchId, onBatchUpdated }) {
               {
                 assignedUser: null,
                 status: "AVAILABLE",
-              }
+              },
             );
           }
         }
@@ -128,7 +128,7 @@ function EditResourceBatchModal({ show, onHide, batchId, onBatchUpdated }) {
 
       await axios.put(
         `${config.backendBase}/resource-batch/update/${batchId}`,
-        updatePayload
+        updatePayload,
       );
 
       // Gọi callback để refresh table ở parent
@@ -139,7 +139,7 @@ function EditResourceBatchModal({ show, onHide, batchId, onBatchUpdated }) {
       console.error("Error updating batch:", err);
       setError(
         err.response?.data?.message ||
-          "Cập nhật batch thất bại. Vui lòng thử lại."
+          "Cập nhật batch thất bại. Vui lòng thử lại.",
       );
     } finally {
       setSaving(false);
@@ -186,8 +186,8 @@ function EditResourceBatchModal({ show, onHide, batchId, onBatchUpdated }) {
                     batch.status === "ACTIVE"
                       ? "success"
                       : batch.status === "PENDING"
-                      ? "warning"
-                      : "secondary"
+                        ? "warning"
+                        : "secondary"
                   }
                 >
                   {batch.status}
@@ -220,7 +220,7 @@ function EditResourceBatchModal({ show, onHide, batchId, onBatchUpdated }) {
                   <option value="">-- Chưa gán --</option>
                   {users.map((user) => (
                     <option key={user.userId} value={user.userId}>
-                      {user.fullName} - {user.personalEmail}
+                      {user.fullName} - {user.phoneNumber}
                     </option>
                   ))}
                 </Form.Select>

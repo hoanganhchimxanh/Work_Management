@@ -38,7 +38,7 @@ function AccountCard({ userData, accountId, token }) {
   const handleDeleteAccount = async () => {
     // Xác nhận lần 1
     const confirmText = window.prompt(
-      'Nhập "XÓA TÀI KHOẢN" để xác nhận (viết hoa):'
+      'Nhập "XÓA TÀI KHOẢN" để xác nhận (viết hoa):',
     );
 
     if (confirmText !== "XÓA TÀI KHOẢN") {
@@ -54,7 +54,7 @@ function AccountCard({ userData, accountId, token }) {
         "- KPI cá nhân\n" +
         "- Thông báo\n" +
         "- Quyền quản lý kênh\n\n" +
-        "Bạn có chắc chắn muốn xóa tài khoản?"
+        "Bạn có chắc chắn muốn xóa tài khoản?",
     );
 
     if (!confirmDelete) return;
@@ -64,7 +64,7 @@ function AccountCard({ userData, accountId, token }) {
         `${config.backendBase}/user/delete-self-account`,
         {
           headers: { Authorization: `Bearer ${token}` },
-        }
+        },
       );
 
       if (response.data.success) {
@@ -76,7 +76,7 @@ function AccountCard({ userData, accountId, token }) {
       console.error("Lỗi xóa tài khoản:", error);
       alert(
         "❌ " +
-          (error.response?.data?.message || "Có lỗi xảy ra khi xóa tài khoản!")
+          (error.response?.data?.message || "Có lỗi xảy ra khi xóa tài khoản!"),
       );
     }
   };
@@ -111,7 +111,7 @@ function AccountCard({ userData, accountId, token }) {
               <Col sm={4} className="text-muted">
                 <strong>Email cá nhân:</strong>
               </Col>
-              <Col sm={8}>{userData.personalEmail}</Col>
+              <Col sm={8}>{userData.phoneNumber}</Col>
             </Row>
           </ListGroup.Item>
 

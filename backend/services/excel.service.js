@@ -64,7 +64,7 @@ class ExcelService {
           Model,
           processedData.data,
           config,
-          null
+          null,
         );
 
         if (duplicateCheck) {
@@ -141,7 +141,7 @@ class ExcelService {
         results.batchId = newBatch._id;
 
         console.log(
-          `✅ Created ResourceBatch: ${newBatch._id} with ${createdResourceIds.length} resources`
+          `✅ Created ResourceBatch: ${newBatch._id} with ${createdResourceIds.length} resources`,
         );
       } catch (batchError) {
         console.error("❌ Error creating ResourceBatch:", batchError);
@@ -279,7 +279,7 @@ class ExcelService {
         const refValue = await this._resolveReference(
           col,
           transformedValue,
-          session
+          session,
         );
         if (col.required && !refValue) {
           error = `Không tìm thấy ${col.referenceModel} với ${col.referenceField}: ${value}`;
@@ -315,7 +315,7 @@ class ExcelService {
 
   async _checkDuplicate(Model, data, config, session) {
     const uniqueField = config.columns.find(
-      (col) => col.required && !col.isReference
+      (col) => col.required && !col.isReference,
     );
 
     if (!uniqueField) return null;
@@ -345,7 +345,7 @@ class ExcelService {
 
   _getPopulateFields(modelName) {
     const fieldMap = {
-      User: "fullName personalEmail role team",
+      User: "fullName phoneNumber role team",
       Team: "name",
       Channel: "name link status",
       Network: "profileAdsenseId emailAddress status",

@@ -45,14 +45,14 @@ function EmployeeList() {
   // 3. Employee revenue data
   const { employees, loading, error, clearError } = useEmployeeRevenue(
     selectedMonth,
-    selectedYear
+    selectedYear,
   );
 
   // 4. Search filter
   const { searchTerm, setSearchTerm, filteredItems } = useSearchFilter(
     employees,
     (employee, term) =>
-      employee.fullName.toLowerCase().includes(term.toLowerCase())
+      employee.fullName.toLowerCase().includes(term.toLowerCase()),
   );
 
   // 5. Pagination
@@ -100,7 +100,7 @@ function EmployeeList() {
 
   const totalRevenue = filteredItems.reduce(
     (sum, emp) => sum + emp.totalRevenue,
-    0
+    0,
   );
 
   // Loading state
@@ -243,7 +243,7 @@ function EmployeeList() {
                         {employee.fullName}
                       </span>
                     </td>
-                    <td>{employee.personalEmail}</td>
+                    <td>{employee.phoneNumber}</td>
                     <td>{employee.loginEmail || "—"}</td>
                     <td>{employee.team || "—"}</td>
                     <td>

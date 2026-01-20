@@ -63,7 +63,7 @@ const NetworkTable = ({ networks, loading }) => {
                   {network.assignedUser?.fullName || "N/A"}
                   <br />
                   <small className="text-muted">
-                    {network.assignedUser?.personalEmail}
+                    {network.assignedUser?.phoneNumber}
                   </small>
                 </td>
                 <td>

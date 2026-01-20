@@ -203,7 +203,7 @@ function EditResourceModal({
               type="text"
               value={
                 resource?.assignedUser
-                  ? `${resource.assignedUser.fullName} (${resource.assignedUser.personalEmail})`
+                  ? `${resource.assignedUser.fullName} (${resource.assignedUser.phoneNumber})`
                   : "Chưa gán"
               }
               disabled

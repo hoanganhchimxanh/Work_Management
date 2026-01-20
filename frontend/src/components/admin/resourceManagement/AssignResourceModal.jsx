@@ -112,7 +112,7 @@ function AssignResourceModal({
                   ?.filter((user) => user.status === "ACTIVE")
                   .map((user) => (
                     <option key={user._id} value={user._id}>
-                      {user.fullName} ({user.personalEmail})
+                      {user.fullName} ({user.phoneNumber})
                       {user.role && ` - ${user.role}`}
                     </option>
                   ))}

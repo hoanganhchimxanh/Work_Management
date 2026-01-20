@@ -84,7 +84,7 @@ const createNew = async (req, res, next) => {
     });
 
     const populatedNetwork = await Network.findById(newNetwork._id)
-      .populate("employment", "fullName personalEmail role")
+      .populate("employment", "fullName phoneNumber role")
       .lean();
 
     // 🔔 SEND NOTIFICATION
@@ -121,7 +121,7 @@ const getAll = async (req, res, next) => {
     if (note) filter.note = note;
 
     const networks = await Network.find(filter)
-      .populate("employment", "fullName personalEmail role team")
+      .populate("employment", "fullName phoneNumber role team")
       .sort({ createdAt: -1 })
       .lean();
 
@@ -136,7 +136,7 @@ const getAll = async (req, res, next) => {
           ...network,
           channelCount,
         };
-      })
+      }),
     );
 
     res.json({
@@ -155,7 +155,7 @@ const getById = async (req, res, next) => {
     const networkId = req.params.id;
 
     const network = await Network.findById(networkId)
-      .populate("employment", "fullName personalEmail role team")
+      .populate("employment", "fullName phoneNumber role team")
       .lean();
 
     if (!network) {
@@ -167,7 +167,7 @@ const getById = async (req, res, next) => {
 
     // Lấy tất cả channels thuộc network này
     const channels = await Channel.find({ network: networkId })
-      .populate("assignedUser", "fullName personalEmail")
+      .populate("assignedUser", "fullName phoneNumber")
       .lean();
 
     res.json({
@@ -251,7 +251,7 @@ const updateNetwork = async (req, res, next) => {
     await network.save();
 
     const updatedNetwork = await Network.findById(networkId)
-      .populate("employment", "fullName personalEmail role")
+      .populate("employment", "fullName phoneNumber role")
       .lean();
 
     res.json({
@@ -441,6 +441,135 @@ const getNetworkStats = async (req, res, next) => {
   }
 };
 
+// Lấy danh sách địa chỉ duy nhất từ các network
+const getUniqueLocations = async (req, res, next) => {
+  try {
+    // Lấy tất cả network có adSenseLocation không rỗng
+    const networks = await Network.find({
+      adSenseLocation: { $exists: true, $ne: "" },
+    })
+      .select("profileAdsenseId adSenseLocation")
+      .lean();
+
+    // Tạo Map để lưu địa chỉ duy nhất với profileAdsenseId đầu tiên sử dụng nó
+    const locationMap = new Map();
+
+    networks.forEach((network) => {
+      const location = network.adSenseLocation.trim();
+      if (location && !locationMap.has(location)) {
+        locationMap.set(location, {
+          adSenseLocation: location,
+          profileAdsenseId: network.profileAdsenseId,
+          networkId: network._id,
+        });
+      }
+    });
+
+    // Chuyển Map thành array
+    const uniqueLocations = Array.from(locationMap.values());
+
+    res.json({
+      success: true,
+      count: uniqueLocations.length,
+      data: uniqueLocations,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Lấy tất cả network sử dụng một địa chỉ cụ thể
+const getNetworksByLocation = async (req, res, next) => {
+  try {
+    const { location } = req.params;
+
+    if (!location) {
+      return res.status(400).json({
+        success: false,
+        message: "Thiếu thông tin địa chỉ!",
+      });
+    }
+
+    const networks = await Network.find({
+      adSenseLocation: location.trim(),
+    })
+      .populate("employment", "fullName phoneNumber role")
+      .select("profileAdsenseId pubId adSenseLocation emailAddress status note")
+      .lean();
+
+    res.json({
+      success: true,
+      count: networks.length,
+      location: location,
+      data: networks,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Cập nhật địa chỉ cho nhiều network cùng lúc
+const bulkUpdateLocation = async (req, res, next) => {
+  try {
+    const { oldLocation, newLocation } = req.body;
+
+    if (!oldLocation || !newLocation) {
+      return res.status(400).json({
+        success: false,
+        message: "Thiếu thông tin địa chỉ cũ hoặc địa chỉ mới!",
+      });
+    }
+
+    // Cập nhật tất cả network có địa chỉ cũ
+    const result = await Network.updateMany(
+      { adSenseLocation: oldLocation.trim() },
+      { $set: { adSenseLocation: newLocation.trim() } },
+    );
+
+    res.json({
+      success: true,
+      message: `Đã cập nhật ${result.modifiedCount} network!`,
+      data: {
+        matchedCount: result.matchedCount,
+        modifiedCount: result.modifiedCount,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Xóa địa chỉ khỏi tất cả network
+const removeLocationFromNetworks = async (req, res, next) => {
+  try {
+    const { location } = req.body;
+
+    if (!location) {
+      return res.status(400).json({
+        success: false,
+        message: "Thiếu thông tin địa chỉ!",
+      });
+    }
+
+    // Đặt adSenseLocation về rỗng cho tất cả network có địa chỉ này
+    const result = await Network.updateMany(
+      { adSenseLocation: location.trim() },
+      { $set: { adSenseLocation: "" } },
+    );
+
+    res.json({
+      success: true,
+      message: `Đã xóa địa chỉ khỏi ${result.modifiedCount} network!`,
+      data: {
+        matchedCount: result.matchedCount,
+        modifiedCount: result.modifiedCount,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   createNew,
   getAll,
@@ -450,4 +579,8 @@ module.exports = {
   assignChannel,
   removeChannel,
   getNetworkStats,
+  getUniqueLocations,
+  getNetworksByLocation,
+  bulkUpdateLocation,
+  removeLocationFromNetworks,
 };

@@ -26,6 +26,12 @@ const networkSchema = new mongoose.Schema(
       unique: true,
     },
 
+    adSenseLocation: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
     // Email đăng nhập AdSense
     emailAddress: {
       type: String,
@@ -107,7 +113,7 @@ const networkSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 module.exports = mongoose.model("Network", networkSchema);

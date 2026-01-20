@@ -12,7 +12,6 @@ import {
 } from "react-bootstrap";
 import { ThreeDotsVertical } from "react-bootstrap-icons";
 import axios from "axios";
-import SendResourcesModal from "./SendResourcesModal";
 
 import config from "../../../configs/api";
 
@@ -20,11 +19,6 @@ function UserTable({ users, loading, onEdit, onRefresh, teams }) {
   const [filterStatus, setFilterStatus] = useState("ALL");
   const [filterSort, setFilterSort] = useState("NEWEST");
   const [searchTerm, setSearchTerm] = useState("");
-
-  // Send resources modal state
-  const [showSendResourcesModal, setShowSendResourcesModal] = useState(false);
-  const [selectedUserForResources, setSelectedUserForResources] =
-    useState(null);
 
   const getRoleBadge = (role) => {
     const variants = {
@@ -110,17 +104,6 @@ function UserTable({ users, loading, onEdit, onRefresh, teams }) {
     } catch (err) {
       alert("Không thể xóa: " + (err.response?.data?.message || err.message));
     }
-  };
-
-  const handleSendResourcesClick = (user) => {
-    setSelectedUserForResources(user);
-    setShowSendResourcesModal(true);
-  };
-
-  const handleResourcesSent = () => {
-    alert("Đã gửi tài nguyên thành công!");
-    setShowSendResourcesModal(false);
-    setSelectedUserForResources(null);
   };
 
   const filteredUsers = getFilteredAndSortedUsers();
@@ -297,12 +280,6 @@ function UserTable({ users, loading, onEdit, onRefresh, teams }) {
                           <i className="bi bi-pencil me-2"></i>
                           Chỉnh sửa
                         </Dropdown.Item>
-                        <Dropdown.Item
-                          onClick={() => handleSendResourcesClick(user)}
-                        >
-                          <i className="bi bi-send me-2"></i>
-                          Gửi tài nguyên
-                        </Dropdown.Item>
                         <Dropdown.Divider />
                         <Dropdown.Item
                           onClick={() =>
@@ -311,7 +288,7 @@ function UserTable({ users, loading, onEdit, onRefresh, teams }) {
                           className="text-danger"
                         >
                           <i className="bi bi-trash me-2"></i>
-                          Xóa
+                          Cho nghỉ việc
                         </Dropdown.Item>
                       </Dropdown.Menu>
                     </Dropdown>
@@ -326,17 +303,6 @@ function UserTable({ users, loading, onEdit, onRefresh, teams }) {
           Làm mới
         </Button>
       </div>
-
-      {/* Send Resources Modal */}
-      <SendResourcesModal
-        show={showSendResourcesModal}
-        user={selectedUserForResources}
-        onHide={() => {
-          setShowSendResourcesModal(false);
-          setSelectedUserForResources(null);
-        }}
-        onSent={handleResourcesSent}
-      />
     </>
   );
 }

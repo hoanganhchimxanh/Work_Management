@@ -195,7 +195,7 @@ const getTopEmployees = async (req, res, next) => {
         $group: {
           _id: "$userData._id",
           fullName: { $first: "$userData.fullName" },
-          personalEmail: { $first: "$userData.personalEmail" },
+          phoneNumber: { $first: "$userData.phoneNumber" },
           totalRevenue: { $sum: "$estimatedRevenue" },
         },
       },
@@ -210,7 +210,7 @@ const getTopEmployees = async (req, res, next) => {
           _id: 0,
           userId: "$_id",
           fullName: 1,
-          personalEmail: 1,
+          phoneNumber: 1,
           totalRevenue: 1,
         },
       },
