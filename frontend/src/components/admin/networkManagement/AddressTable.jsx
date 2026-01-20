@@ -28,6 +28,28 @@ function AddressTable() {
   const [editedLocation, setEditedLocation] = useState("");
   const [locationNetworks, setLocationNetworks] = useState([]);
 
+  const [allNetworks, setAllNetworks] = useState([]);
+
+  // Add new location form
+  const [newLocationForm, setNewLocationForm] = useState({
+    adSenseLocation: "",
+    networkId: "",
+  });
+
+  // Fetch all networks for dropdown
+  const fetchAllNetworks = async () => {
+    try {
+      const response = await axios.get("http://localhost:9999/network/get-all", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+      setAllNetworks(response.data.data || []);
+    } catch (err) {
+      console.error("Error fetching networks:", err);
+    }
+  };
+
   // Fetch unique locations
   const fetchLocations = async () => {
     setLoading(true);
@@ -69,6 +91,59 @@ function AddressTable() {
         variant: "danger",
         message:
           err.response?.data?.message || "Không thể tải danh sách network",
+      });
+    }
+  };
+
+  // Handle add new location (Actually update a network's address)
+  const handleAddLocation = async (e) => {
+    e.preventDefault();
+
+    if (!newLocationForm.adSenseLocation.trim()) {
+      setAlert({
+        variant: "danger",
+        message: "Vui lòng nhập địa chỉ AdSense!",
+      });
+      return;
+    }
+
+    if (!newLocationForm.networkId) {
+      setAlert({
+        variant: "danger",
+        message: "Vui lòng chọn network!",
+      });
+      return;
+    }
+
+    try {
+      await axios.put(
+        `http://localhost:9999/network/update/${newLocationForm.networkId}`,
+        {
+          adSenseLocation: newLocationForm.adSenseLocation.trim(),
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        },
+      );
+
+      setAlert({
+        variant: "success",
+        message: "Thêm địa chỉ cho network thành công!",
+      });
+
+      setShowAddModal(false);
+      setNewLocationForm({
+        adSenseLocation: "",
+        networkId: "",
+      });
+      fetchLocations();
+      fetchAllNetworks();
+    } catch (err) {
+      setAlert({
+        variant: "danger",
+        message: err.response?.data?.message || "Thêm địa chỉ thất bại",
       });
     }
   };
@@ -140,6 +215,15 @@ function AddressTable() {
     }
   };
 
+  // Open add modal
+  const openAddModal = () => {
+    setNewLocationForm({
+      adSenseLocation: "",
+      networkId: "",
+    });
+    setShowAddModal(true);
+  };
+
   // Open edit modal
   const openEditModal = (location) => {
     setSelectedLocation(location);
@@ -161,6 +245,7 @@ function AddressTable() {
 
   useEffect(() => {
     fetchLocations();
+    fetchAllNetworks();
   }, []);
 
   return (
@@ -175,8 +260,8 @@ function AddressTable() {
           >
             <i className="bi bi-arrow-clockwise"></i> Làm mới
           </Button>
-          <Button variant="primary" onClick={() => setShowAddModal(true)}>
-            <i className="bi bi-plus-circle"></i> Thông tin
+          <Button variant="primary" onClick={openAddModal}>
+            <i className="bi bi-plus-circle"></i> Thêm địa chỉ mới
           </Button>
         </div>
       </div>
@@ -274,26 +359,70 @@ function AddressTable() {
         </Table>
       )}
 
-      {/* Info Modal */}
-      <Modal show={showAddModal} onHide={() => setShowAddModal(false)}>
+      {/* Add Location Modal */}
+      <Modal
+        show={showAddModal}
+        onHide={() => setShowAddModal(false)}
+        size="lg"
+      >
         <Modal.Header closeButton>
-          <Modal.Title>Thông tin</Modal.Title>
+          <Modal.Title>Thêm địa chỉ mới</Modal.Title>
         </Modal.Header>
-        <Modal.Body>
-          <p>
-            Địa chỉ sẽ được thêm tự động khi bạn tạo hoặc cập nhật network với
-            trường
-            <strong> AdSense Location</strong>.
-          </p>
-          <p className="text-muted mb-0">
-            Vui lòng vào tab "Quản lý Network" để thêm/sửa địa chỉ cho network.
-          </p>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowAddModal(false)}>
-            Đóng
-          </Button>
-        </Modal.Footer>
+        <Form onSubmit={handleAddLocation}>
+          <Modal.Body>
+            <Form.Group className="mb-3">
+              <Form.Label>
+                Địa chỉ AdSense <span className="text-danger">*</span>
+              </Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="Nhập địa chỉ AdSense"
+                value={newLocationForm.adSenseLocation}
+                onChange={(e) =>
+                  setNewLocationForm({
+                    ...newLocationForm,
+                    adSenseLocation: e.target.value,
+                  })
+                }
+                required
+              />
+              <Form.Text className="text-muted">
+                Địa chỉ này sẽ được gán cho network được chọn bên dưới
+              </Form.Text>
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>
+                Network tương ứng <span className="text-danger">*</span>
+              </Form.Label>
+              <Form.Select
+                value={newLocationForm.networkId}
+                onChange={(e) =>
+                  setNewLocationForm({
+                    ...newLocationForm,
+                    networkId: e.target.value,
+                  })
+                }
+                required
+              >
+                <option value="">-- Chọn network --</option>
+                {allNetworks.map((network) => (
+                  <option key={network._id} value={network._id}>
+                    {network.profileAdsenseId} {network.pubId ? `(${network.pubId})` : ""} - {network.emailAddress || "Không có email"}
+                  </option>
+                ))}
+              </Form.Select>
+            </Form.Group>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowAddModal(false)}>
+              Hủy
+            </Button>
+            <Button variant="primary" type="submit">
+              <i className="bi bi-plus-circle"></i> Thêm địa chỉ
+            </Button>
+          </Modal.Footer>
+        </Form>
       </Modal>
 
       {/* Edit Modal */}
