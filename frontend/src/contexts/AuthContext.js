@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect } from "react";
+import React, { createContext, useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import config from "../configs/api";
@@ -12,15 +12,14 @@ export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
 
   // ✅ Hàm logout (đưa ra ngoài useEffect để dùng trong interceptor)
-  const logout = () => {
+  const logout = useCallback(() => {
     localStorage.removeItem("token");
     delete axios.defaults.headers.common["Authorization"];
     setUser(null);
-    navigate("/login", { replace: true }); // ✅ Thêm replace: true
-  };
+    navigate("/login", { replace: true });
+  }, [navigate]);
 
   useEffect(() => {
-    // ✅ Setup interceptor ngay khi app khởi động
     setupAxiosInterceptors(logout);
 
     const token = localStorage.getItem("token");
@@ -28,7 +27,6 @@ export const AuthProvider = ({ children }) => {
       axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
       try {
         const payload = JSON.parse(atob(token.split(".")[1]));
-
         setUser({
           accountId: payload.accountId,
           userId: payload.userId,
@@ -36,19 +34,12 @@ export const AuthProvider = ({ children }) => {
           isActive: payload.isActive,
           isFirstLogin: payload.isFirstLogin,
         });
-
-        console.log("User set:", {
-          accountId: payload.accountId,
-          userId: payload.userId,
-          role: payload.role,
-        });
       } catch (err) {
-        console.error("Invalid token:", err);
         localStorage.removeItem("token");
       }
     }
     setLoading(false);
-  }, []);
+  }, [logout]);
 
   const login = async (email, password) => {
     try {

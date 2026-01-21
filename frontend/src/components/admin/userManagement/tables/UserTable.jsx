@@ -266,7 +266,13 @@ function UserTable({ users, loading, onEdit, onRefresh, teams }) {
                   <td className="text-center">
                     <Badge bg="info">{user.channelCount || 0}</Badge>
                   </td>
-                  <td>{user.note}</td>
+                  <td>
+                    {user.note && user.note.trim() !== "" ? (
+                      <span>{user.note}</span>
+                    ) : (
+                      <Badge bg="secondary">N/A</Badge>
+                    )}
+                  </td>
                   <td>
                     <Dropdown>
                       <Dropdown.Toggle

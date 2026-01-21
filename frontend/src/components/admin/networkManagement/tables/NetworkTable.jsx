@@ -99,8 +99,8 @@ const NetworkTable = ({ networks, loading, onEdit, onDelete, onRefresh }) => {
             <th style={{ width: "100px" }}>Tax Form</th>
             <th style={{ width: "180px" }}>Linked Channel</th>
             <th style={{ width: "120px" }}>Location</th>
-            <th style={{ width: "110px" }}>Ngày tạo</th>
-            <th style={{ width: "110px" }}>Ngày nhắc</th>
+            <th style={{ width: "95px" }}>Ngày tạo</th>
+            <th style={{ width: "100px" }}>Ngày nhắc</th>
             <th style={{ width: "100px" }}>Trạng thái</th>
             <th style={{ width: "100px" }}>Note</th>
             <th style={{ width: "90px" }}>Thao tác</th>
