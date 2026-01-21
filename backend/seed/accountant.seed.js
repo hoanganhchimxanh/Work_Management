@@ -83,7 +83,6 @@ async function seedAccountant() {
     console.log("🎉 Accountant account created successfully!");
     console.log("📧 Email: accountant@company.com");
     console.log("🔑 Password: accountant1234");
-    console.log("⚠️  Please change the password after first login!");
 
     return {
       success: true,
