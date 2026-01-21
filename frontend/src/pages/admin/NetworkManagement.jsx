@@ -5,7 +5,6 @@ import { Container, Alert, Tabs, Tab } from "react-bootstrap";
 import NetworkFilters from "../../components/admin/networkManagement/filters/NetworkFilters";
 import NetworkTable from "../../components/admin/networkManagement/tables/NetworkTable";
 import AddNetworkModal from "../../components/admin/networkManagement/modals/AddNetworkModal";
-import NetworkImportModal from "../../components/admin/networkManagement/modals/NetworkImportModal";
 import EditNetworkModal from "../../components/admin/networkManagement/modals/EditNetworkModal";
 import AddressTable from "../../components/admin/networkManagement/tables/AddressTable";
 
@@ -53,7 +52,6 @@ const NetworkManagement = () => {
   const {
     handleCreate,
     handleExport,
-    handleImport,
     handleUpdate,
     handleDelete,
     alert,
@@ -66,8 +64,6 @@ const NetworkManagement = () => {
     selectedNetwork,
     openAddModal,
     closeAddModal,
-    openImportModal,
-    closeImportModal,
     openEditModal,
     closeEditModal,
   } = useNetworkModals();
@@ -76,11 +72,6 @@ const NetworkManagement = () => {
   const onAddSubmit = async (data) => {
     const success = await handleCreate(data);
     if (success) closeAddModal();
-  };
-
-  const onImportSubmit = async (file) => {
-    const success = await handleImport(file);
-    if (success) closeImportModal();
   };
 
   const onEditSubmit = async (networkId, data) => {
@@ -128,7 +119,6 @@ const NetworkManagement = () => {
             filters={filters}
             onFilterChange={onFilterChange}
             onExport={handleExport}
-            onImport={openImportModal}
             onAdd={openAddModal}
           />
 
@@ -158,12 +148,6 @@ const NetworkManagement = () => {
         show={modals.showAddModal}
         onHide={closeAddModal}
         onSubmit={onAddSubmit}
-      />
-
-      <NetworkImportModal
-        show={modals.showImportModal}
-        onHide={closeImportModal}
-        onSubmit={onImportSubmit}
       />
 
       <EditNetworkModal

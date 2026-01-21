@@ -28,7 +28,7 @@ const importExcel = (entityType) => async (req, res, next) => {
     const results = await excelService.importFromExcel(
       entityType,
       req.file.buffer,
-      options
+      options,
     );
 
     // ✅ Response bao gồm cả batchId (nếu có)
@@ -76,7 +76,7 @@ const exportExcel = (entityType) => async (req, res, next) => {
     }.xlsx`;
     res.setHeader(
       "Content-Type",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     );
     res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
 
@@ -98,7 +98,7 @@ const exportTemplate = (entityType) => async (req, res, next) => {
     const filename = `${entityType}_import_template.xlsx`;
     res.setHeader(
       "Content-Type",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     );
     res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
 
@@ -121,9 +121,7 @@ const exportTeamExcel = exportExcel("team");
 const exportTeamTemplate = exportTemplate("team");
 
 //Network
-const importNetworkExcel = importExcel("network");
 const exportNetworkExcel = exportExcel("network");
-const exportNetworkTemplate = exportTemplate("network");
 
 // Resource
 const importResourceExcel = importExcel("resource");
