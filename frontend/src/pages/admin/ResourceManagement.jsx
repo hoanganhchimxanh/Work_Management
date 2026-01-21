@@ -25,14 +25,14 @@ import {
 } from "react-bootstrap-icons";
 
 // Components
-import ResourceStats from "../../components/admin/resourceManagement/ResourceStats";
-import ResourceTable from "../../components/admin/resourceManagement/ResourceTable";
-import ResourceBatchTable from "../../components/admin/resourceManagement/ResourceBatchTable";
-import CreateResourceModal from "../../components/admin/resourceManagement/CreateResourceModal";
-import EditResourceModal from "../../components/admin/resourceManagement/EditResourceModal";
-import AssignResourceModal from "../../components/admin/resourceManagement/AssignResourceModal";
-import ResourceImportModal from "../../components/admin/resourceManagement/ResourceImportModal";
-import BulkAssignUserModal from "../../components/admin/resourceManagement/BulkAssignUserModal";
+import ResourceStats from "../../components/admin/resourceManagement/others/ResourceStats";
+import ResourceTable from "../../components/admin/resourceManagement/tables/ResourceTable";
+import ResourceBatchTable from "../../components/admin/resourceManagement/tables/ResourceBatchTable";
+import CreateResourceModal from "../../components/admin/resourceManagement/modals/CreateResourceModal";
+import EditResourceModal from "../../components/admin/resourceManagement/modals/EditResourceModal";
+import AssignResourceModal from "../../components/admin/resourceManagement/modals/AssignResourceModal";
+import ResourceImportModal from "../../components/admin/resourceManagement/modals/ResourceImportModal";
+import BulkAssignUserModal from "../../components/admin/resourceManagement/modals/BulkAssignUserModal";
 import TablePagination from "../../components/common/TablePagination";
 import ItemsPerPageSelector from "../../components/common/ItemsPerPageSelector";
 

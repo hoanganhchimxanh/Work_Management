@@ -5,9 +5,9 @@ import {
   BroadcastPin,
   CheckCircleFill,
 } from "react-bootstrap-icons";
-import StatsCard from "../../components/employee/dashboard/StatsCard";
-import TimeFilterButtons from "../../components/employee/dashboard/TimeFilterButtons";
-import RevenueChart from "../../components/employee/dashboard/RevenueChart";
+import StatsCard from "../../components/employee/dashboard/others/StatsCard";
+import TimeFilterButtons from "../../components/employee/dashboard/others/TimeFilterButtons";
+import RevenueChart from "../../components/employee/dashboard/others/RevenueChart";
 import { useDashboardData } from "../../hooks/employee/dashboard/useDashboardData";
 
 function EmployeeDashboard() {

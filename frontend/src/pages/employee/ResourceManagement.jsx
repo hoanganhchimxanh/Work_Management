@@ -13,9 +13,9 @@ import {
 import { Search, FunnelFill, ArrowClockwise } from "react-bootstrap-icons";
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
-import ResourceStats from "../../components/employee/resourceManagement/ResourceStats";
-import ResourceTable from "../../components/employee/resourceManagement/ResourceTable";
-import ManageChannelModal from "../../components/employee/resourceManagement/ManageChannelModal";
+import ResourceStats from "../../components/employee/resourceManagement/others/ResourceStats";
+import ResourceTable from "../../components/employee/resourceManagement/tables/ResourceTable";
+import ManageChannelModal from "../../components/employee/resourceManagement/modals/ManageChannelModal";
 
 import config from "../../configs/api";
 
@@ -66,11 +66,11 @@ function ResourceManagement() {
       const [resourcesRes, channelsRes] = await Promise.all([
         axios.get(
           `${config.backendBase}/resource/my-resources`,
-          getAuthConfig()
+          getAuthConfig(),
         ),
         axios.get(
           `${config.backendBase}/channel/by-owner/${userId}`,
-          getAuthConfig()
+          getAuthConfig(),
         ),
       ]);
 
@@ -109,7 +109,7 @@ function ResourceManagement() {
       await axios.post(
         `${config.backendBase}/resource/assign-to-channel/${resourceId}`,
         { channelId },
-        getAuthConfig()
+        getAuthConfig(),
       );
       setSuccess("Gán kênh cho resource thành công!");
       setShowManageChannelModal(false);
@@ -134,7 +134,7 @@ function ResourceManagement() {
       await axios.put(
         `${config.backendBase}/resource/update/${resourceId}`,
         { assignedChannel: null },
-        getAuthConfig()
+        getAuthConfig(),
       );
       setSuccess("Đã bỏ kênh khỏi resource!");
       fetchData();

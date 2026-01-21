@@ -1,8 +1,8 @@
 // src/pages/NetworkManagement/NetworkManagement.jsx
 import React, { useState, useEffect } from "react";
 import { Container, Alert } from "react-bootstrap";
-import NetworkFilters from "../../components/accountant/networkManagement/NetworkFilters";
-import NetworkTable from "../../components/accountant/networkManagement/NetworkTable";
+import NetworkFilters from "../../components/accountant/networkManagement/others/NetworkFilters";
+import NetworkTable from "../../components/accountant/networkManagement/tables/NetworkTable";
 
 import config from "../../configs/api";
 
@@ -36,7 +36,7 @@ const NetworkManagement = () => {
             Authorization: `Bearer ${getAuthToken()}`,
             "Content-Type": "application/json",
           },
-        }
+        },
       );
 
       const data = await response.json();
@@ -89,7 +89,7 @@ const NetworkManagement = () => {
           headers: {
             Authorization: `Bearer ${getAuthToken()}`,
           },
-        }
+        },
       );
 
       if (!response.ok) {

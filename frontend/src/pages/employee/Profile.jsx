@@ -3,9 +3,9 @@ import { Container, Row, Spinner, Alert } from "react-bootstrap";
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
 
-import AccountCard from "../../components/employee/profile/AccountCard";
-import TeamCard from "../../components/employee/profile/TeamCard";
-import TeamDetailModal from "../../components/employee/profile/TeamDetailModal";
+import AccountCard from "../../components/employee/profile/cards/AccountCard";
+import TeamCard from "../../components/employee/profile/cards/TeamCard";
+import TeamDetailModal from "../../components/employee/profile/modals/TeamDetailModal";
 import config from "../../configs/api";
 
 function Profile() {
@@ -34,7 +34,7 @@ function Profile() {
         `${config.backendBase}/user/get-one/${userId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
-        }
+        },
       );
 
       setUserData(res.data.data);

@@ -10,11 +10,11 @@ import {
   Alert,
 } from "react-bootstrap";
 import { ArrowLeft, Calendar } from "react-bootstrap-icons";
-import RevenueChart from "../../components/employee/channelDetail/RevenueChart";
-import SubscribersChart from "../../components/employee/channelDetail/SubscribersChart";
-import StatsCards from "../../components/employee/channelDetail/StatsCards";
-import TimeRangeFilter from "../../components/employee/channelDetail/TimeRangeFilter";
-import ChannelInfoCard from "../../components/employee/channelDetail/ChannelInfoCard";
+import RevenueChart from "../../components/employee/channelDetail/others/RevenueChart";
+import SubscribersChart from "../../components/employee/channelDetail/others/SubscribersChart";
+import StatsCards from "../../components/employee/channelDetail/others/StatsCards";
+import TimeRangeFilter from "../../components/employee/channelDetail/others/TimeRangeFilter";
+import ChannelInfoCard from "../../components/employee/channelDetail/others/ChannelInfoCard";
 
 import config from "../../configs/api";
 
