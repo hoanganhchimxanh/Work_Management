@@ -140,9 +140,7 @@ module.exports = {
   exportTeamTemplate,
 
   //Network
-  importNetworkExcel,
   exportNetworkExcel,
-  exportNetworkTemplate,
 
   // Resource
   importResourceExcel,
