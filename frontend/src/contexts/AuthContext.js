@@ -2,6 +2,7 @@ import React, { createContext, useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import config from "../configs/api";
+import { setupAxiosInterceptors } from "../utils/axiosInterceptor"; // ✅ Import
 
 export const AuthContext = createContext();
 
@@ -10,7 +11,18 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  // ✅ Hàm logout (đưa ra ngoài useEffect để dùng trong interceptor)
+  const logout = () => {
+    localStorage.removeItem("token");
+    delete axios.defaults.headers.common["Authorization"];
+    setUser(null);
+    navigate("/login", { replace: true }); // ✅ Thêm replace: true
+  };
+
   useEffect(() => {
+    // ✅ Setup interceptor ngay khi app khởi động
+    setupAxiosInterceptors(logout);
+
     const token = localStorage.getItem("token");
     if (token) {
       axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
@@ -91,7 +103,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // ✅ THÊM HÀM CẬP NHẬT USER TỪ TOKEN MỚI
   const updateUserFromToken = (token) => {
     try {
       localStorage.setItem("token", token);
@@ -116,13 +127,6 @@ export const AuthProvider = ({ children }) => {
       console.error("Error updating user from token:", err);
       return null;
     }
-  };
-
-  const logout = () => {
-    localStorage.removeItem("token");
-    delete axios.defaults.headers.common["Authorization"];
-    setUser(null);
-    navigate("/login");
   };
 
   return (
