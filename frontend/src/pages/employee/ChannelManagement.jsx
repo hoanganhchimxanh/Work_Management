@@ -5,6 +5,8 @@ import ChannelActionButtons from "../../components/employee/channelManagement/ot
 import ChannelTable from "../../components/employee/channelManagement/tables/ChannelTable";
 import AddChannelModal from "../../components/employee/channelManagement/modals/AddChannelModal";
 import EditChannelModal from "../../components/employee/channelManagement/modals/EditChannelModal";
+import SyncChannelModal from "../../components/employee/channelManagement/modals/SyncChannelModal";
+
 import useChannels from "../../hooks/employee/channelManagement/useChannels";
 import useYouTubeAuth from "../../hooks/employee/channelManagement/useYoutubeAuth";
 import usePagination from "../../hooks/usePagination";
@@ -13,6 +15,10 @@ function EmployeeChannelManagement() {
   const { user } = useContext(AuthContext);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+
+  const [showSyncModal, setShowSyncModal] = useState(false);
+  const [channelToSync, setChannelToSync] = useState(null); // Lưu ID kênh đang chọn để sync
+
   const [selectedChannel, setSelectedChannel] = useState(null);
 
   // Custom hooks
@@ -31,9 +37,7 @@ function EmployeeChannelManagement() {
     setItemsPerPage,
   } = usePagination(channels, 10);
 
-  /**
-   * Handle OAuth callback
-   */
+  // ... (Giữ nguyên useEffect xử lý OAuth callback) ...
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const authStatus = urlParams.get("auth");
@@ -48,12 +52,9 @@ function EmployeeChannelManagement() {
     }
   }, [operations]);
 
-  /**
-   * Handle add channel
-   */
+  // ... (Giữ nguyên handleAddChannel, handleEditChannel, handleUpdateChannel, handleDeleteChannel) ...
   const handleAddChannel = async (channelData) => {
     const result = await operations.add(channelData);
-
     if (result.success) {
       alert(result.message);
       setShowAddModal(false);
@@ -62,20 +63,13 @@ function EmployeeChannelManagement() {
     }
   };
 
-  /**
-   * Handle edit channel
-   */
   const handleEditChannel = (channel) => {
     setSelectedChannel(channel);
     setShowEditModal(true);
   };
 
-  /**
-   * Handle update channel
-   */
   const handleUpdateChannel = async (channelId, data) => {
     const result = await operations.update(channelId, data);
-
     if (result.success) {
       alert(result.message);
       setShowEditModal(false);
@@ -85,67 +79,60 @@ function EmployeeChannelManagement() {
     }
   };
 
-  /**
-   * Handle delete channel
-   */
   const handleDeleteChannel = async (channelId) => {
     if (!window.confirm("Bạn có chắc muốn xóa kênh này?")) {
       return;
     }
-
     const result = await operations.delete(channelId);
     alert(result.message);
   };
 
-  /**
-   * Handle grant auth
-   */
+  // ... (Giữ nguyên handleGrantAuth, handleCheckAuthStatus, handleRevokeAuth) ...
   const handleGrantAuth = async (channelId) => {
     const result = await authOperations.getAuthUrl(channelId);
-
     if (!result.success) {
       alert(result.message);
     }
   };
 
-  /**
-   * Handle check auth status
-   */
   const handleCheckAuthStatus = async (channelId) => {
     const result = await authOperations.checkAuthStatus(channelId);
     alert(result.message);
   };
 
-  /**
-   * Handle revoke auth
-   */
   const handleRevokeAuth = async (channelId) => {
     if (!window.confirm("Bạn có chắc muốn thu hồi quyền truy cập?")) {
       return;
     }
-
     const result = await authOperations.revokeAuth(channelId);
     alert(result.message);
-
     if (result.success) {
       operations.refresh();
     }
   };
 
   /**
-   * Handle sync channel
+   * 3. SỬA ĐỔI LOGIC SYNC
+   * Thay vì prompt, hàm này chỉ mở modal và lưu ID kênh
    */
-  const handleSyncChannel = async (channelId) => {
-    const startInput = prompt("Nhập ngày bắt đầu (dd-MM-yyyy):");
-    const endInput = prompt("Nhập ngày kết thúc (dd-MM-yyyy):");
-
-    const result = await operations.sync(channelId, startInput, endInput);
-    alert(result.message);
+  const handleOpenSyncModal = (channelId) => {
+    setChannelToSync(channelId); // Lưu lại ID kênh cần sync
+    setShowSyncModal(true); // Mở modal
   };
 
   /**
-   * Render loading state
+   * 4. HÀM MỚI ĐỂ GỌI API SAU KHI CHỌN NGÀY TỪ MODAL
    */
+  const handleConfirmSync = async (startDate, endDate) => {
+    setShowSyncModal(false); // Đóng modal ngay lập tức để hiện loading ở UI chính
+
+    if (channelToSync) {
+      const result = await operations.sync(channelToSync, startDate, endDate);
+      alert(result.message);
+      setChannelToSync(null); // Reset ID
+    }
+  };
+
   if (loading) {
     return (
       <Container className="text-center mt-5">
@@ -159,14 +146,12 @@ function EmployeeChannelManagement() {
     <Container fluid>
       <h1 className="mb-4">Quản lý Kênh YouTube của tôi</h1>
 
-      {/* Error Alert */}
       {error && (
         <Alert variant="danger" dismissible onClose={() => setError(null)}>
           {error}
         </Alert>
       )}
 
-      {/* Syncing Alert */}
       {syncing && (
         <Alert variant="info">
           <Spinner animation="border" size="sm" className="me-2" />
@@ -174,10 +159,8 @@ function EmployeeChannelManagement() {
         </Alert>
       )}
 
-      {/* Action Buttons */}
       <ChannelActionButtons onAddNew={() => setShowAddModal(true)} />
 
-      {/* Channel Table */}
       <ChannelTable
         channels={paginatedChannels}
         pagination={pagination}
@@ -189,18 +172,17 @@ function EmployeeChannelManagement() {
         onGrantAuth={handleGrantAuth}
         onCheckAuth={handleCheckAuthStatus}
         onRevokeAuth={handleRevokeAuth}
-        onSync={handleSyncChannel}
+        // 5. GỌI HÀM MỞ MODAL THAY VÌ HÀM PROMPT CŨ
+        onSync={handleOpenSyncModal}
         onDelete={handleDeleteChannel}
       />
 
-      {/* Add Modal */}
       <AddChannelModal
         show={showAddModal}
         onHide={() => setShowAddModal(false)}
         onSubmit={handleAddChannel}
       />
 
-      {/* Edit Modal */}
       <EditChannelModal
         show={showEditModal}
         channel={selectedChannel}
@@ -209,6 +191,16 @@ function EmployeeChannelManagement() {
           setSelectedChannel(null);
         }}
         onSubmit={handleUpdateChannel}
+      />
+
+      {/* 6. RENDER SYNC MODAL */}
+      <SyncChannelModal
+        show={showSyncModal}
+        onHide={() => {
+          setShowSyncModal(false);
+          setChannelToSync(null);
+        }}
+        onSubmit={handleConfirmSync}
       />
     </Container>
   );
