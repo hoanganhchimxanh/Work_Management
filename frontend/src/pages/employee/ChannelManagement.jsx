@@ -87,7 +87,6 @@ function EmployeeChannelManagement() {
     alert(result.message);
   };
 
-  // ... (Giữ nguyên handleGrantAuth, handleCheckAuthStatus, handleRevokeAuth) ...
   const handleGrantAuth = async (channelId) => {
     const result = await authOperations.getAuthUrl(channelId);
     if (!result.success) {
@@ -111,20 +110,13 @@ function EmployeeChannelManagement() {
     }
   };
 
-  /**
-   * 3. SỬA ĐỔI LOGIC SYNC
-   * Thay vì prompt, hàm này chỉ mở modal và lưu ID kênh
-   */
   const handleOpenSyncModal = (channelId) => {
     setChannelToSync(channelId); // Lưu lại ID kênh cần sync
     setShowSyncModal(true); // Mở modal
   };
 
-  /**
-   * 4. HÀM MỚI ĐỂ GỌI API SAU KHI CHỌN NGÀY TỪ MODAL
-   */
   const handleConfirmSync = async (startDate, endDate) => {
-    setShowSyncModal(false); // Đóng modal ngay lập tức để hiện loading ở UI chính
+    setShowSyncModal(false);
 
     if (channelToSync) {
       const result = await operations.sync(channelToSync, startDate, endDate);
@@ -172,7 +164,6 @@ function EmployeeChannelManagement() {
         onGrantAuth={handleGrantAuth}
         onCheckAuth={handleCheckAuthStatus}
         onRevokeAuth={handleRevokeAuth}
-        // 5. GỌI HÀM MỞ MODAL THAY VÌ HÀM PROMPT CŨ
         onSync={handleOpenSyncModal}
         onDelete={handleDeleteChannel}
       />
@@ -193,7 +184,6 @@ function EmployeeChannelManagement() {
         onSubmit={handleUpdateChannel}
       />
 
-      {/* 6. RENDER SYNC MODAL */}
       <SyncChannelModal
         show={showSyncModal}
         onHide={() => {
