@@ -14,6 +14,7 @@ const addNew = async (req, res, next) => {
       assignedUser,
       network,
       status,
+      isBrandAccount,
       isMonetized,
       monetizeDate,
     } = req.body;
@@ -51,6 +52,7 @@ const addNew = async (req, res, next) => {
       assignedUser: assignedUser || null,
       network: network || null,
       status: status || "ACTIVE",
+      isBrandAccount: isBrandAccount || false,
       isMonetized: isMonetized || false,
       monetizeDate: monetizeDate || null,
     });
