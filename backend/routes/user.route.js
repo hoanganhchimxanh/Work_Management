@@ -39,6 +39,12 @@ router.put(
   authorizeRoles(["ADMIN", "EMPLOYEE", "ACCOUNTANT"]),
   userController.updateUser,
 );
+router.post(
+  "/reset-password/:id",
+  authenticateJWT,
+  authorizeRoles("ADMIN"),
+  userController.resetPasswordByAdmin,
+);
 router.delete(
   "/delete/:id",
   authenticateJWT,
