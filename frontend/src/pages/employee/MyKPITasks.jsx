@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   Container,
   Row,
@@ -9,129 +9,64 @@ import {
   Toast,
   ToastContainer,
 } from "react-bootstrap";
-import axios from "axios";
+
 import EmployeeKPITable from "../../components/employee/kpiTaskManagement/tables/EmpolyeeKPITable";
 import EmployeeTaskTable from "../../components/employee/kpiTaskManagement/tables/EmployeeTaskTable";
-import config from "../../configs/api";
+
+import useAuth from "../../hooks/useAuth";
+import useMyKPIs from "../../hooks/employee/kpiTaskManagement/useMyKPIs";
+import useMyTasks from "../../hooks/employee/kpiTaskManagement/useMyTasks";
+import useToastNotification from "../../hooks/employee/kpiTaskManagement/useToastNotification";
 
 function MyKPITasks() {
-  // KPIs state
-  const [kpis, setKPIs] = useState([]);
-  const [loadingKPIs, setLoadingKPIs] = useState(true);
-
-  // Tasks state
-  const [tasks, setTasks] = useState([]);
-  const [loadingTasks, setLoadingTasks] = useState(true);
-
-  // Error handling
-  const [error, setError] = useState(null);
-
-  // Active tab
+  const { token } = useAuth();
   const [activeTab, setActiveTab] = useState("kpi");
 
-  // Toast notification
-  const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState("");
-  const [toastVariant, setToastVariant] = useState("success");
+  // KPIs hook
+  const {
+    kpis,
+    loading: loadingKPIs,
+    error: kpiError,
+    refetch: refetchKPIs,
+  } = useMyKPIs(token);
 
-  // Show toast notification
-  const showNotification = (message, variant = "success") => {
-    setToastMessage(message);
-    setToastVariant(variant);
-    setShowToast(true);
-  };
+  // Tasks hook
+  const {
+    tasks,
+    loading: loadingTasks,
+    error: taskError,
+    refetch: refetchTasks,
+    updateTaskStatus,
+  } = useMyTasks(token);
 
-  // Fetch KPIs with progress
-  const fetchKPIs = async () => {
-    try {
-      setLoadingKPIs(true);
-      const token = localStorage.getItem("token");
-      const response = await axios.get(
-        `${config.backendBase}/kpi/my-kpis-with-progress`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
-      setKPIs(response.data.data);
-      setError(null);
-    } catch (err) {
-      setError("Không thể tải danh sách KPI");
-      console.error(err);
-    } finally {
-      setLoadingKPIs(false);
-    }
-  };
+  // Toast notification hook
+  const { showToast, toastMessage, toastVariant, showNotification, hideToast } =
+    useToastNotification();
 
-  // Fetch Tasks
-  const fetchTasks = async () => {
-    try {
-      setLoadingTasks(true);
-      const token = localStorage.getItem("token");
-      const response = await axios.get(`${config.backendBase}/task/my-tasks`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      setTasks(response.data.data);
-      setError(null);
-    } catch (err) {
-      setError("Không thể tải danh sách công việc");
-      console.error(err);
-    } finally {
-      setLoadingTasks(false);
-    }
-  };
+  // Combined error state
+  const error = kpiError || taskError;
 
-  // Update task status
+  // Handle task status update
   const handleUpdateTaskStatus = async (taskId, newStatus) => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await axios.patch(
-        `${config.backendBase}/task/update-status/${taskId}`,
-        { status: newStatus },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
+      const result = await updateTaskStatus(taskId, newStatus);
 
-      if (response.data.success) {
-        // Update local state
-        setTasks((prevTasks) =>
-          prevTasks.map((task) =>
-            task._id === taskId ? { ...task, status: newStatus } : task,
-          ),
-        );
+      // Show success notification
+      const statusLabels = {
+        PENDING: "Chờ xử lý",
+        IN_PROGRESS: "Đang làm",
+        COMPLETED: "Hoàn thành",
+        WAITING: "Đang chờ",
+      };
 
-        // Show success notification
-        const statusLabels = {
-          PENDING: "Chờ xử lý",
-          IN_PROGRESS: "Đang làm",
-          COMPLETED: "Hoàn thành",
-          WAITING: "Đang chờ",
-        };
-        showNotification(
-          `Đã cập nhật trạng thái thành: ${statusLabels[newStatus]}`,
-          "success",
-        );
-      }
-    } catch (err) {
-      console.error("Error updating task status:", err);
       showNotification(
-        err.response?.data?.message ||
-          "Không thể cập nhật trạng thái công việc",
-        "danger",
+        `Đã cập nhật trạng thái thành: ${statusLabels[result.newStatus]}`,
+        "success",
       );
+    } catch (err) {
+      showNotification(err.message, "danger");
     }
   };
-
-  useEffect(() => {
-    fetchKPIs();
-    fetchTasks();
-  }, []);
 
   return (
     <Container fluid>
@@ -143,7 +78,7 @@ function MyKPITasks() {
       </Row>
 
       {error && (
-        <Alert variant="danger" onClose={() => setError(null)} dismissible>
+        <Alert variant="danger" dismissible>
           {error}
         </Alert>
       )}
@@ -160,7 +95,7 @@ function MyKPITasks() {
               <EmployeeKPITable
                 kpis={kpis}
                 loading={loadingKPIs}
-                onRefresh={fetchKPIs}
+                onRefresh={refetchKPIs}
               />
             </Col>
           </Row>
@@ -173,7 +108,7 @@ function MyKPITasks() {
               <EmployeeTaskTable
                 tasks={tasks}
                 loading={loadingTasks}
-                onRefresh={fetchTasks}
+                onRefresh={refetchTasks}
                 onUpdateStatus={handleUpdateTaskStatus}
               />
             </Col>
@@ -185,7 +120,7 @@ function MyKPITasks() {
       <ToastContainer position="top-end" className="p-3">
         <Toast
           show={showToast}
-          onClose={() => setShowToast(false)}
+          onClose={hideToast}
           delay={3000}
           autohide
           bg={toastVariant}

@@ -1,11 +1,11 @@
 import React from "react";
 import { Card, ListGroup, Row, Col, Badge, Button } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
-import config from "../../../../configs/api";
+import useAccountActions from "../../../../hooks/employee/profile/useAccountActions";
 
 function AccountCard({ userData, accountId, token }) {
   const navigate = useNavigate();
+  const { deleteAccount, isDeleting } = useAccountActions(token);
 
   const getRoleBadge = (role) => {
     const roleMap = {
@@ -33,52 +33,6 @@ function AccountCard({ userData, accountId, token }) {
       month: "long",
       day: "numeric",
     });
-  };
-
-  const handleDeleteAccount = async () => {
-    // Xác nhận lần 1
-    const confirmText = window.prompt(
-      'Nhập "XÓA TÀI KHOẢN" để xác nhận (viết hoa):',
-    );
-
-    if (confirmText !== "XÓA TÀI KHOẢN") {
-      alert("Xác nhận không đúng. Hủy thao tác.");
-      return;
-    }
-
-    // Xác nhận lần 2
-    const confirmDelete = window.confirm(
-      "⚠️ CẢNH BÁO: Hành động này không thể hoàn tác!\n\n" +
-        "Tất cả dữ liệu liên quan sẽ bị xóa:\n" +
-        "- Tài khoản đăng nhập\n" +
-        "- KPI cá nhân\n" +
-        "- Thông báo\n" +
-        "- Quyền quản lý kênh\n\n" +
-        "Bạn có chắc chắn muốn xóa tài khoản?",
-    );
-
-    if (!confirmDelete) return;
-
-    try {
-      const response = await axios.delete(
-        `${config.backendBase}/user/delete-self-account`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
-
-      if (response.data.success) {
-        alert("✅ Tài khoản đã được xóa thành công!");
-        localStorage.removeItem("token");
-        navigate("/login");
-      }
-    } catch (error) {
-      console.error("Lỗi xóa tài khoản:", error);
-      alert(
-        "❌ " +
-          (error.response?.data?.message || "Có lỗi xảy ra khi xóa tài khoản!"),
-      );
-    }
   };
 
   const roleBadge = getRoleBadge(userData.role);
@@ -185,9 +139,22 @@ function AccountCard({ userData, accountId, token }) {
               Đổi mật khẩu
             </Button>
 
-            <Button variant="outline-danger" onClick={handleDeleteAccount}>
-              <i className="bi bi-trash me-2"></i>
-              Xóa tài khoản
+            <Button
+              variant="outline-danger"
+              onClick={deleteAccount}
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <>
+                  <span className="spinner-border spinner-border-sm me-2" />
+                  Đang xóa...
+                </>
+              ) : (
+                <>
+                  <i className="bi bi-trash me-2"></i>
+                  Xóa tài khoản
+                </>
+              )}
             </Button>
           </div>
         )}

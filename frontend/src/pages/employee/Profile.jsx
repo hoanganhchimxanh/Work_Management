@@ -1,21 +1,19 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Container, Row, Spinner, Alert } from "react-bootstrap";
-import axios from "axios";
 import { jwtDecode } from "jwt-decode";
 
 import AccountCard from "../../components/employee/profile/cards/AccountCard";
 import TeamCard from "../../components/employee/profile/cards/TeamCard";
 import TeamDetailModal from "../../components/employee/profile/modals/TeamDetailModal";
-import config from "../../configs/api";
+
+import useAuth from "../../hooks/useAuth";
+import useUserProfile from "../../hooks/employee/profile/useUserProfile";
 
 function Profile() {
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [userData, setUserData] = useState(null);
-
+  const { token } = useAuth();
   const [showTeamModal, setShowTeamModal] = useState(false);
 
-  const token = localStorage.getItem("token");
+  // Lấy userId và accountId từ token
   let userId = null;
   let accountId = null;
 
@@ -24,45 +22,39 @@ function Profile() {
       const decoded = jwtDecode(token);
       userId = decoded.userId;
       accountId = decoded.accountId;
-    } catch {}
+    } catch (error) {
+      console.error("Error decoding token:", error);
+    }
   }
 
-  const fetchUserData = async () => {
-    try {
-      setLoading(true);
-      const res = await axios.get(
-        `${config.backendBase}/user/get-one/${userId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
+  // Sử dụng custom hook để lấy user data
+  const { userData, loading, error } = useUserProfile(userId, token);
 
-      setUserData(res.data.data);
-      console.log(userData);
-      setLoading(false);
-    } catch (err) {
-      setError("Không thể tải thông tin người dùng");
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchUserData();
-  }, []);
-
-  if (loading)
+  if (loading) {
     return (
       <Container className="d-flex justify-content-center py-5">
-        <Spinner />
+        <Spinner animation="border" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </Spinner>
       </Container>
     );
+  }
 
-  if (error)
+  if (error) {
     return (
       <Alert variant="danger" className="m-3">
         {error}
       </Alert>
     );
+  }
+
+  if (!userData) {
+    return (
+      <Alert variant="warning" className="m-3">
+        Không tìm thấy thông tin người dùng
+      </Alert>
+    );
+  }
 
   return (
     <Container fluid className="py-4">
@@ -72,9 +64,14 @@ function Profile() {
           <p className="text-muted">Xem thông tin tài khoản và nhóm của bạn</p>
         </div>
       </Row>
+
       <Row>
         <div className="col-lg-7 mb-4">
-          <AccountCard userData={userData} accountId={accountId} />
+          <AccountCard
+            userData={userData}
+            accountId={accountId}
+            token={token}
+          />
         </div>
 
         <div className="col-lg-5 mb-4">
@@ -84,6 +81,7 @@ function Profile() {
           />
         </div>
       </Row>
+
       {/* Modal nhóm chi tiết */}
       {userData?.team?._id && (
         <TeamDetailModal

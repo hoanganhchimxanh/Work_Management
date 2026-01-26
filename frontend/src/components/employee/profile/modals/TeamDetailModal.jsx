@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import {
   Modal,
   Button,
@@ -7,39 +7,11 @@ import {
   ListGroup,
   Badge,
 } from "react-bootstrap";
-import axios from "axios";
 
-import config from "../../../../configs/api";
+import useTeamDetail from "../../../../hooks/employee/profile/useTeamDetail";
 
 function TeamDetailModal({ show, onHide, teamId, token }) {
-  const [team, setTeam] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    if (!show) return;
-
-    const fetchTeam = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const res = await axios.get(
-          `${config.backendBase}/team/get-team/${teamId}`,
-          { headers: { Authorization: `Bearer ${token}` } },
-        );
-
-        setTeam(res.data.data);
-      } catch (err) {
-        console.error(err);
-        setError("Không thể tải thông tin nhóm");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTeam();
-  }, [show]);
+  const { team, loading, error } = useTeamDetail(teamId, token, show);
 
   return (
     <Modal show={show} onHide={onHide} centered>
@@ -50,11 +22,13 @@ function TeamDetailModal({ show, onHide, teamId, token }) {
       <Modal.Body>
         {loading ? (
           <div className="text-center py-3">
-            <Spinner />
+            <Spinner animation="border" role="status">
+              <span className="visually-hidden">Loading...</span>
+            </Spinner>
           </div>
         ) : error ? (
           <Alert variant="danger">{error}</Alert>
-        ) : (
+        ) : team ? (
           <>
             <h5 className="mb-2">{team.name}</h5>
             <p className="text-muted">
@@ -67,20 +41,30 @@ function TeamDetailModal({ show, onHide, teamId, token }) {
             <hr />
 
             <h6>Leader</h6>
-            <p className="mb-3">
-              <strong>{team.leader.fullName}</strong> – {team.leader.role}
-            </p>
+            {team.leader ? (
+              <p className="mb-3">
+                <strong>{team.leader.fullName}</strong> — {team.leader.role}
+              </p>
+            ) : (
+              <p className="text-muted mb-3">Chưa có leader</p>
+            )}
 
             <h6>👥 Thành viên ({team.memberCount})</h6>
-            <ListGroup>
-              {team.members.map((m) => (
-                <ListGroup.Item key={m._id}>
-                  <strong>{m.fullName}</strong>
-                  <div className="text-muted small">{m.role}</div>
-                </ListGroup.Item>
-              ))}
-            </ListGroup>
+            {team.members && team.members.length > 0 ? (
+              <ListGroup>
+                {team.members.map((m) => (
+                  <ListGroup.Item key={m._id}>
+                    <strong>{m.fullName}</strong>
+                    <div className="text-muted small">{m.role}</div>
+                  </ListGroup.Item>
+                ))}
+              </ListGroup>
+            ) : (
+              <Alert variant="info">Chưa có thành viên</Alert>
+            )}
           </>
+        ) : (
+          <Alert variant="warning">Không tìm thấy thông tin nhóm</Alert>
         )}
       </Modal.Body>
 
