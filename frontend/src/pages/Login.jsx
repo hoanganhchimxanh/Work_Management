@@ -1,6 +1,5 @@
 import React, { useState, useContext } from "react";
 import { Button, Col, Container, Form, Row, Alert } from "react-bootstrap";
-import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../contexts/AuthContext";
 import "../styles/login.style.css";
 
@@ -11,8 +10,6 @@ function Login() {
   const [loading, setLoading] = useState(false);
 
   const { login } = useContext(AuthContext);
-
-  const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -75,17 +72,6 @@ function Login() {
                   required
                 />
               </Form.Group>
-
-              <div className="text-end mb-3">
-                <Button
-                  variant="link"
-                  onClick={() => navigate("/forgot-password")}
-                  className="p-0"
-                  style={{ textDecoration: "none" }}
-                >
-                  Quên mật khẩu?
-                </Button>
-              </div>
 
               <Button
                 variant="primary"
