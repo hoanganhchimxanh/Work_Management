@@ -9,7 +9,7 @@ const excelConfigs = {
     sheetName: "Users",
     fileName: "users",
 
-    // Định nghĩa các cột trong Excel
+    // ============== IMPORT ==============
     columns: [
       {
         excelKey: "fullName",
@@ -21,14 +21,38 @@ const excelConfigs = {
       {
         excelKey: "phoneNumber",
         dbField: "phoneNumber",
-        displayName: "Email cá nhân",
+        displayName: "Số điện thoại",
         required: true,
-        width: 30,
+        width: 20,
         validate: (value) => {
-          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-          return emailRegex.test(value);
+          // Validate phone number format (basic)
+          return value && value.toString().trim().length > 0;
         },
-        transform: (value) => value.trim().toLowerCase(),
+        transform: (value) => value.toString().trim(),
+      },
+      {
+        excelKey: "facebookLink",
+        dbField: "facebookLink",
+        displayName: "Facebook Link",
+        required: false,
+        width: 40,
+        transform: (value) => value?.trim() || null,
+      },
+      {
+        excelKey: "bankName",
+        dbField: "bankInfo.bankName",
+        displayName: "Tên ngân hàng",
+        required: false,
+        width: 25,
+        transform: (value) => value?.trim() || null,
+      },
+      {
+        excelKey: "accountNumber",
+        dbField: "bankInfo.accountNumber",
+        displayName: "Số tài khoản",
+        required: false,
+        width: 20,
+        transform: (value) => value?.toString().trim() || null,
       },
       {
         excelKey: "role",
@@ -43,6 +67,18 @@ const excelConfigs = {
         transform: (value) => value?.toUpperCase() || "EMPLOYEE",
       },
       {
+        excelKey: "status",
+        dbField: "status",
+        displayName: "Trạng thái",
+        required: false,
+        width: 15,
+        validate: (value) => {
+          const validStatuses = ["PENDING", "ACTIVE", "QUIT"];
+          return !value || validStatuses.includes(value.toUpperCase());
+        },
+        transform: (value) => value?.toUpperCase() || "ACTIVE",
+      },
+      {
         excelKey: "teamName",
         dbField: "team",
         displayName: "Team",
@@ -53,39 +89,107 @@ const excelConfigs = {
         referenceField: "name",
         referenceKey: "_id",
       },
+      {
+        excelKey: "joinDate",
+        dbField: "joinDate",
+        displayName: "Ngày vào làm",
+        required: false,
+        width: 15,
+        transform: (value) => {
+          if (!value) return null;
+          // Handle Excel date format
+          if (typeof value === "number") {
+            // Excel serial date
+            const date = new Date((value - 25569) * 86400 * 1000);
+            return date;
+          }
+          return new Date(value);
+        },
+      },
+      {
+        excelKey: "responsibilities",
+        dbField: "responsibilities",
+        displayName: "Nhiệm vụ/Mảng",
+        required: false,
+        width: 30,
+        transform: (value) => value?.trim() || null,
+      },
+      {
+        excelKey: "note",
+        dbField: "note",
+        displayName: "Ghi chú",
+        required: false,
+        width: 40,
+        transform: (value) => value?.trim() || null,
+      },
+      {
+        excelKey: "loginEmail",
+        dbField: "loginEmail",
+        displayName: "Email đăng nhập",
+        required: false,
+        width: 30,
+        validate: (value) => {
+          if (!value) return true;
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          return emailRegex.test(value);
+        },
+        transform: (value) => value?.trim().toLowerCase() || null,
+      },
     ],
 
-    // Export columns (có thể khác với import)
+    // ============== EXPORT ==============
     exportColumns: [
       { key: "stt", displayName: "STT", width: 5 },
       { key: "fullName", displayName: "Họ và tên", width: 25 },
-      { key: "phoneNumber", displayName: "Email cá nhân", width: 30 },
+      { key: "phoneNumber", displayName: "Số điện thoại", width: 20 },
+      { key: "facebookLink", displayName: "Facebook Link", width: 40 },
+      { key: "bankName", displayName: "Tên ngân hàng", width: 25 },
+      { key: "accountNumber", displayName: "Số tài khoản", width: 20 },
       { key: "loginEmail", displayName: "Email đăng nhập", width: 30 },
       { key: "role", displayName: "Vai trò", width: 12 },
       { key: "status", displayName: "Trạng thái", width: 12 },
       { key: "teamName", displayName: "Team", width: 20 },
-      { key: "accountIsActive", displayName: "Tài khoản hoạt động", width: 15 },
-      { key: "isFirstLogin", displayName: "Lần đăng nhập đầu", width: 15 },
-      { key: "joinedAt", displayName: "Ngày tham gia", width: 15 },
+      { key: "accountIsActive", displayName: "TK hoạt động", width: 12 },
+      { key: "isFirstLogin", displayName: "Lần đầu đăng nhập", width: 15 },
+      { key: "joinDate", displayName: "Ngày vào làm", width: 15 },
+      { key: "responsibilities", displayName: "Nhiệm vụ/Mảng", width: 30 },
+      { key: "note", displayName: "Ghi chú", width: 40 },
+      { key: "createdAt", displayName: "Ngày tạo", width: 15 },
     ],
 
-    // Template data mẫu
+    // ============== TEMPLATE ==============
     templateData: [
       {
         fullName: "Nguyễn Văn A",
-        phoneNumber: "nguyenvana@gmail.com",
+        phoneNumber: "0123456789",
+        facebookLink: "https://facebook.com/nguyenvana",
+        bankName: "Vietcombank",
+        accountNumber: "1234567890",
         role: "EMPLOYEE",
+        status: "ACTIVE",
         teamName: "Team Marketing",
+        joinDate: "2024-01-15",
+        responsibilities: "Quản lý kênh YouTube",
+        note: "Nhân viên mới",
+        loginEmail: "nguyenvana@company.com",
       },
       {
         fullName: "Trần Thị B",
-        phoneNumber: "tranthib@gmail.com",
+        phoneNumber: "0987654321",
+        facebookLink: "",
+        bankName: "Techcombank",
+        accountNumber: "9876543210",
         role: "EMPLOYEE",
+        status: "ACTIVE",
         teamName: "Team Content",
+        joinDate: "2024-02-01",
+        responsibilities: "Sáng tạo nội dung",
+        note: "",
+        loginEmail: "tranthib@company.com",
       },
     ],
 
-    // Hướng dẫn cho template
+    // ============== INSTRUCTIONS ==============
     instructions: [
       {
         column: "fullName",
@@ -94,25 +198,72 @@ const excelConfigs = {
       },
       {
         column: "phoneNumber",
-        description: "Email cá nhân (duy nhất)",
+        description: "Số điện thoại (duy nhất)",
         required: "Có",
       },
       {
+        column: "facebookLink",
+        description: "Link Facebook cá nhân",
+        required: "Không",
+      },
+      {
+        column: "bankName",
+        description: "Tên ngân hàng",
+        required: "Không",
+      },
+      {
+        column: "accountNumber",
+        description: "Số tài khoản ngân hàng",
+        required: "Không",
+      },
+      {
         column: "role",
-        description: "ADMIN / ACCOUNTANT / EMPLOYEE",
-        required: "Không (mặc định EMPLOYEE)",
+        description: "ADMIN / ACCOUNTANT / EMPLOYEE (mặc định EMPLOYEE)",
+        required: "Không",
+      },
+      {
+        column: "status",
+        description: "PENDING / ACTIVE / QUIT (mặc định ACTIVE)",
+        required: "Không",
       },
       {
         column: "teamName",
-        description: "Tên team trong hệ thống",
+        description: "Tên team trong hệ thống (phải tồn tại)",
+        required: "Không",
+      },
+      {
+        column: "joinDate",
+        description: "Ngày vào làm (YYYY-MM-DD)",
+        required: "Không",
+      },
+      {
+        column: "responsibilities",
+        description: "Nhiệm vụ hoặc mảng công việc",
+        required: "Không",
+      },
+      {
+        column: "note",
+        description: "Ghi chú bổ sung",
+        required: "Không",
+      },
+      {
+        column: "loginEmail",
+        description:
+          "Email đăng nhập hệ thống (sẽ được tạo tự động nếu để trống)",
         required: "Không",
       },
     ],
 
-    // Xử lý sau khi import thành công
+    // ============== HOOKS ==============
     afterImport: async (record, session, models) => {
       // Tạo account cho user
-      const loginEmail = `${record.phoneNumber.split("@")[0]}@company.com`;
+      let loginEmail = record.loginEmail;
+
+      // Nếu không có loginEmail trong Excel, tạo tự động
+      if (!loginEmail) {
+        loginEmail = `${record.phoneNumber}@company.com`;
+      }
+
       const tempPassword = generator.generate({
         length: 10,
         numbers: true,
@@ -130,7 +281,7 @@ const excelConfigs = {
             email: loginEmail,
             password: hashedPassword,
             user: record._id,
-            isActive: false,
+            isActive: true, // Đổi thành true để user có thể login ngay
           },
         ],
         { session },
@@ -139,7 +290,6 @@ const excelConfigs = {
       return { loginEmail, tempPassword };
     },
 
-    // Xử lý dữ liệu trước khi export
     prepareExportData: async (records, models) => {
       const results = await Promise.all(
         records.map(async (user, index) => {
@@ -151,23 +301,58 @@ const excelConfigs = {
             stt: index + 1,
             fullName: user.fullName,
             phoneNumber: user.phoneNumber,
+            facebookLink: user.facebookLink || "",
+            bankName: user.bankInfo?.bankName || "",
+            accountNumber: user.bankInfo?.accountNumber || "",
             loginEmail: account?.email || "",
             role: user.role,
             status: user.status,
             teamName: user.team?.name || "",
             accountIsActive: account?.isActive ? "Có" : "Không",
             isFirstLogin: user.isFirstLogin ? "Có" : "Không",
-            joinedAt: new Date(user.createdAt).toLocaleDateString("vi-VN"),
+            joinDate: user.joinDate
+              ? new Date(user.joinDate).toLocaleDateString("vi-VN")
+              : "",
+            responsibilities: user.responsibilities || "",
+            note: user.note || "",
+            createdAt: new Date(user.createdAt).toLocaleDateString("vi-VN"),
           };
         }),
       );
       return results;
     },
 
-    // Default values khi tạo record
+    // ============== DEFAULTS ==============
     defaults: {
       status: "ACTIVE",
       isFirstLogin: true,
+      role: "EMPLOYEE",
+      bankInfo: {
+        bankName: null,
+        accountNumber: null,
+      },
+    },
+
+    // ============== BEFORE CREATE ==============
+    beforeCreate: (data) => {
+      // Xử lý bankInfo - nếu có bankName hoặc accountNumber thì tạo object
+      if (data["bankInfo.bankName"] || data["bankInfo.accountNumber"]) {
+        data.bankInfo = {
+          bankName: data["bankInfo.bankName"] || null,
+          accountNumber: data["bankInfo.accountNumber"] || null,
+        };
+        delete data["bankInfo.bankName"];
+        delete data["bankInfo.accountNumber"];
+      }
+
+      // Lưu loginEmail tạm để dùng trong afterImport
+      if (data.loginEmail) {
+        // Store it temporarily, will be used in afterImport
+        data._tempLoginEmail = data.loginEmail;
+        delete data.loginEmail; // Remove from user data
+      }
+
+      return data;
     },
   },
 
@@ -466,167 +651,14 @@ const excelConfigs = {
     sheetName: "Networks",
     fileName: "networks",
 
-    columns: [
-      {
-        excelKey: "pubId",
-        dbField: "pubId",
-        displayName: "PUB-ID",
-        required: false,
-        width: 25,
-        transform: (value) => value?.trim() || undefined,
-      },
-      {
-        excelKey: "employment",
-        dbField: "employment",
-        displayName: "Employment (Nhân viên)",
-        required: false,
-        width: 30,
-        transform: (value) => value?.trim() || "",
-      },
-      {
-        excelKey: "reminder",
-        dbField: "reminderDate",
-        displayName: "Ngày nhắc nhở",
-        required: false,
-        width: 15,
-        transform: (value) => (value ? new Date(value) : null),
-      },
-      {
-        excelKey: "profileAdsenseId",
-        dbField: "profileAdsenseId",
-        displayName: "Profile AdSense ID",
-        required: true,
-        width: 25,
-        transform: (value) => value.trim(),
-      },
-      {
-        excelKey: "emailAddress",
-        dbField: "emailAddress",
-        displayName: "Email Address",
-        required: false,
-        width: 30,
-        validate: (value) => {
-          if (!value) return true;
-          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-          return emailRegex.test(value);
-        },
-        transform: (value) => value?.trim().toLowerCase() || "",
-      },
-      {
-        excelKey: "password",
-        dbField: "password",
-        displayName: "Password",
-        required: false,
-        width: 20,
-        transform: (value) => value?.trim() || "",
-      },
-      {
-        excelKey: "recoveryEmail",
-        dbField: "recoveryEmail",
-        displayName: "Recovery Email",
-        required: false,
-        width: 30,
-        validate: (value) => {
-          if (!value) return true;
-          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-          return emailRegex.test(value);
-        },
-        transform: (value) => (value ? value.trim().toLowerCase() : ""),
-      },
-      {
-        excelKey: "twoFA",
-        dbField: "twoFA",
-        displayName: "2FA (Yes/No)",
-        required: false,
-        width: 10,
-        validate: (value) => {
-          if (!value) return true;
-          const validValues = ["yes", "no", "true", "false", "1", "0"];
-          return validValues.includes(value.toString().toLowerCase());
-        },
-        transform: (value) => {
-          if (!value) return false;
-          const str = value.toString().toLowerCase();
-          return str === "yes" || str === "true" || str === "1";
-        },
-      },
-      {
-        excelKey: "creationDate",
-        dbField: "creationDate",
-        displayName: "Ngày tạo Profile",
-        required: false,
-        width: 15,
-        transform: (value) => (value ? new Date(value) : null),
-      },
-      {
-        excelKey: "taxForm",
-        dbField: "taxForm",
-        displayName: "Tax Form",
-        required: false,
-        width: 20,
-        transform: (value) => value?.trim() || "",
-      },
-      {
-        excelKey: "location",
-        dbField: "location",
-        displayName: "Vị trí",
-        required: false,
-        width: 15,
-        validate: (value) => {
-          const validLocations = ["HOME", "OFFICE", "OTHER"];
-          return !value || validLocations.includes(value.toUpperCase());
-        },
-        transform: (value) => value?.toUpperCase() || "OFFICE",
-      },
-      {
-        excelKey: "linkedChannel",
-        dbField: "linkedChannelUrl",
-        displayName: "Linked Channel URL",
-        required: false,
-        width: 50,
-        transform: (value) => value?.trim() || "",
-      },
-      {
-        excelKey: "status",
-        dbField: "status",
-        displayName: "Trạng thái",
-        required: false,
-        width: 15,
-        validate: (value) => {
-          const validStatuses = ["ACTIVE", "STRIKE", "DEMONETIZED", "DEAD"];
-          return !value || validStatuses.includes(value.toUpperCase());
-        },
-        transform: (value) => value?.toUpperCase() || "ACTIVE",
-      },
-      {
-        excelKey: "note",
-        dbField: "note",
-        displayName: "Ghi chú",
-        required: false,
-        width: 30,
-        validate: (value) => {
-          const validNotes = [
-            "PENDING_ACTIVATION",
-            "REJECTED",
-            "PENDING_IDENTITY_VERIFICATION",
-            "IDENTITY_VERIFICATION_REVIEW",
-            "PENDING_32",
-            "PENDING_PIN",
-            "ACTIVATED",
-          ];
-          return !value || validNotes.includes(value.toUpperCase());
-        },
-        transform: (value) => value?.toUpperCase() || "PENDING_ACTIVATION",
-      },
-    ],
-
+    // EXPORT - Chỉ giữ lại phần export
     exportColumns: [
       { key: "stt", displayName: "STT", width: 5 },
       { key: "pubId", displayName: "PUB-ID", width: 25 },
-      { key: "employment", displayName: "Employment", width: 30 },
+      { key: "employmentName", displayName: "Nhân viên phụ trách", width: 30 },
       { key: "profileAdsenseId", displayName: "Profile AdSense ID", width: 25 },
+      { key: "adSenseLocation", displayName: "Địa chỉ AdSense", width: 40 },
       { key: "emailAddress", displayName: "Email Address", width: 30 },
-      { key: "password", displayName: "Password", width: 15 },
       { key: "recoveryEmail", displayName: "Recovery Email", width: 30 },
       { key: "twoFA", displayName: "2FA", width: 10 },
       { key: "creationDate", displayName: "Ngày tạo Profile", width: 15 },
@@ -636,109 +668,17 @@ const excelConfigs = {
       { key: "status", displayName: "Trạng thái", width: 15 },
       { key: "note", displayName: "Ghi chú", width: 30 },
       { key: "reminderDate", displayName: "Ngày nhắc nhở", width: 15 },
-    ],
-
-    templateData: [
-      {
-        pubId: "pub-1234567890123456",
-        employment: "Nguyễn Văn A",
-        reminder: "2025-12-31",
-        profileAdsenseId: "pub-1234567890123456",
-        emailAddress: "adsense@gmail.com",
-        password: "MySecurePassword123",
-        recoveryEmail: "recovery@gmail.com",
-        twoFA: "Yes",
-        creationDate: "2024-01-01",
-        taxForm: "W-8BEN",
-        location: "OFFICE",
-        linkedChannel: "https://youtube.com/@channelname",
-        status: "ACTIVE",
-        note: "PENDING_ACTIVATION",
-      },
-    ],
-
-    instructions: [
-      {
-        column: "pubId",
-        description: "PUB-ID duy nhất (unique, tùy chọn)",
-        required: "Không",
-      },
-      {
-        column: "employment",
-        description: "Tên nhân viên phụ trách",
-        required: "Không",
-      },
-      {
-        column: "reminder",
-        description: "Ngày nhắc nhở (YYYY-MM-DD)",
-        required: "Không",
-      },
-      {
-        column: "profileAdsenseId",
-        description: "Mã Profile AdSense (duy nhất)",
-        required: "Có",
-      },
-      {
-        column: "emailAddress",
-        description: "Email của Profile AdSense",
-        required: "Không",
-      },
-      {
-        column: "password",
-        description: "Mật khẩu đăng nhập",
-        required: "Không",
-      },
-      {
-        column: "recoveryEmail",
-        description: "Email khôi phục",
-        required: "Không",
-      },
-      {
-        column: "twoFA",
-        description: "Xác thực 2 yếu tố (Yes/No)",
-        required: "Không",
-      },
-      {
-        column: "creationDate",
-        description: "Ngày tạo Profile (YYYY-MM-DD)",
-        required: "Không",
-      },
-      {
-        column: "taxForm",
-        description: "Loại Tax Form (W-8BEN, W-9, etc.)",
-        required: "Không",
-      },
-      {
-        column: "location",
-        description: "HOME / OFFICE / OTHER",
-        required: "Không",
-      },
-      {
-        column: "linkedChannel",
-        description: "URL kênh YouTube liên kết",
-        required: "Không",
-      },
-      {
-        column: "status",
-        description: "ACTIVE / STRIKE / DEMONETIZED / DEAD",
-        required: "Không",
-      },
-      {
-        column: "note",
-        description:
-          "PENDING_ACTIVATION / REJECTED / PENDING_IDENTITY_VERIFICATION / IDENTITY_VERIFICATION_REVIEW / PENDING_32 / PENDING_PIN / ACTIVATED",
-        required: "Không",
-      },
+      { key: "channelCount", displayName: "Số kênh", width: 10 },
     ],
 
     prepareExportData: async (records) => {
       return records.map((network, index) => ({
         stt: index + 1,
         pubId: network.pubId || "",
-        employment: network.employment?.fullName || network.employment || "",
+        employmentName: network.employment?.fullName || "",
         profileAdsenseId: network.profileAdsenseId,
+        adSenseLocation: network.adSenseLocation || "",
         emailAddress: network.emailAddress || "",
-        password: network.password ? "********" : "", // Mask password in export
         recoveryEmail: network.recoveryEmail || "",
         twoFA: network.twoFA ? "Yes" : "No",
         creationDate: network.creationDate
@@ -752,17 +692,8 @@ const excelConfigs = {
         reminderDate: network.reminderDate
           ? new Date(network.reminderDate).toLocaleDateString("vi-VN")
           : "",
+        channelCount: network.channelCount || 0,
       }));
-    },
-
-    defaults: {
-      status: "ACTIVE",
-      note: "PENDING_ACTIVATION",
-      location: "OFFICE",
-      twoFA: false,
-      employment: "",
-      password: "",
-      emailAddress: "",
     },
   },
 };

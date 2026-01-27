@@ -2,13 +2,7 @@ import React from "react";
 import { Row, Col, Form, Button } from "react-bootstrap";
 import { BoxArrowInDown, BoxArrowUp, PlusCircle } from "react-bootstrap-icons";
 
-const NetworkFilters = ({
-  filters,
-  onFilterChange,
-  onExport,
-  onImport,
-  onAdd,
-}) => {
+const NetworkFilters = ({ filters, onFilterChange, onExport, onAdd }) => {
   return (
     <div className="mb-4">
       <Row className="mb-3">
@@ -16,10 +10,6 @@ const NetworkFilters = ({
           <Button variant="success" onClick={onAdd}>
             <PlusCircle className="me-2" />
             Thêm Network
-          </Button>
-          <Button variant="primary" onClick={onImport}>
-            <BoxArrowInDown className="me-2" />
-            Import Excel
           </Button>
           <Button variant="info" onClick={onExport}>
             <BoxArrowUp className="me-2" />

@@ -145,7 +145,14 @@ const createOrUpdateRevenue = async (req, res, next) => {
   }
 };
 
-// Đồng bộ doanh thu từ YouTube Analytics
+// Hàm hỗ trợ lấy thời gian (tháng)
+const isCurrentMonth = (monthString) => {
+  const now = new Date();
+  const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  return monthString === currentMonth;
+};
+
+// Đồng bộ doanh thu
 const syncRevenueFromAnalytics = async (req, res, next) => {
   try {
     const { channelId } = req.params;
@@ -211,6 +218,9 @@ const syncRevenueFromAnalytics = async (req, res, next) => {
         const month = data._id;
         const estimatedRevenue = data.totalRevenue;
 
+        // ✅ Xác định trạng thái locked dựa trên tháng
+        const shouldLock = !isCurrentMonth(month);
+
         // Tìm hoặc tạo mới
         let revenue = await ChannelRevenue.findOne({
           channel: channelId,
@@ -218,6 +228,7 @@ const syncRevenueFromAnalytics = async (req, res, next) => {
         });
 
         if (revenue) {
+          // ⚠️ Chỉ cập nhật nếu chưa bị khóa
           if (revenue.locked) {
             errors.push({
               month,
@@ -225,17 +236,20 @@ const syncRevenueFromAnalytics = async (req, res, next) => {
             });
             continue;
           }
+
           revenue.estimatedRevenue = estimatedRevenue;
+          revenue.locked = shouldLock; // ✅ Tự động khóa nếu không phải tháng hiện tại
           await revenue.save();
         } else {
           revenue = await ChannelRevenue.create({
             channel: channelId,
             month,
             estimatedRevenue,
+            locked: shouldLock, // ✅ Tự động khóa nếu không phải tháng hiện tại
           });
         }
 
-        synced.push({ month, estimatedRevenue });
+        synced.push({ month, estimatedRevenue, locked: shouldLock });
       } catch (err) {
         errors.push({ month: data._id, error: err.message });
       }

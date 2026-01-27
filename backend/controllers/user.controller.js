@@ -305,6 +305,86 @@ const updateUser = async (req, res, next) => {
   }
 };
 
+// Reset mật khẩu user (chỉ Admin)
+const resetPasswordByAdmin = async (req, res, next) => {
+  try {
+    const userId = req.params.id;
+
+    // 1. Kiểm tra user
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy người dùng!",
+      });
+    }
+
+    // 2. Kiểm tra account
+    const account = await Account.findOne({ user: userId });
+    if (!account) {
+      return res.status(400).json({
+        success: false,
+        message: "Người dùng chưa có tài khoản đăng nhập!",
+      });
+    }
+
+    // 3. Tạo mật khẩu mới ngẫu nhiên
+    const newPassword = generator.generate({
+      length: 10,
+      numbers: true,
+      uppercase: true,
+      lowercase: true,
+      symbols: false,
+      strict: true,
+    });
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // 4. Cập nhật account
+    account.password = hashedPassword;
+    account.isActive = true;
+    await account.save();
+
+    // 5. Reset trạng thái user
+    user.isFirstLogin = true;
+    await user.save();
+
+    // 6. (Optional) Gửi notification cho admin
+    try {
+      const admins = await User.find({ role: "ADMIN" }).lean();
+      await Promise.all(
+        admins.map((admin) =>
+          sendNotification({
+            userId: admin._id,
+            title: "Reset mật khẩu người dùng",
+            message: `Admin đã reset mật khẩu cho ${user.fullName}\nEmail: ${account.email}\nMật khẩu mới: ${newPassword}`,
+            type: "SYSTEM",
+            metadata: {
+              userId: user._id,
+              action: "RESET_PASSWORD",
+            },
+          }),
+        ),
+      );
+    } catch (err) {
+      console.error("Notification error:", err);
+    }
+
+    res.json({
+      success: true,
+      message: "Reset mật khẩu thành công!",
+      data: {
+        userId: user._id,
+        fullName: user.fullName,
+        email: account.email,
+        newPassword, // ⚠️ chỉ trả về cho ADMIN
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // Xóa user (soft delete - chuyển status thành QUIT)
 const deleteUser = async (req, res, next) => {
   try {
@@ -490,6 +570,7 @@ module.exports = {
   getAll,
   getPersonal,
   updateUser,
+  resetPasswordByAdmin,
   deleteUser,
   deleteSelfAccount,
 };

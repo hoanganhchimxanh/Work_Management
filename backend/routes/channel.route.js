@@ -19,7 +19,7 @@ router.post(
   "/add-new",
   authenticateJWT,
   authorizeRoles("EMPLOYEE"),
-  channelController.addNew
+  channelController.addNew,
 );
 
 // Lấy tất cả kênh
@@ -27,7 +27,7 @@ router.get(
   "/get-all",
   authenticateJWT,
   authorizeRoles(["ADMIN", "ACCOUNTANT"]),
-  channelController.getAll
+  channelController.getAll,
 );
 
 // Lấy kênh theo ID
@@ -35,7 +35,7 @@ router.get(
   "/get-by-id/:id",
   authenticateJWT,
   authorizeRoles(["ADMIN", "ACCOUNTANT", "EMPLOYEE"]),
-  channelController.getById
+  channelController.getById,
 );
 
 // Chỉnh sửa thông tin kênh
@@ -43,15 +43,15 @@ router.put(
   "/edit/:id",
   authenticateJWT,
   authorizeRoles("EMPLOYEE"),
-  channelController.editChannelInfo
+  channelController.editChannelInfo,
 );
 
 // Xóa kênh
 router.delete(
   "/delete/:id",
   authenticateJWT,
-  authorizeRoles("ADMIN"),
-  channelController.deleteChannel
+  authorizeRoles("EMPLOYEE"),
+  channelController.deleteChannel,
 );
 
 // Gán owner cho kênh
@@ -59,7 +59,7 @@ router.put(
   "/assign-owner/:id",
   authenticateJWT,
   authorizeRoles("ADMIN"),
-  channelController.assignOwner
+  channelController.assignOwner,
 );
 
 // Lấy kênh theo owner
@@ -67,7 +67,7 @@ router.get(
   "/by-owner/:userId",
   authenticateJWT,
   authorizeRoles(["ADMIN", "EMPLOYEE", "ACCOUNTANT"]),
-  channelController.getByOwner
+  channelController.getByOwner,
 );
 
 // Lấy kênh theo network
@@ -75,7 +75,7 @@ router.get(
   "/by-network/:networkId",
   authenticateJWT,
   authorizeRoles(["ADMIN", "ACCOUNTANT"]),
-  channelController.getByNetwork
+  channelController.getByNetwork,
 );
 
 module.exports = router;

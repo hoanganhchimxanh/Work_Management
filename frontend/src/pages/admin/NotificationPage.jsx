@@ -68,7 +68,7 @@ function Notification_Page() {
     try {
       await markNotificationRead(id);
       setNotifications((prev) =>
-        prev.map((n) => (n._id === id ? { ...n, isRead: true } : n))
+        prev.map((n) => (n._id === id ? { ...n, isRead: true } : n)),
       );
     } catch (err) {
       console.error("Mark read failed", err);
@@ -166,7 +166,7 @@ function Notification_Page() {
           notifications.map((noti) => (
             <ListGroup.Item
               key={noti._id}
-              action
+              // action
               onClick={() => handleClickNotification(noti)}
               className={`d-flex justify-content-between align-items-start ${
                 !noti.isRead ? "fw-bold bg-light" : ""

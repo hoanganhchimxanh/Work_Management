@@ -1,6 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { Modal, Form, Button, Alert } from "react-bootstrap";
 
+// 1. Import DatePicker và date-fns
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import { format } from "date-fns";
+
+// Tùy chọn: Import ngôn ngữ tiếng Việt cho lịch nếu muốn
+import { registerLocale } from "react-datepicker";
+import vi from "date-fns/locale/vi";
+registerLocale("vi", vi);
+
 function EditChannelModal({ show, onHide, onSubmit, channel }) {
   const [formData, setFormData] = useState({
     name: "",
@@ -8,7 +18,7 @@ function EditChannelModal({ show, onHide, onSubmit, channel }) {
     status: "ACTIVE",
     isBrandAccount: false,
     isMonetized: false,
-    monetizeDate: "",
+    monetizeDate: null, // 2. Để mặc định là null hoặc Date object
   });
   const [error, setError] = useState("");
 
@@ -22,9 +32,10 @@ function EditChannelModal({ show, onHide, onSubmit, channel }) {
       status: channel.status ?? "ACTIVE",
       isBrandAccount: Boolean(channel.isBrandAccount),
       isMonetized: Boolean(channel.isMonetized),
+      // 3. Chuyển đổi string từ DB thành Date Object để DatePicker hiểu
       monetizeDate: channel.monetizeDate
-        ? new Date(channel.monetizeDate).toISOString().split("T")[0]
-        : "",
+        ? new Date(channel.monetizeDate)
+        : null,
     });
   }, [channel]);
 
@@ -36,26 +47,34 @@ function EditChannelModal({ show, onHide, onSubmit, channel }) {
     });
   };
 
+  // 4. Hàm riêng để xử lý khi chọn ngày từ DatePicker
+  const handleDateChange = (date) => {
+    setFormData({
+      ...formData,
+      monetizeDate: date,
+    });
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     setError("");
 
-    // Validate
     if (!formData.name || !formData.link) {
       setError("Vui lòng điền đầy đủ thông tin!");
       return;
     }
 
-    // Check YouTube link format
     if (!formData.link.includes("youtube.com")) {
       setError("Link kênh không hợp lệ!");
       return;
     }
 
-    // Prepare data for submission
+    // 5. Format lại dữ liệu trước khi gửi đi (chuyển về ISO string hoặc format tùy backend)
     const submitData = {
       ...formData,
-      monetizeDate: formData.monetizeDate || null,
+      monetizeDate: formData.monetizeDate
+        ? formData.monetizeDate.toISOString() // Gửi lên server dạng chuẩn ISO
+        : null,
     };
 
     onSubmit(channel._id, submitData);
@@ -68,7 +87,7 @@ function EditChannelModal({ show, onHide, onSubmit, channel }) {
       status: "ACTIVE",
       isBrandAccount: false,
       isMonetized: false,
-      monetizeDate: "",
+      monetizeDate: null,
     });
     setError("");
     onHide();
@@ -83,6 +102,8 @@ function EditChannelModal({ show, onHide, onSubmit, channel }) {
         {error && <Alert variant="danger">{error}</Alert>}
 
         <Form onSubmit={handleSubmit}>
+          {/* ... Các trường Name, Link, Status giữ nguyên ... */}
+
           <Form.Group className="mb-3" controlId="editChannelName">
             <Form.Label>
               Tên kênh <span className="text-danger">*</span>
@@ -92,7 +113,6 @@ function EditChannelModal({ show, onHide, onSubmit, channel }) {
               name="name"
               value={formData.name}
               onChange={handleChange}
-              placeholder="Nhập tên kênh YouTube"
               required
             />
           </Form.Group>
@@ -106,12 +126,8 @@ function EditChannelModal({ show, onHide, onSubmit, channel }) {
               name="link"
               value={formData.link}
               onChange={handleChange}
-              placeholder="https://youtube.com/@channelname"
               required
             />
-            <Form.Text className="text-muted">
-              Ví dụ: https://youtube.com/@channelname
-            </Form.Text>
           </Form.Group>
 
           <Form.Group className="mb-3" controlId="editChannelStatus">
@@ -150,12 +166,21 @@ function EditChannelModal({ show, onHide, onSubmit, channel }) {
 
           {formData.isMonetized && (
             <Form.Group className="mb-3" controlId="editMonetizeDate">
-              <Form.Label>Ngày bật kiếm tiền</Form.Label>
-              <Form.Control
-                type="date"
-                name="monetizeDate"
-                value={formData.monetizeDate}
-                onChange={handleChange}
+              <Form.Label className="d-block">Ngày bật kiếm tiền</Form.Label>
+              {/* 6. Thay thế Form.Control type="date" bằng DatePicker */}
+              <DatePicker
+                selected={formData.monetizeDate}
+                onChange={handleDateChange}
+                dateFormat="dd-MM-yyyy"
+                className="form-control"
+                placeholderText="dd-mm-yyyy"
+                locale="vi"
+                isClearable
+                maxDate={new Date()}
+                peekNextMonth
+                showMonthDropdown
+                showYearDropdown
+                dropdownMode="select"
               />
             </Form.Group>
           )}

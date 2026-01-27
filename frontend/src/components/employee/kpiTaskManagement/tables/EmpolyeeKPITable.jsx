@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   Table,
   Badge,
@@ -10,9 +10,17 @@ import {
   ProgressBar,
 } from "react-bootstrap";
 
+import useKPIFilters from "../../../../hooks/employee/kpiTaskManagement/useKPIFilters";
+
 function EmployeeKPITable({ kpis, loading, onRefresh }) {
-  const [filterStatus, setFilterStatus] = useState("ALL");
-  const [filterSort, setFilterSort] = useState("NEWEST");
+  // Use filters hook
+  const {
+    filterStatus,
+    setFilterStatus,
+    filterSort,
+    setFilterSort,
+    filteredKPIs,
+  } = useKPIFilters(kpis);
 
   const getStatusBadge = (status) => {
     const variants = {
@@ -47,35 +55,6 @@ function EmployeeKPITable({ kpis, loading, onRefresh }) {
     if (progress >= 50) return "warning";
     return "danger";
   };
-
-  const getFilteredAndSortedKPIs = () => {
-    let filtered = kpis;
-
-    if (filterStatus !== "ALL") {
-      filtered = filtered.filter((kpi) => kpi.status === filterStatus);
-    }
-
-    const sorted = [...filtered].sort((a, b) => {
-      if (filterSort === "NEWEST") {
-        return new Date(b.startDate) - new Date(a.startDate);
-      } else if (filterSort === "OLDEST") {
-        return new Date(a.startDate) - new Date(b.startDate);
-      } else if (filterSort === "REVENUE_DESC") {
-        return b.revenueTarget - a.revenueTarget;
-      } else if (filterSort === "REVENUE_ASC") {
-        return a.revenueTarget - b.revenueTarget;
-      } else if (filterSort === "PROGRESS_DESC") {
-        return (b.revenueProgress || 0) - (a.revenueProgress || 0);
-      } else if (filterSort === "PROGRESS_ASC") {
-        return (a.revenueProgress || 0) - (b.revenueProgress || 0);
-      }
-      return 0;
-    });
-
-    return sorted;
-  };
-
-  const filteredKPIs = getFilteredAndSortedKPIs();
 
   if (loading) {
     return (

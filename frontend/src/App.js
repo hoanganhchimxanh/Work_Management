@@ -2,7 +2,6 @@ import "./App.css";
 import { Routes, Route } from "react-router-dom";
 // Public pages
 import Login from "./pages/Login";
-import ForgotPassword from "./pages/ForgotPassword";
 import ChangePassword from "./pages/ChangePassword";
 import Unauthorized from "./pages/Unauthorized";
 import BugReport from "./pages/BugReport";
@@ -59,7 +58,6 @@ function App() {
       <Route element={<PublicRoute />}>
         <Route path="/" element={<Login />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
       </Route>
 
       {/* PROTECTED ROUTES - Chỉ cho người đã đăng nhập */}

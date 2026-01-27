@@ -84,6 +84,45 @@ function UserTable({ users, loading, onEdit, onRefresh, teams }) {
     return sorted;
   };
 
+  const handleResetPassword = async (userId, fullName) => {
+    if (
+      !window.confirm(
+        `Bạn có chắc chắn muốn cấp lại mật khẩu cho "${fullName}"?`,
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+
+      const response = await axios.post(
+        `${config.backendBase}/user/reset-password/${userId}`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      const newPassword = response.data?.data?.newPassword;
+
+      alert(
+        `Cấp lại mật khẩu thành công!\n\n` +
+          `Người dùng: ${fullName}\n` +
+          `Mật khẩu mới: ${newPassword}`,
+      );
+
+      onRefresh();
+    } catch (err) {
+      alert(
+        "Không thể cấp lại mật khẩu: " +
+          (err.response?.data?.message || err.message),
+      );
+    }
+  };
+
   const handleDelete = async (userId, userName) => {
     if (
       !window.confirm(`Bạn có chắc chắn muốn xóa người dùng "${userName}"?`)
@@ -266,7 +305,13 @@ function UserTable({ users, loading, onEdit, onRefresh, teams }) {
                   <td className="text-center">
                     <Badge bg="info">{user.channelCount || 0}</Badge>
                   </td>
-                  <td>{user.note}</td>
+                  <td>
+                    {user.note && user.note.trim() !== "" ? (
+                      <span>{user.note}</span>
+                    ) : (
+                      <Badge bg="secondary">N/A</Badge>
+                    )}
+                  </td>
                   <td>
                     <Dropdown>
                       <Dropdown.Toggle
@@ -282,7 +327,20 @@ function UserTable({ users, loading, onEdit, onRefresh, teams }) {
                           <i className="bi bi-pencil me-2"></i>
                           Chỉnh sửa
                         </Dropdown.Item>
+
+                        {user.loginEmail && (
+                          <Dropdown.Item
+                            onClick={() =>
+                              handleResetPassword(user.userId, user.fullName)
+                            }
+                          >
+                            <i className="bi bi-key me-2"></i>
+                            Cấp lại mật khẩu
+                          </Dropdown.Item>
+                        )}
+
                         <Dropdown.Divider />
+
                         <Dropdown.Item
                           onClick={() =>
                             handleDelete(user.userId, user.fullName)

@@ -18,11 +18,21 @@ import {
   PauseCircleFill,
 } from "react-bootstrap-icons";
 
+import useTaskFilters from "../../../../hooks/employee/kpiTaskManagement/useTaskFilters";
+
 function EmployeeTaskTable({ tasks, loading, onRefresh, onUpdateStatus }) {
-  const [filterStatus, setFilterStatus] = useState("ALL");
-  const [filterSort, setFilterSort] = useState("NEWEST");
-  const [searchTerm, setSearchTerm] = useState("");
   const [updatingTaskId, setUpdatingTaskId] = useState(null);
+
+  // Use filters hook
+  const {
+    filterStatus,
+    setFilterStatus,
+    filterSort,
+    setFilterSort,
+    searchTerm,
+    setSearchTerm,
+    filteredTasks,
+  } = useTaskFilters(tasks);
 
   const getStatusBadge = (status) => {
     const variants = {
@@ -53,44 +63,6 @@ function EmployeeTaskTable({ tasks, loading, onRefresh, onUpdateStatus }) {
       setUpdatingTaskId(null);
     }
   };
-
-  const getFilteredAndSortedTasks = () => {
-    let filtered = tasks;
-
-    if (filterStatus !== "ALL") {
-      filtered = filtered.filter((task) => task.status === filterStatus);
-    }
-
-    if (searchTerm) {
-      const searchLower = searchTerm.toLowerCase();
-      filtered = filtered.filter(
-        (task) =>
-          task.title.toLowerCase().includes(searchLower) ||
-          task.description?.toLowerCase().includes(searchLower)
-      );
-    }
-
-    const sorted = [...filtered].sort((a, b) => {
-      if (filterSort === "NEWEST") {
-        return new Date(b.createdAt) - new Date(a.createdAt);
-      } else if (filterSort === "OLDEST") {
-        return new Date(a.createdAt) - new Date(b.createdAt);
-      } else if (filterSort === "DEADLINE_ASC") {
-        if (!a.deadline) return 1;
-        if (!b.deadline) return -1;
-        return new Date(a.deadline) - new Date(b.deadline);
-      } else if (filterSort === "DEADLINE_DESC") {
-        if (!a.deadline) return 1;
-        if (!b.deadline) return -1;
-        return new Date(b.deadline) - new Date(a.deadline);
-      }
-      return 0;
-    });
-
-    return sorted;
-  };
-
-  const filteredTasks = getFilteredAndSortedTasks();
 
   // Render action buttons based on current status
   const renderActionButtons = (task) => {

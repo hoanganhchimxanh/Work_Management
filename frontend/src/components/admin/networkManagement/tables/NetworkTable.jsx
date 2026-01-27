@@ -38,7 +38,7 @@ const NetworkTable = ({ networks, loading, onEdit, onDelete, onRefresh }) => {
       REJECTED: "Từ chối",
       PENDING_IDENTITY_VERIFICATION: "Chờ XMDT",
       IDENTITY_VERIFICATION_REVIEW: "XMDT chờ duyệt",
-      PENDING_32: "Chờ 32",
+      PENDING_32: "Chờ 32 ngày",
       PENDING_PIN: "Chờ PIN",
       ACTIVATED: "Active",
     };
@@ -81,25 +81,29 @@ const NetworkTable = ({ networks, loading, onEdit, onDelete, onRefresh }) => {
 
   return (
     <div className="table-responsive">
-      <Table striped bordered hover>
+      <Table
+        striped
+        bordered
+        hover
+        style={{
+          tableLayout: "fixed",
+          width: "100%",
+        }}
+      >
         <thead>
           <tr>
             <th style={{ width: "50px" }}>STT</th>
-            <th>PUB-ID</th>
-            <th>Profile AdSense ID</th>
-            <th>Employment</th>
-            <th>Email Address</th>
-            <th>Password</th>
-            <th>Recovery Email</th>
-            <th>2FA</th>
-            <th>Tax Form</th>
-            <th>Linked Channel</th>
-            <th>Location</th>
-            <th>Ngày tạo</th>
-            <th>Ngày nhắc</th>
-            <th>Trạng thái</th>
-            <th>Note</th>
-            <th style={{ width: "120px" }}>Thao tác</th>
+            <th style={{ width: "170px" }}>Mã định danh</th>
+            <th style={{ width: "160px" }}>Employment</th>
+            <th style={{ width: "260px" }}>Account</th>
+            <th style={{ width: "100px" }}>Tax Form</th>
+            <th style={{ width: "180px" }}>Linked Channel</th>
+            <th style={{ width: "120px" }}>Location</th>
+            <th style={{ width: "95px" }}>Ngày tạo</th>
+            <th style={{ width: "100px" }}>Ngày nhắc</th>
+            <th style={{ width: "100px" }}>Trạng thái</th>
+            <th style={{ width: "100px" }}>Note</th>
+            <th style={{ width: "90px" }}>Thao tác</th>
           </tr>
         </thead>
         <tbody>
@@ -114,33 +118,64 @@ const NetworkTable = ({ networks, loading, onEdit, onDelete, onRefresh }) => {
               <tr key={network._id}>
                 <td>{index + 1}</td>
                 <td>
-                  <small className="text-muted">{network.pubId || "N/A"}</small>
-                </td>
-                <td>
-                  <small className="text-muted">
-                    {network.profileAdsenseId}
-                  </small>
+                  <div className="d-flex flex-column gap-1">
+                    {/* PUB-ID */}
+                    <div>
+                      <small className="text-muted fw-semibold">PUB-ID:</small>{" "}
+                      <small className="text-monospace">
+                        {network.pubId || "N/A"}
+                      </small>
+                    </div>
+
+                    {/* Profile AdSense */}
+                    <div>
+                      <small className="text-muted fw-semibold">
+                        AdSense-ID:
+                      </small>{" "}
+                      <small className="text-monospace">
+                        {network.profileAdsenseId || "N/A"}
+                      </small>
+                    </div>
+                  </div>
                 </td>
                 <td>
                   {network.employment?.fullName || network.employment || "N/A"}
                 </td>
+
                 <td>
-                  <small>{network.emailAddress || "N/A"}</small>
-                </td>
-                <td>
-                  <small className="text-muted">
-                    {network.password || "N/A"}
-                  </small>
-                </td>
-                <td>
-                  <small>{network.recoveryEmail || "N/A"}</small>
-                </td>
-                <td className="text-center">
-                  {network.twoFA ? (
-                    <Badge bg="success">Có</Badge>
-                  ) : (
-                    <Badge bg="secondary">Không</Badge>
-                  )}
+                  <div className="d-flex flex-column gap-1">
+                    {/* Email */}
+                    <div>
+                      <strong className="text-muted">Email:</strong>{" "}
+                      <small>{network.emailAddress || "N/A"}</small>
+                    </div>
+
+                    {/* Password */}
+                    <div>
+                      <strong className="text-muted">Pass:</strong>{" "}
+                      <small>{network.password || "N/A"}</small>
+                    </div>
+
+                    {/* Recovery */}
+                    <div>
+                      <strong className="text-muted">Recovery:</strong>{" "}
+                      <small>{network.recoveryEmail || "N/A"}</small>
+                    </div>
+
+                    {/* 2FA */}
+                    <div>
+                      <strong className="text-muted">2FA:</strong>{" "}
+                      {network.twoFA ? (
+                        <Badge bg="success" className="ms-1">
+                          Có
+                        </Badge>
+                      ) : (
+                        <Badge bg="secondary" className="ms-1">
+                          Không
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
                 </td>
                 <td>
                   <small>{network.taxForm || "N/A"}</small>

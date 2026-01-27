@@ -42,7 +42,7 @@ router.get(
   "/download-user-template",
   authenticateJWT,
   authorizeRoles("ADMIN"),
-  excelController.exportUserTemplate
+  excelController.exportUserTemplate,
 );
 
 router.post(
@@ -50,14 +50,14 @@ router.post(
   authenticateJWT,
   authorizeRoles("ADMIN"),
   upload.single("file"),
-  excelController.importUserExcel
+  excelController.importUserExcel,
 );
 
 router.get(
   "/export-user-excel",
   authenticateJWT,
   authorizeRoles("ADMIN"),
-  excelController.exportUserExcel
+  excelController.exportUserExcel,
 );
 
 // ========== TEAM EXCEL ROUTES ==========
@@ -65,7 +65,7 @@ router.get(
   "/download-team-template",
   authenticateJWT,
   authorizeRoles("ADMIN"),
-  excelController.exportTeamTemplate
+  excelController.exportTeamTemplate,
 );
 
 router.post(
@@ -73,37 +73,22 @@ router.post(
   authenticateJWT,
   authorizeRoles("ADMIN"),
   upload.single("file"),
-  excelController.importTeamExcel
+  excelController.importTeamExcel,
 );
 
 router.get(
   "/export-team-excel",
   authenticateJWT,
   authorizeRoles("ADMIN"),
-  excelController.exportTeamExcel
+  excelController.exportTeamExcel,
 );
 
 // ========== NETWORK EXCEL ROUTES ==========
 router.get(
-  "/download-network-template",
-  authenticateJWT,
-  authorizeRoles("ADMIN"),
-  excelController.exportNetworkTemplate
-);
-
-router.post(
-  "/import-network-excel",
-  authenticateJWT,
-  authorizeRoles("ADMIN"),
-  upload.single("file"),
-  excelController.importNetworkExcel
-);
-
-router.get(
   "/export-network-excel",
   authenticateJWT,
   authorizeRoles(["ADMIN", "ACCOUNTANT"]),
-  excelController.exportNetworkExcel
+  excelController.exportNetworkExcel,
 );
 
 // ========== RESOURCE EXCEL ROUTES ==========
@@ -111,7 +96,7 @@ router.get(
   "/download-resource-template",
   authenticateJWT,
   authorizeRoles("ADMIN"),
-  excelController.exportResourceTemplate
+  excelController.exportResourceTemplate,
 );
 
 router.post(
@@ -119,14 +104,14 @@ router.post(
   authenticateJWT,
   authorizeRoles("ADMIN"),
   upload.single("file"),
-  excelController.importResourceExcel
+  excelController.importResourceExcel,
 );
 
 router.get(
   "/export-resource-excel",
   authenticateJWT,
   authorizeRoles("ADMIN"),
-  excelController.exportResourceExcel
+  excelController.exportResourceExcel,
 );
 
 module.exports = router;
