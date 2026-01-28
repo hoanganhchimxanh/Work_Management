@@ -8,7 +8,12 @@ export const useChannelRevenue = (channelId, show) => {
   const [error, setError] = useState(null);
   const [channelData, setChannelData] = useState(null);
   const [revenues, setRevenues] = useState([]);
-  const [totals, setTotals] = useState({ totalEstimated: 0, totalActual: 0 });
+  const [totals, setTotals] = useState({
+    totalEstimated: 0,
+    totalActual: 0,
+    totalUsRevenue: 0,
+    totalNonUsRevenue: 0,
+  });
 
   const getToken = () => localStorage.getItem("token");
 
@@ -22,7 +27,7 @@ export const useChannelRevenue = (channelId, show) => {
         `${config.backendBase}/channel-revenue/${channelId}/monthly`,
         {
           headers: { Authorization: `Bearer ${token}` },
-        }
+        },
       );
 
       setChannelData(response.data.data.channel);
