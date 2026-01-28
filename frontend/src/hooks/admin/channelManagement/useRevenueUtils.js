@@ -53,25 +53,22 @@ export const useRevenueUtils = (channelData) => {
 
         <div className="mb-3">
           <strong>Bước 4: Tính doanh thu thực tế</strong>
-          {channelData?.hasNetwork ? (
-            <div className="ms-3">
-              <div className="text-primary fw-bold">Trường hợp CÓ NETWORK:</div>
-              <div className="text-muted">
-                DT Thực tế = [(DT Mỹ × (100% - % Thuế Mỹ)) + DT Ngoài Mỹ] ×
-                (100% - % Net Network - % Thuế TNCN)
-              </div>
+          <div className="ms-3">
+            <div className="text-success fw-bold">Trường hợp CÓ NETWORK:</div>
+            <div className="text-muted">
+              DT Thực tế = [(DT Mỹ × (100% - % Thuế Mỹ)) + DT Ngoài Mỹ] × (100%
+              - % Net Network - % Thuế TNCN)
             </div>
-          ) : (
-            <div className="ms-3">
-              <div className="text-success fw-bold">
-                Trường hợp KHÔNG CÓ NETWORK:
-              </div>
-              <div className="text-muted">
-                DT Thực tế = [(DT Mỹ × (100% - % Thuế Mỹ)) + DT Ngoài Mỹ] ×
-                (100% - % Thuế TNCN)
-              </div>
+          </div>
+          <div className="ms-3">
+            <div className="text-success fw-bold">
+              Trường hợp KHÔNG CÓ NETWORK:
             </div>
-          )}
+            <div className="text-muted">
+              DT Thực tế = [(DT Mỹ × (100% - % Thuế Mỹ)) + DT Ngoài Mỹ] × (100%
+              - % Thuế TNCN)
+            </div>
+          </div>
         </div>
 
         <div className="alert alert-info mt-3 mb-0">

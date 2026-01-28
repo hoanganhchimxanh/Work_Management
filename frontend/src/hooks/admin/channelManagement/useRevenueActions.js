@@ -13,7 +13,7 @@ export const useRevenueActions = (
   const handleSyncAnalytics = async () => {
     if (
       !window.confirm(
-        "Đồng bộ doanh thu và views từ YouTube Analytics?\n\nDữ liệu sẽ bao gồm: Doanh thu ước tính, Tổng views, và Views từ Mỹ.",
+        "Đồng bộ doanh thu và views từ YouTube Analytics?\n\nDữ liệu sẽ bao gồm: Doanh thu ước tính, Tổng views, và Views từ Mỹ.\n\n⚠️ Lưu ý: Chỉ sync đến THÁNG TRƯỚC (tháng hiện tại chưa có đủ dữ liệu).",
       )
     ) {
       return;
@@ -22,16 +22,24 @@ export const useRevenueActions = (
     try {
       const token = getToken();
 
+      // ✅ FIX: Sync 12 tháng GẦN NHẤT (không bao gồm tháng hiện tại)
       const now = new Date();
-      const endMonth = `${now.getFullYear()}-${String(
-        now.getMonth() + 1,
+
+      // endMonth = tháng trước
+      const prevMonth = new Date(now);
+      prevMonth.setMonth(prevMonth.getMonth() - 1);
+      const endMonth = `${prevMonth.getFullYear()}-${String(
+        prevMonth.getMonth() + 1,
       ).padStart(2, "0")}`;
 
-      const startDate = new Date(now);
+      // startMonth = 11 tháng trước endMonth = 12 tháng trước tháng hiện tại
+      const startDate = new Date(prevMonth);
       startDate.setMonth(startDate.getMonth() - 11);
       const startMonth = `${startDate.getFullYear()}-${String(
         startDate.getMonth() + 1,
       ).padStart(2, "0")}`;
+
+      console.log(`📅 Syncing from ${startMonth} to ${endMonth}`);
 
       const response = await axios.post(
         `${config.backendBase}/channel-revenue/${channelId}/sync-analytics`,

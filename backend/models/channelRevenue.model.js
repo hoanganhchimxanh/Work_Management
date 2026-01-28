@@ -104,8 +104,8 @@ const channelRevenueSchema = new mongoose.Schema(
 // Index để query nhanh
 channelRevenueSchema.index({ channel: 1, month: -1 });
 
-// Tính toán tự động trước khi save
-channelRevenueSchema.pre("save", async function (next) {
+// ✅ Tính toán tự động trước khi save (Mongoose 5+ không cần next())
+channelRevenueSchema.pre("save", async function () {
   // 1. Tính tỷ lệ views từ Mỹ
   if (this.totalViews > 0 && this.usViews > 0) {
     this.usViewsPercentage = (this.usViews / this.totalViews) * 100;
@@ -137,7 +137,7 @@ channelRevenueSchema.pre("save", async function (next) {
 
     if (!channel || !channel.isMonetized) {
       this.actualRevenue = 0;
-      return next();
+      return; // ✅ Mongoose 5+ không cần next(), chỉ cần return
     }
 
     // Tính doanh thu Mỹ sau thuế
@@ -157,8 +157,6 @@ channelRevenueSchema.pre("save", async function (next) {
       this.actualRevenue = totalRevenueAfterUsTax * (1 - this.taxPIT / 100);
     }
   }
-
-  next();
 });
 
 module.exports = mongoose.model("ChannelRevenue", channelRevenueSchema);
