@@ -17,7 +17,15 @@ const app = express();
 const server = http.createServer(app);
 
 // --- Middlewares ---
-app.use(cors());
+app.use(
+  cors({
+    origin: [
+      "http://localhost:3000", // cho development
+      "https://thanglong.vercel.app", // thay bằng URL Vercel của bạn
+    ],
+    credentials: true,
+  }),
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan("dev"));

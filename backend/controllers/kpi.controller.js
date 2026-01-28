@@ -83,7 +83,6 @@ const createNew = async (req, res, next) => {
         userId: teamUserIds[0],
         title: "Bạn được giao KPI mới",
         message: "Một KPI mới vừa được tạo và gán cho bạn.",
-        // type: "KPI",
         metadata: {
           kpiId: newKPI._id,
           startDate,
@@ -95,7 +94,6 @@ const createNew = async (req, res, next) => {
         userIds: teamUserIds,
         title: "Team bạn được giao KPI mới",
         message: "Một KPI mới vừa được tạo cho team của bạn.",
-        // type: "KPI",
         metadata: {
           kpiId: newKPI._id,
           startDate,
@@ -420,9 +418,21 @@ const getAllWithProgress = async (req, res, next) => {
 
           actualRevenue = revenueData[0]?.totalRevenue || 0;
 
-          // Đếm số kênh đã BKT (status ACTIVE)
-          actualBkt = channels.filter((ch) => ch.status === "ACTIVE").length;
-        } else if (kpi.team) {
+          // ✅ FIX: Đếm số kênh được BKT TRONG khoảng thời gian KPI
+          // Chỉ đếm kênh nếu:
+          // 1. isMonetized = true
+          // 2. monetizeDate nằm trong khoảng [startDate, endDate]
+          actualBkt = channels.filter((ch) => {
+            if (!ch.isMonetized || !ch.monetizeDate) return false;
+
+            const monetizeDate = new Date(ch.monetizeDate);
+            const kpiStart = new Date(kpi.startDate);
+            const kpiEnd = new Date(kpi.endDate);
+
+            // Kênh được bật kiếm tiền trong khoảng thời gian KPI
+            return monetizeDate >= kpiStart && monetizeDate <= kpiEnd;
+          }).length;
+        } else if (hasStarted && kpi.team) {
           // Tìm các user thuộc team
           const teamUsers = await db.User.find({
             team: kpi.team._id || kpi.team,
@@ -457,8 +467,17 @@ const getAllWithProgress = async (req, res, next) => {
 
           actualRevenue = revenueData[0]?.totalRevenue || 0;
 
-          // Đếm số kênh đã BKT
-          actualBkt = channels.filter((ch) => ch.status === "ACTIVE").length;
+          // ✅ FIX: Đếm số kênh được BKT TRONG khoảng thời gian KPI
+          actualBkt = channels.filter((ch) => {
+            if (!ch.isMonetized || !ch.monetizeDate) return false;
+
+            const monetizeDate = new Date(ch.monetizeDate);
+            const kpiStart = new Date(kpi.startDate);
+            const kpiEnd = new Date(kpi.endDate);
+
+            // Kênh được bật kiếm tiền trong khoảng thời gian KPI
+            return monetizeDate >= kpiStart && monetizeDate <= kpiEnd;
+          }).length;
         }
       } catch (error) {
         console.error("Error calculating KPI progress:", error);
@@ -574,8 +593,17 @@ const getMyKPIsWithProgress = async (req, res, next) => {
 
           actualRevenue = revenueData[0]?.totalRevenue || 0;
 
-          // Đếm số kênh đã BKT (status ACTIVE)
-          actualBkt = channels.filter((ch) => ch.status === "ACTIVE").length;
+          // ✅ FIX: Đếm số kênh được BKT TRONG khoảng thời gian KPI
+          actualBkt = channels.filter((ch) => {
+            if (!ch.isMonetized || !ch.monetizeDate) return false;
+
+            const monetizeDate = new Date(ch.monetizeDate);
+            const kpiStart = new Date(kpi.startDate);
+            const kpiEnd = new Date(kpi.endDate);
+
+            // Kênh được bật kiếm tiền trong khoảng thời gian KPI
+            return monetizeDate >= kpiStart && monetizeDate <= kpiEnd;
+          }).length;
         } else if (hasStarted && kpi.team) {
           // Tìm các user thuộc team
           const teamUsers = await db.User.find({
@@ -611,8 +639,17 @@ const getMyKPIsWithProgress = async (req, res, next) => {
 
           actualRevenue = revenueData[0]?.totalRevenue || 0;
 
-          // Đếm số kênh đã BKT
-          actualBkt = channels.filter((ch) => ch.status === "ACTIVE").length;
+          // ✅ FIX: Đếm số kênh được BKT TRONG khoảng thời gian KPI
+          actualBkt = channels.filter((ch) => {
+            if (!ch.isMonetized || !ch.monetizeDate) return false;
+
+            const monetizeDate = new Date(ch.monetizeDate);
+            const kpiStart = new Date(kpi.startDate);
+            const kpiEnd = new Date(kpi.endDate);
+
+            // Kênh được bật kiếm tiền trong khoảng thời gian KPI
+            return monetizeDate >= kpiStart && monetizeDate <= kpiEnd;
+          }).length;
         }
       } catch (error) {
         console.error("Error calculating KPI progress:", error);

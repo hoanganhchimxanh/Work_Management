@@ -244,7 +244,12 @@ function KPITable({ kpis, loading, onEdit, onRefresh, onDeleted }) {
                           now={kpi.revenueProgress || 0}
                           variant={getProgressVariant(kpi.revenueProgress || 0)}
                           label={`${kpi.revenueProgress || 0}%`}
-                          style={{ height: "25px" }}
+                          style={{
+                            height: "22px",
+                            backgroundColor: "#d1e9ff",
+                            borderRadius: "6px",
+                            fontWeight: 500,
+                          }}
                         />
                       </>
                     )}
@@ -267,7 +272,12 @@ function KPITable({ kpis, loading, onEdit, onRefresh, onDeleted }) {
                           now={kpi.bktProgress || 0}
                           variant={getProgressVariant(kpi.bktProgress || 0)}
                           label={`${kpi.bktProgress || 0}%`}
-                          style={{ height: "25px" }}
+                          style={{
+                            height: "22px",
+                            backgroundColor: "#d1e9ff",
+                            borderRadius: "6px",
+                            fontWeight: 500,
+                          }}
                         />
                       </>
                     )}

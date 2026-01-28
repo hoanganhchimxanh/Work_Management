@@ -21,7 +21,40 @@ const channelRevenueSchema = new mongoose.Schema(
       default: 0,
     },
 
-    // Thuế Mỹ (chỉ áp dụng cho kênh không thuộc network)
+    // ============ DỮ LIỆU VIEWS TỪ YOUTUBE ANALYTICS ============
+    totalViews: {
+      type: Number,
+      default: 0,
+    },
+
+    usViews: {
+      type: Number,
+      default: 0,
+    },
+
+    // Tỷ lệ views từ Mỹ (tính tự động)
+    usViewsPercentage: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 100,
+    },
+
+    // ============ DOANH THU THEO KHU VỰC (TÍNH TỰ ĐỘNG) ============
+    // Doanh thu từ Mỹ (ước tính dựa trên tỷ lệ views)
+    usRevenue: {
+      type: Number,
+      default: 0,
+    },
+
+    // Doanh thu ngoài Mỹ
+    nonUsRevenue: {
+      type: Number,
+      default: 0,
+    },
+
+    // ============ CÁC KHOẢN KHẤU TRỪ ============
+    // Thuế Mỹ (áp dụng cho phần doanh thu từ Mỹ)
     taxUS: {
       type: Number,
       default: 30, // Mặc định 30%
@@ -29,7 +62,7 @@ const channelRevenueSchema = new mongoose.Schema(
       max: 100,
     },
 
-    // Network fee (chỉ áp dụng cho kênh thuộc network)
+    // Network fee (áp dụng sau khi đã trừ thuế Mỹ)
     netNetwork: {
       type: Number,
       default: 20, // Mặc định 20%
@@ -65,16 +98,35 @@ const channelRevenueSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 // Index để query nhanh
 channelRevenueSchema.index({ channel: 1, month: -1 });
 
-// Tính toán doanh thu thực tế trước khi save
-channelRevenueSchema.pre("save", async function (next) {
+// ✅ Tính toán tự động trước khi save (Mongoose 5+ không cần next())
+channelRevenueSchema.pre("save", async function () {
+  // 1. Tính tỷ lệ views từ Mỹ
+  if (this.totalViews > 0 && this.usViews > 0) {
+    this.usViewsPercentage = (this.usViews / this.totalViews) * 100;
+  } else {
+    this.usViewsPercentage = 0;
+  }
+
+  // 2. Tính doanh thu theo khu vực (dựa trên tỷ lệ views)
+  if (this.usViewsPercentage > 0) {
+    this.usRevenue = this.estimatedRevenue * (this.usViewsPercentage / 100);
+    this.nonUsRevenue = this.estimatedRevenue - this.usRevenue;
+  } else {
+    this.usRevenue = 0;
+    this.nonUsRevenue = this.estimatedRevenue;
+  }
+
+  // 3. Tính doanh thu thực tế theo công thức mới
   if (
     this.isModified("estimatedRevenue") ||
+    this.isModified("totalViews") ||
+    this.isModified("usViews") ||
     this.isModified("taxUS") ||
     this.isModified("netNetwork") ||
     this.isModified("taxPIT")
@@ -83,21 +135,28 @@ channelRevenueSchema.pre("save", async function (next) {
     const Channel = mongoose.model("Channel");
     const channel = await Channel.findById(this.channel).populate("network");
 
-    let deductionPercent = this.taxPIT;
-
-    if (channel.network && channel.isMonetized) {
-      // Kênh thuộc network: trừ network fee + thuế TNCN
-      deductionPercent += this.netNetwork;
-    } else if (!channel.network && channel.isMonetized) {
-      // Kênh không thuộc network: trừ thuế Mỹ + thuế TNCN
-      deductionPercent += this.taxUS;
+    if (!channel || !channel.isMonetized) {
+      this.actualRevenue = 0;
+      return; // ✅ Mongoose 5+ không cần next(), chỉ cần return
     }
 
-    // Tính doanh thu thực tế
-    this.actualRevenue = this.estimatedRevenue * (1 - deductionPercent / 100);
-  }
+    // Tính doanh thu Mỹ sau thuế
+    const usRevenueAfterTax = this.usRevenue * (1 - this.taxUS / 100);
 
-  // next();
+    // Tổng doanh thu sau thuế Mỹ
+    const totalRevenueAfterUsTax = usRevenueAfterTax + this.nonUsRevenue;
+
+    if (channel.network) {
+      // ============ CÓ NETWORK ============
+      // DT Thực tế = [ (DT Mỹ × (100% − %Thuế Mỹ)) + DT Ngoài Mỹ ] × (100% − %Net Network − %Thuế TNCN)
+      this.actualRevenue =
+        totalRevenueAfterUsTax * (1 - (this.netNetwork + this.taxPIT) / 100);
+    } else {
+      // ============ KHÔNG CÓ NETWORK ============
+      // DT Thực tế = [ (DT Mỹ × (100% − %Thuế Mỹ)) + DT Ngoài Mỹ ] × (100% − %Thuế TNCN)
+      this.actualRevenue = totalRevenueAfterUsTax * (1 - this.taxPIT / 100);
+    }
+  }
 });
 
 module.exports = mongoose.model("ChannelRevenue", channelRevenueSchema);
