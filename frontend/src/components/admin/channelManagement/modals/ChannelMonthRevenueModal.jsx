@@ -359,26 +359,27 @@ function ChannelMonthRevenueModal({ show, onHide, channelId, channelName }) {
 
                         {/* Net Network */}
                         <td className="text-center">
-                          <Form.Control
-                            type="number"
-                            size="sm"
-                            min="0"
-                            max="100"
-                            step="0.1"
-                            disabled={rev.locked || !channelData?.hasNetwork}
-                            value={rev.netNetwork}
-                            onChange={(e) =>
-                              handleUpdateRevenue(
-                                rev.month,
-                                "netNetwork",
-                                e.target.value,
-                              )
-                            }
-                            className="text-center"
-                            style={{ width: "80px" }}
-                          />
-                          {!channelData?.hasNetwork && (
-                            <small className="text-muted d-block">N/A</small>
+                          {!channelData?.hasNetwork ? (
+                            <span className="text-muted">N/A</span>
+                          ) : (
+                            <Form.Control
+                              type="number"
+                              size="sm"
+                              min="0"
+                              max="100"
+                              step="0.1"
+                              disabled={rev.locked}
+                              value={rev.netNetwork}
+                              onChange={(e) =>
+                                handleUpdateRevenue(
+                                  rev.month,
+                                  "netNetwork",
+                                  e.target.value,
+                                )
+                              }
+                              className="text-center"
+                              style={{ width: "80px" }}
+                            />
                           )}
                         </td>
 
