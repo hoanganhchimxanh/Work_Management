@@ -133,7 +133,7 @@ function ChannelMonthRevenueModal({ show, onHide, channelId, channelName }) {
                   </div>
                 </Col>
                 <Col md={3}>
-                  <small className="text-muted d-block">DT từ Mỹ (API)</small>
+                  <small className="text-muted d-block">DT từ Mỹ</small>
                   <div className="fw-bold fs-5 text-info mt-1">
                     ${totals.totalUsRevenue?.toLocaleString() || "0"}
                   </div>
