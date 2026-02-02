@@ -1,123 +1,117 @@
-// hooks/admin/channelManagement/useRevenueUtils.js
+import { useMemo } from "react";
+
+/**
+ * Hook để format số và tạo công thức tính doanh thu
+ */
 export const useRevenueUtils = (channelData) => {
-  // Hàm format số với 2 chữ số thập phân
+  // Format số với 2 chữ số thập phân
   const formatNumber = (num) => {
-    return num?.toFixed(2) || "0.00";
+    if (!num && num !== 0) return "-";
+    return Number(num).toFixed(2);
   };
 
-  // Hàm tính tỷ lệ views từ Mỹ
-  const calculateUsViewsPercentage = (totalViews, usViews) => {
-    if (!totalViews || totalViews === 0) return 0;
-    return ((usViews / totalViews) * 100).toFixed(2);
-  };
-
-  // Hàm tính doanh thu từ Mỹ
-  const calculateUsRevenue = (estimatedRevenue, usViewsPercentage) => {
-    return (estimatedRevenue * usViewsPercentage) / 100;
-  };
-
-  // Hàm tính doanh thu ngoài Mỹ
-  const calculateNonUsRevenue = (estimatedRevenue, usRevenue) => {
-    return estimatedRevenue - usRevenue;
-  };
-
-  // Hàm hiển thị công thức tính
   const getFormulaText = () => {
-    if (!channelData?.isMonetized) {
-      return <span className="text-muted">Kênh chưa bật kiếm tiền</span>;
-    }
+    const hasNetwork = channelData?.hasNetwork;
 
     return (
-      <div className="formula-container">
+      <div className="small">
         <div className="mb-3">
-          <strong>Bước 1: Tính tỷ lệ views từ Mỹ</strong>
-          <div className="ms-3 text-muted">
-            % Views Mỹ = (Views Mỹ / Tổng Views) × 100%
-          </div>
+          <strong>📌 Lưu ý quan trọng:</strong>
+          <ul className="mt-2 mb-0">
+            <li>
+              <strong>Doanh thu từ Mỹ (US Revenue)</strong> được lấy{" "}
+              <span className="text-primary fw-bold">
+                TRỰC TIẾP từ YouTube API
+              </span>
+            </li>
+            <li>
+              <strong>Doanh thu ngoài Mỹ (Non-US Revenue)</strong> = Tổng DT -
+              DT từ Mỹ
+            </li>
+          </ul>
         </div>
 
-        <div className="mb-3">
-          <strong>Bước 2: Ước tính doanh thu theo khu vực</strong>
-          <div className="ms-3 text-muted">
-            • DT Mỹ = DT Ước tính × (% Views Mỹ / 100)
-            <br />• DT Ngoài Mỹ = DT Ước tính - DT Mỹ
-          </div>
-        </div>
-
-        <div className="mb-3">
-          <strong>Bước 3: Áp dụng thuế Mỹ</strong>
-          <div className="ms-3 text-muted">
-            DT Mỹ sau thuế = DT Mỹ × (100% - % Thuế Mỹ)
-          </div>
-        </div>
-
-        <div className="mb-3">
-          <strong>Bước 4: Tính doanh thu thực tế</strong>
-          <div className="ms-3">
-            <div className="text-success fw-bold">Trường hợp CÓ NETWORK:</div>
-            <div className="text-muted">
-              DT Thực tế = [(DT Mỹ × (100% - % Thuế Mỹ)) + DT Ngoài Mỹ] × (100%
-              - % Net Network - % Thuế TNCN)
+        <div className="bg-light p-3 rounded">
+          <div className="mb-3">
+            <strong className="text-info">
+              Bước 1: Tính doanh thu ngoài Mỹ
+            </strong>
+            <div className="ms-3 mt-2">
+              <code className="d-block bg-white p-2 rounded border">
+                DT Ngoài Mỹ = Tổng DT Ước tính - DT từ Mỹ (API)
+              </code>
             </div>
           </div>
-          <div className="ms-3">
-            <div className="text-success fw-bold">
-              Trường hợp KHÔNG CÓ NETWORK:
-            </div>
-            <div className="text-muted">
-              DT Thực tế = [(DT Mỹ × (100% - % Thuế Mỹ)) + DT Ngoài Mỹ] × (100%
-              - % Thuế TNCN)
+
+          <div>
+            <strong className="text-success">
+              Bước 2: Tính doanh thu thực tế
+            </strong>
+            <div className="ms-3 mt-2">
+              {hasNetwork ? (
+                <>
+                  <div className="text-muted mb-2">
+                    <em>
+                      <i className="bi bi-diagram-3 me-1"></i>
+                      Kênh có Network (MCN):
+                    </em>
+                  </div>
+                  <code className="d-block bg-white p-2 rounded border">
+                    DT Thực tế = <br />
+                    &nbsp;&nbsp;[ (DT từ Mỹ × (100% - %Thuế Mỹ)) + DT Ngoài Mỹ ]{" "}
+                    <br />
+                    &nbsp;&nbsp;× (100% - %Net Network - %Thuế TNCN)
+                  </code>
+                </>
+              ) : (
+                <>
+                  <div className="text-muted mb-2">
+                    <em>
+                      <i className="bi bi-person me-1"></i>
+                      Kênh không có Network:
+                    </em>
+                  </div>
+                  <code className="d-block bg-white p-2 rounded border">
+                    DT Thực tế = <br />
+                    &nbsp;&nbsp;[ (DT từ Mỹ × (100% - %Thuế Mỹ)) + DT Ngoài Mỹ ]{" "}
+                    <br />
+                    &nbsp;&nbsp;× (100% - %Thuế TNCN)
+                  </code>
+                  <br />
+                  <div className="text-muted mb-2">
+                    <em>
+                      <i className="bi bi-person me-1"></i>
+                      Kênh có Network:
+                    </em>
+                  </div>
+                  <code className="d-block bg-white p-2 rounded border">
+                    DT Thực tế = <br />
+                    &nbsp;&nbsp;[ (DT từ Mỹ × (100% - %Thuế Mỹ)) + DT Ngoài Mỹ ]{" "}
+                    <br />
+                    &nbsp;&nbsp;× (100% - %Net network - %Thuế TNCN)
+                  </code>
+                </>
+              )}
             </div>
           </div>
         </div>
 
-        <div className="alert alert-info mt-3 mb-0">
+        <div className="mt-3 text-muted">
           <small>
-            <strong>Lưu ý:</strong> Thuế Mỹ chỉ áp dụng cho phần doanh thu từ
-            views Mỹ. Doanh thu từ các quốc gia khác không bị đánh thuế Mỹ.
+            <i className="bi bi-info-circle me-1"></i>
+            Tất cả các giá trị doanh thu đều tự động được tính toán khi bạn đồng
+            bộ từ Analytics hoặc thay đổi các tham số khấu trừ.
           </small>
         </div>
       </div>
     );
   };
 
-  // Hàm tính ví dụ minh họa
-  const getExampleCalculation = (revenue) => {
-    if (!revenue || !channelData?.isMonetized) return null;
-
-    const usViewsPercent = revenue.usViewsPercentage || 0;
-    const usRev = revenue.usRevenue || 0;
-    const nonUsRev = revenue.nonUsRevenue || 0;
-    const taxUS = revenue.taxUS || 0;
-    const netNetwork = revenue.netNetwork || 0;
-    const taxPIT = revenue.taxPIT || 0;
-
-    const usRevAfterTax = usRev * (1 - taxUS / 100);
-    const totalRevAfterUsTax = usRevAfterTax + nonUsRev;
-
-    let actualRevenue;
-    if (channelData.hasNetwork) {
-      actualRevenue = totalRevAfterUsTax * (1 - (netNetwork + taxPIT) / 100);
-    } else {
-      actualRevenue = totalRevAfterUsTax * (1 - taxPIT / 100);
-    }
-
-    return {
-      usViewsPercent: formatNumber(usViewsPercent),
-      usRevenue: formatNumber(usRev),
-      nonUsRevenue: formatNumber(nonUsRev),
-      usRevenueAfterTax: formatNumber(usRevAfterTax),
-      totalRevenueAfterUsTax: formatNumber(totalRevAfterUsTax),
-      actualRevenue: formatNumber(actualRevenue),
-    };
-  };
-
-  return {
-    formatNumber,
-    calculateUsViewsPercentage,
-    calculateUsRevenue,
-    calculateNonUsRevenue,
-    getFormulaText,
-    getExampleCalculation,
-  };
+  return useMemo(
+    () => ({
+      formatNumber,
+      getFormulaText,
+    }),
+    [channelData],
+  );
 };

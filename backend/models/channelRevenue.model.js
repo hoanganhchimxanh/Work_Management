@@ -15,7 +15,7 @@ const channelRevenueSchema = new mongoose.Schema(
       match: /^\d{4}-(0[1-9]|1[0-2])$/, // Validate format YYYY-MM
     },
 
-    // Doanh thu ước tính từ YouTube Analytics
+    // Doanh thu ước tính TỔNG từ YouTube Analytics
     estimatedRevenue: {
       type: Number,
       default: 0,
@@ -40,14 +40,14 @@ const channelRevenueSchema = new mongoose.Schema(
       max: 100,
     },
 
-    // ============ DOANH THU THEO KHU VỰC (TÍNH TỰ ĐỘNG) ============
-    // Doanh thu từ Mỹ (ước tính dựa trên tỷ lệ views)
+    // ============ DOANH THU THEO KHU VỰC ============
+    // ✅ DOANH THU TỪ MỸ - LẤY TRỰC TIẾP TỪ YOUTUBE API (KHÔNG TÍNH TOÁN)
     usRevenue: {
       type: Number,
       default: 0,
     },
 
-    // Doanh thu ngoài Mỹ
+    // Doanh thu ngoài Mỹ (tính bằng tổng DT - DT từ Mỹ)
     nonUsRevenue: {
       type: Number,
       default: 0,
@@ -104,7 +104,7 @@ const channelRevenueSchema = new mongoose.Schema(
 // Index để query nhanh
 channelRevenueSchema.index({ channel: 1, month: -1 });
 
-// ✅ Tính toán tự động trước khi save (Mongoose 5+ không cần next())
+// ✅ Tính toán tự động trước khi save
 channelRevenueSchema.pre("save", async function () {
   // 1. Tính tỷ lệ views từ Mỹ
   if (this.totalViews > 0 && this.usViews > 0) {
@@ -113,20 +113,14 @@ channelRevenueSchema.pre("save", async function () {
     this.usViewsPercentage = 0;
   }
 
-  // 2. Tính doanh thu theo khu vực (dựa trên tỷ lệ views)
-  if (this.usViewsPercentage > 0) {
-    this.usRevenue = this.estimatedRevenue * (this.usViewsPercentage / 100);
-    this.nonUsRevenue = this.estimatedRevenue - this.usRevenue;
-  } else {
-    this.usRevenue = 0;
-    this.nonUsRevenue = this.estimatedRevenue;
-  }
+  // 2. ✅ TÍNH DOANH THU NGOÀI MỸ
+  // Doanh thu ngoài Mỹ = Tổng DT - DT từ Mỹ (DT từ Mỹ được lấy từ API, không tính)
+  this.nonUsRevenue = Math.max(0, this.estimatedRevenue - this.usRevenue);
 
   // 3. Tính doanh thu thực tế theo công thức mới
   if (
     this.isModified("estimatedRevenue") ||
-    this.isModified("totalViews") ||
-    this.isModified("usViews") ||
+    this.isModified("usRevenue") ||
     this.isModified("taxUS") ||
     this.isModified("netNetwork") ||
     this.isModified("taxPIT")
@@ -137,7 +131,7 @@ channelRevenueSchema.pre("save", async function () {
 
     if (!channel || !channel.isMonetized) {
       this.actualRevenue = 0;
-      return; // ✅ Mongoose 5+ không cần next(), chỉ cần return
+      return;
     }
 
     // Tính doanh thu Mỹ sau thuế

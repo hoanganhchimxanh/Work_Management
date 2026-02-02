@@ -19,7 +19,6 @@ import {
   Trash,
   CloudDownload,
   InfoCircle,
-  Eye,
 } from "react-bootstrap-icons";
 import { useChannelRevenue } from "../../../../hooks/admin/channelManagement/useChannelRevenue";
 import { useRevenueActions } from "../../../../hooks/admin/channelManagement/useRevenueActions";
@@ -134,7 +133,7 @@ function ChannelMonthRevenueModal({ show, onHide, channelId, channelName }) {
                   </div>
                 </Col>
                 <Col md={3}>
-                  <small className="text-muted d-block">DT từ Mỹ</small>
+                  <small className="text-muted d-block">DT từ Mỹ (API)</small>
                   <div className="fw-bold fs-5 text-info mt-1">
                     ${totals.totalUsRevenue?.toLocaleString() || "0"}
                   </div>
@@ -169,7 +168,7 @@ function ChannelMonthRevenueModal({ show, onHide, channelId, channelName }) {
               <OverlayTrigger
                 placement="right"
                 overlay={renderTooltip(
-                  "Dữ liệu bao gồm: Doanh thu ước tính, Tổng views, Views từ Mỹ",
+                  "Dữ liệu bao gồm: Tổng DT, DT từ Mỹ (API), Tổng views, Views từ Mỹ",
                 )}
               >
                 <InfoCircle className="text-muted" />
@@ -223,78 +222,20 @@ function ChannelMonthRevenueModal({ show, onHide, channelId, channelName }) {
                     </th>
                   </tr>
                   <tr>
-                    <th className="text-center" style={{ minWidth: "100px" }}>
-                      DT Ước tính ($)
-                    </th>
-                    <th className="text-center" style={{ minWidth: "90px" }}>
-                      <OverlayTrigger
-                        placement="top"
-                        overlay={renderTooltip(
-                          "Tổng lượt xem từ tất cả quốc gia",
-                        )}
-                      >
-                        <span>
-                          <Eye size={14} className="me-1" />
-                          Tổng Views
-                        </span>
-                      </OverlayTrigger>
-                    </th>
-                    <th className="text-center" style={{ minWidth: "90px" }}>
-                      <OverlayTrigger
-                        placement="top"
-                        overlay={renderTooltip("Lượt xem từ Hoa Kỳ")}
-                      >
-                        <span>
-                          <Eye size={14} className="me-1" />
-                          Views Mỹ
-                        </span>
-                      </OverlayTrigger>
-                    </th>
-                    <th className="text-center" style={{ minWidth: "80px" }}>
-                      <OverlayTrigger
-                        placement="top"
-                        overlay={renderTooltip(
-                          "Tỷ lệ views từ Mỹ so với tổng views",
-                        )}
-                      >
-                        <span>% Views Mỹ</span>
-                      </OverlayTrigger>
-                    </th>
-                    <th className="text-center" style={{ minWidth: "90px" }}>
-                      <OverlayTrigger
-                        placement="top"
-                        overlay={renderTooltip(
-                          "Thuế Mỹ - chỉ áp dụng cho phần DT từ views Mỹ",
-                        )}
-                      >
-                        <span>Thuế Mỹ</span>
-                      </OverlayTrigger>
-                    </th>
-                    <th className="text-center" style={{ minWidth: "100px" }}>
-                      <OverlayTrigger
-                        placement="top"
-                        overlay={renderTooltip(
-                          "Phí Network (MCN) - áp dụng sau khi trừ thuế Mỹ",
-                        )}
-                      >
-                        <span>Net Network</span>
-                      </OverlayTrigger>
-                    </th>
-                    <th className="text-center" style={{ minWidth: "90px" }}>
-                      <OverlayTrigger
-                        placement="top"
-                        overlay={renderTooltip("Thuế thu nhập cá nhân")}
-                      >
-                        <span>Thuế TNCN</span>
-                      </OverlayTrigger>
-                    </th>
+                    <th className="text-center">DT Ước tính ($)</th>
+                    <th className="text-center">DT từ Mỹ ($)</th>
+                    <th className="text-center">Tổng Views</th>
+                    <th className="text-center">Views Mỹ</th>
+                    <th className="text-center">Thuế Mỹ</th>
+                    <th className="text-center">Net Network</th>
+                    <th className="text-center">Thuế TNCN</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {revenues.length === 0 ? (
+                  {!revenues || revenues.length === 0 ? (
                     <tr>
-                      <td colSpan="11" className="text-center py-4">
-                        <div className="text-muted">
+                      <td colSpan="11" className="text-center text-muted py-5">
+                        <div className="d-flex flex-column align-items-center">
                           <InfoCircle
                             size={24}
                             className="mb-2 d-block mx-auto"
@@ -318,6 +259,13 @@ function ChannelMonthRevenueModal({ show, onHide, channelId, channelName }) {
                           {formatNumber(rev.estimatedRevenue)}
                         </td>
 
+                        {/* ✅ DT từ Mỹ (API) */}
+                        <td className="text-center">
+                          <span className="text-info fw-bold">
+                            {formatNumber(rev.usRevenue)}
+                          </span>
+                        </td>
+
                         {/* Tổng Views */}
                         <td className="text-center text-muted">
                           {rev.totalViews?.toLocaleString() || "-"}
@@ -326,13 +274,13 @@ function ChannelMonthRevenueModal({ show, onHide, channelId, channelName }) {
                         {/* Views Mỹ */}
                         <td className="text-center text-info">
                           {rev.usViews?.toLocaleString() || "-"}
-                        </td>
-
-                        {/* % Views Mỹ */}
-                        <td className="text-center">
-                          <Badge bg="info" className="px-2">
-                            {formatNumber(rev.usViewsPercentage || 0)}%
-                          </Badge>
+                          {rev.usViewsPercentage > 0 && (
+                            <div>
+                              <small className="text-muted">
+                                ({formatNumber(rev.usViewsPercentage)}%)
+                              </small>
+                            </div>
+                          )}
                         </td>
 
                         {/* Thuế Mỹ */}

@@ -45,27 +45,19 @@ const getAuthenticatedClient = async (channelId) => {
 };
 
 /**
- * ✅ FIXED: Helper tính date range ĐÚNG cho YouTube Analytics
- * YouTube Analytics với dimension "month" cần:
- * - startDate: ngày đầu tháng
- * - endDate: ngày cuối tháng
+ * Helper tính date range ĐÚNG cho YouTube Analytics
  */
 const calculateDateRange = (startMonth, endMonth) => {
-  // Input: "2025-01", "2025-02"
   const [startYear, startMonthNum] = startMonth.split("-").map(Number);
   const [endYear, endMonthNum] = endMonth.split("-").map(Number);
 
-  // Start date: luôn là ngày 01
   const startDateStr = `${startYear}-${String(startMonthNum).padStart(2, "0")}-01`;
 
-  // End date: ngày cuối của endMonth
-  // Tạo date object cho THÁNG SAU, rồi lùi 1 ngày
   let endDate;
   if (endMonthNum === 12) {
-    // Nếu là tháng 12, tháng sau là tháng 1 năm sau
-    endDate = new Date(endYear + 1, 0, 0); // Day 0 = ngày cuối tháng trước
+    endDate = new Date(endYear + 1, 0, 0);
   } else {
-    endDate = new Date(endYear, endMonthNum, 0); // Day 0 = ngày cuối tháng trước
+    endDate = new Date(endYear, endMonthNum, 0);
   }
 
   const year = endDate.getFullYear();
@@ -147,6 +139,7 @@ const createOrUpdateRevenue = async (req, res, next) => {
       estimatedRevenue,
       totalViews,
       usViews,
+      usRevenue,
       taxUS,
       netNetwork,
       taxPIT,
@@ -190,6 +183,7 @@ const createOrUpdateRevenue = async (req, res, next) => {
         revenue.estimatedRevenue = estimatedRevenue;
       if (totalViews !== undefined) revenue.totalViews = totalViews;
       if (usViews !== undefined) revenue.usViews = usViews;
+      if (usRevenue !== undefined) revenue.usRevenue = usRevenue;
       if (taxUS !== undefined) revenue.taxUS = taxUS;
       if (netNetwork !== undefined) revenue.netNetwork = netNetwork;
       if (taxPIT !== undefined) revenue.taxPIT = taxPIT;
@@ -203,6 +197,7 @@ const createOrUpdateRevenue = async (req, res, next) => {
         estimatedRevenue: estimatedRevenue || 0,
         totalViews: totalViews || 0,
         usViews: usViews || 0,
+        usRevenue: usRevenue || 0,
         taxUS: taxUS !== undefined ? taxUS : 30,
         netNetwork: netNetwork !== undefined ? netNetwork : 20,
         taxPIT: taxPIT !== undefined ? taxPIT : 7,
@@ -226,7 +221,7 @@ const createOrUpdateRevenue = async (req, res, next) => {
   }
 };
 
-// ============ ✅ FINAL FIX: Query từng tháng một ============
+// ✅ CẬP NHẬT: Lấy doanh thu từ Mỹ trực tiếp từ YouTube API
 const syncRevenueFromAnalytics = async (req, res, next) => {
   try {
     const { channelId } = req.params;
@@ -254,7 +249,7 @@ const syncRevenueFromAnalytics = async (req, res, next) => {
       });
     }
 
-    // ✅ FIX 1: Chỉ sync đến THÁNG TRƯỚC (tháng hiện tại chưa hoàn thành)
+    // Chỉ sync đến THÁNG TRƯỚC (tháng hiện tại chưa hoàn thành)
     const now = new Date();
     const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 
@@ -291,7 +286,7 @@ const syncRevenueFromAnalytics = async (req, res, next) => {
       auth: oauth2Client,
     });
 
-    // ✅ FIX 2: Tạo danh sách các tháng cần sync
+    // Tạo danh sách các tháng cần sync
     const monthsToSync = [];
     const start = new Date(`${startMonth}-01`);
     const end = new Date(`${adjustedEndMonth}-01`);
@@ -307,18 +302,17 @@ const syncRevenueFromAnalytics = async (req, res, next) => {
       `📊 Will sync ${monthsToSync.length} months: ${monthsToSync.join(", ")}`,
     );
 
-    // ============ XỬ LÝ DỮ LIỆU ============
     const synced = [];
     const errors = [];
 
-    // ✅ FIX 3: Query TỪNG THÁNG MỘT
+    // ✅ Query TỪNG THÁNG MỘT - Lấy cả doanh thu từ Mỹ
     for (const month of monthsToSync) {
       try {
         const { startDateStr, endDateStr } = calculateDateRange(month, month);
 
-        console.log(`🔄 Fetching ${month}: ${startDateStr} to ${endDateStr}`);
+        console.log(`📄 Fetching ${month}: ${startDateStr} to ${endDateStr}`);
 
-        // Query overall data (revenue + total views)
+        // ✅ 1. Query TỔNG doanh thu + total views
         const overallResponse = await youtubeAnalytics.reports.query({
           ids: `channel==${youtubeChannelId}`,
           startDate: startDateStr,
@@ -326,28 +320,29 @@ const syncRevenueFromAnalytics = async (req, res, next) => {
           metrics: "estimatedRevenue,views",
         });
 
-        // Query US views
-        const usViewsResponse = await youtubeAnalytics.reports.query({
+        // ✅ 2. Query doanh thu + views TỪ MỸ
+        const usResponse = await youtubeAnalytics.reports.query({
           ids: `channel==${youtubeChannelId}`,
           startDate: startDateStr,
           endDate: endDateStr,
-          metrics: "views",
+          metrics: "estimatedRevenue,views",
           filters: "country==US",
         });
 
         const overallRow = overallResponse.data.rows?.[0];
-        const usViewsRow = usViewsResponse.data.rows?.[0];
+        const usRow = usResponse.data.rows?.[0];
 
         if (!overallRow) {
           console.log(`⚠️ No data for ${month}, skipping...`);
           continue;
         }
 
-        const [revenue, totalViews] = overallRow;
-        const usViews = usViewsRow?.[0] || 0;
+        const [totalRevenue, totalViews] = overallRow;
+        const usRevenue = usRow?.[0] || 0; // ✅ Doanh thu từ Mỹ (API)
+        const usViews = usRow?.[1] || 0; // ✅ Views từ Mỹ
 
         console.log(
-          `📊 ${month}: Revenue=$${revenue}, Total Views=${totalViews}, US Views=${usViews}`,
+          `📊 ${month}: Total Revenue=$${totalRevenue}, US Revenue=$${usRevenue}, Total Views=${totalViews}, US Views=${usViews}`,
         );
 
         // Tìm hoặc tạo revenue document
@@ -361,25 +356,29 @@ const syncRevenueFromAnalytics = async (req, res, next) => {
             errors.push({ month, error: "Tháng này đã được khóa" });
             continue;
           }
-          revenueDoc.estimatedRevenue = revenue || 0;
+          revenueDoc.estimatedRevenue = totalRevenue || 0;
           revenueDoc.totalViews = totalViews || 0;
+          revenueDoc.usRevenue = usRevenue || 0; // ✅ Lấy từ API
           revenueDoc.usViews = usViews || 0;
           await revenueDoc.save();
         } else {
           revenueDoc = await ChannelRevenue.create({
             channel: channelId,
             month,
-            estimatedRevenue: revenue || 0,
+            estimatedRevenue: totalRevenue || 0,
             totalViews: totalViews || 0,
+            usRevenue: usRevenue || 0, // ✅ Lấy từ API
             usViews: usViews || 0,
           });
         }
 
         synced.push({
           month,
-          estimatedRevenue: revenue || 0,
+          estimatedRevenue: totalRevenue || 0,
+          usRevenue: usRevenue || 0,
           totalViews: totalViews || 0,
           usViews: usViews || 0,
+          nonUsRevenue: revenueDoc.nonUsRevenue || 0,
           usViewsPercentage: revenueDoc.usViewsPercentage || 0,
           actualRevenue: revenueDoc.actualRevenue || 0,
         });
@@ -399,8 +398,6 @@ const syncRevenueFromAnalytics = async (req, res, next) => {
         }
 
         errors.push({ month, error: errorMessage });
-
-        // Continue với tháng tiếp theo
         continue;
       }
     }
@@ -431,7 +428,7 @@ const syncRevenueFromAnalytics = async (req, res, next) => {
     });
   } catch (err) {
     console.error("💥 Sync Revenue Error:", err);
-    // next(err);
+    next(err);
   }
 };
 
