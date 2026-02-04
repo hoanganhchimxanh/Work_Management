@@ -21,7 +21,7 @@ function StatsCards({ totals }) {
 
   const stats = [
     {
-      title: "Tổng doanh thu",
+      title: "Tổng doanh thu ước tính",
       value: formatCurrency(totals.totalRevenue || 0),
       icon: CurrencyDollar,
       color: "success",
@@ -41,7 +41,7 @@ function StatsCards({ totals }) {
     {
       title: "Subs thực tế",
       value: `${totals.netSubsChange >= 0 ? "+" : ""}${formatNumber(
-        totals.netSubsChange || 0
+        totals.netSubsChange || 0,
       )}`,
       icon: People,
       color: totals.netSubsChange >= 0 ? "success" : "danger",

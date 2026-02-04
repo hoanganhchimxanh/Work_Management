@@ -30,11 +30,11 @@ function useEmployeeRevenue(selectedMonth, selectedYear) {
         {
           headers: { Authorization: `Bearer ${token}` },
           params: { status: "ACTIVE" },
-        }
+        },
       );
 
       const employees = usersResponse.data.data.filter(
-        (user) => user.role === "EMPLOYEE"
+        (user) => user.role === "EMPLOYEE",
       );
 
       // Lấy tổng quan doanh thu
@@ -43,16 +43,26 @@ function useEmployeeRevenue(selectedMonth, selectedYear) {
         {
           headers: { Authorization: `Bearer ${token}` },
           params: { month: monthQuery },
-        }
+        },
       );
 
       const revenueData = revenueResponse.data.data.channels;
 
-      // Tạo map với userId
+      console.log("🔍 Debug - Revenue Data Sample:", revenueData[0]); // Debug log
+
+      // ✅ FIX: Tạo map với userId - Lấy đúng từ assignedUser.userId
       const revenueByUserId = {};
 
       revenueData.forEach((channel) => {
-        const assignedUserId = channel.assignedUser?.userId;
+        // ✅ FIX: assignedUser.userId nằm trong nested object
+        const assignedUserId = channel.assignedUser?.userId?.toString();
+
+        console.log(
+          "🔍 Channel:",
+          channel.channelName,
+          "User ID:",
+          assignedUserId,
+        ); // Debug log
 
         if (assignedUserId) {
           if (!revenueByUserId[assignedUserId]) {
@@ -68,12 +78,18 @@ function useEmployeeRevenue(selectedMonth, selectedYear) {
         }
       });
 
+      console.log("🔍 Debug - Revenue Map:", revenueByUserId); // Debug log
+
       // Merge employee data với revenue data
       const employeesWithRevenue = employees.map((user) => {
-        const userRevenue = revenueByUserId[user.userId] || {
+        // ✅ FIX: So sánh string với string
+        const userIdString = user.userId?.toString();
+        const userRevenue = revenueByUserId[userIdString] || {
           totalRevenue: 0,
           channelCount: 0,
         };
+
+        console.log(`🔍 User: ${user.fullName} (${userIdString})`, userRevenue); // Debug log
 
         return {
           ...user,
@@ -87,7 +103,7 @@ function useEmployeeRevenue(selectedMonth, selectedYear) {
       console.error("Error fetching employees revenue:", err);
       setError(
         err.response?.data?.message ||
-          "Không thể tải danh sách nhân viên. Vui lòng thử lại."
+          "Không thể tải danh sách nhân viên. Vui lòng thử lại.",
       );
     } finally {
       setLoading(false);

@@ -136,7 +136,7 @@ function ChannelManagement() {
 
       {/* FILTER */}
       <ChannelFilter
-        users={users}
+        users={users.filter((user) => user.role !== "ACCOUNTANT")}
         searchName={searchName}
         setSearchName={setSearchName}
         filterUser={filterUser}
