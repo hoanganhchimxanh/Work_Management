@@ -24,7 +24,7 @@ function ChannelInfoCard({ channel, network }) {
               href={channel.channelLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-decoration-none d-block mb-2"
+              className="text-decoration-none d-block mb-2 text-break"
             >
               {channel.channelLink}
             </a>
