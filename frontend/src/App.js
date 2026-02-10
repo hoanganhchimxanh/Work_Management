@@ -7,6 +7,8 @@ import Unauthorized from "./pages/Unauthorized";
 import BugReport from "./pages/BugReport";
 import TestPage from "./pages/TestPage";
 import NotFound from "./pages/NotFound";
+import Policy from "./pages/Policy";
+import TermsOfService from "./pages/TermsOfService";
 
 // Admin pages
 import AdminLayout from "./layouts/AdminLayout";
@@ -52,6 +54,8 @@ function App() {
       <Route element={<PublicRoute />}>
         <Route path="/" element={<Login />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/policies" element={<Policy />} />
+        <Route path="/terms-of-service" element={<TermsOfService />} />
       </Route>
 
       {/* PROTECTED ROUTES - Chỉ cho người đã đăng nhập */}

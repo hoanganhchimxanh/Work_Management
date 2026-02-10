@@ -223,8 +223,8 @@ function ChannelMonthRevenueModal({ show, onHide, channelId, channelName }) {
                   </tr>
                   <tr>
                     <th className="text-center">DT Ước tính ($)</th>
-                    <th className="text-center">DT từ Mỹ ($)</th>
                     <th className="text-center">Tổng Views</th>
+                    <th className="text-center">DT từ Mỹ ($)</th>
                     <th className="text-center">Views Mỹ</th>
                     <th className="text-center">Thuế Mỹ</th>
                     <th className="text-center">Net Network</th>
@@ -259,16 +259,16 @@ function ChannelMonthRevenueModal({ show, onHide, channelId, channelName }) {
                           {formatNumber(rev.estimatedRevenue)}
                         </td>
 
+                        {/* Tổng Views */}
+                        <td className="text-center text-muted">
+                          {rev.totalViews?.toLocaleString() || "-"}
+                        </td>
+
                         {/* ✅ DT từ Mỹ (API) */}
                         <td className="text-center">
                           <span className="text-info fw-bold">
                             {formatNumber(rev.usRevenue)}
                           </span>
-                        </td>
-
-                        {/* Tổng Views */}
-                        <td className="text-center text-muted">
-                          {rev.totalViews?.toLocaleString() || "-"}
                         </td>
 
                         {/* Views Mỹ */}

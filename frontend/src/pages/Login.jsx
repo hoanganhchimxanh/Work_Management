@@ -1,4 +1,5 @@
 import React, { useState, useContext } from "react";
+import { Link } from "react-router-dom";
 import { Button, Col, Container, Form, Row, Alert } from "react-bootstrap";
 import { AuthContext } from "../contexts/AuthContext";
 import "../styles/login.style.css";
@@ -81,6 +82,12 @@ function Login() {
               >
                 {loading ? "Đang đăng nhập..." : "Đăng nhập"}
               </Button>
+
+              <Form.Text className="text-muted text-center d-block">
+                Khi đăng nhập, bạn đồng ý với{" "}
+                <Link to="/terms-of-service">Điều khoản sử dụng</Link> và{" "}
+                <Link to="/policies">Chính sách bảo mật</Link>.
+              </Form.Text>
             </Form>
           </Col>
         </Row>
