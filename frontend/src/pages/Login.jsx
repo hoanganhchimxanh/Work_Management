@@ -1,6 +1,14 @@
 import React, { useState, useContext } from "react";
 import { Link } from "react-router-dom";
-import { Button, Col, Container, Form, Row, Alert } from "react-bootstrap";
+import {
+  Button,
+  Col,
+  Container,
+  Form,
+  Row,
+  Alert,
+  Card,
+} from "react-bootstrap";
 import { AuthContext } from "../contexts/AuthContext";
 import "../styles/login.style.css";
 
@@ -44,6 +52,19 @@ function Login() {
             <p className="login-subtext">
               Xin mời đăng nhập để truy cập vào hệ thống.
             </p>
+
+            <Card className="mt-4 shadow-sm">
+              <Card.Body>
+                <Card.Title className="mb-2">Giới thiệu hệ thống</Card.Title>
+                <Card.Text className="text-muted">
+                  <strong>Work Management</strong> là hệ thống nội bộ dùng để
+                  quản lý nhân viên và theo dõi hoạt động kênh YouTube trong
+                  công ty truyền thông. Hệ thống hỗ trợ tổng hợp dữ liệu kênh,
+                  doanh thu và hiệu suất làm việc nhằm phục vụ báo cáo và vận
+                  hành nội bộ.
+                </Card.Text>
+              </Card.Body>
+            </Card>
           </Col>
 
           <Col xs={12} md={6}>
