@@ -127,33 +127,31 @@ function Notification_Page() {
     }
   };
 
+  const selection = window.getSelection();
+  if (selection && selection.toString().length > 0) return;
+
   const handleClickNotification = async (noti) => {
+    // Nếu user đang select text thì không navigate
+    const selection = window.getSelection();
+    if (selection && selection.toString().length > 0) return;
+
     if (!noti.isRead) {
       await handleMarkAsRead(noti._id);
     }
 
-    // Điều hướng theo loại notification
     switch (noti.type) {
       case "TASK":
-        if (noti.metadata?.taskId) {
-          navigate(`/tasks/${noti.metadata.taskId}`);
-        }
+        if (noti.metadata?.taskId) navigate(`/tasks/${noti.metadata.taskId}`);
         break;
-
       case "TEAM":
-        if (noti.metadata?.teamId) {
-          navigate(`/teams/${noti.metadata.teamId}`);
-        }
+        if (noti.metadata?.teamId) navigate(`/teams/${noti.metadata.teamId}`);
         break;
-
       case "KPI":
         navigate("/kpi");
         break;
-
       case "CHANNEL":
         navigate("/channels");
         break;
-
       default:
         break;
     }

@@ -52,7 +52,7 @@ function Notification_Page() {
         setLoading(false);
       }
     },
-    [page]
+    [page],
   );
 
   useEffect(() => {
@@ -83,7 +83,7 @@ function Notification_Page() {
   const handleMarkAsRead = async (id) => {
     await markNotificationRead(id);
     setNotifications((prev) =>
-      prev.map((n) => (n._id === id ? { ...n, isRead: true } : n))
+      prev.map((n) => (n._id === id ? { ...n, isRead: true } : n)),
     );
   };
 
@@ -109,21 +109,24 @@ function Notification_Page() {
     setSelectedNoti(null);
   };
 
+  const selection = window.getSelection();
+  if (selection && selection.toString().length > 0) return;
+
   const handleClickNotification = async (noti) => {
+    // Nếu user đang select text thì không navigate
+    const selection = window.getSelection();
+    if (selection && selection.toString().length > 0) return;
+
     if (!noti.isRead) {
       await handleMarkAsRead(noti._id);
     }
 
     switch (noti.type) {
       case "TASK":
-        if (noti.metadata?.taskId) {
-          navigate(`/tasks/${noti.metadata.taskId}`);
-        }
+        if (noti.metadata?.taskId) navigate(`/tasks/${noti.metadata.taskId}`);
         break;
       case "TEAM":
-        if (noti.metadata?.teamId) {
-          navigate(`/teams/${noti.metadata.teamId}`);
-        }
+        if (noti.metadata?.teamId) navigate(`/teams/${noti.metadata.teamId}`);
         break;
       case "KPI":
         navigate("/kpi");
