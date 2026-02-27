@@ -10,7 +10,6 @@ import {
   Pagination,
   Modal,
 } from "react-bootstrap";
-import { useNavigate } from "react-router-dom";
 
 import {
   fetchNotifications,
@@ -32,8 +31,6 @@ function Notification_Page() {
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedNoti, setSelectedNoti] = useState(null);
-
-  const navigate = useNavigate();
 
   /* =======================
    * Load notifications (REST)
@@ -64,11 +61,9 @@ function Notification_Page() {
    * ======================= */
   useEffect(() => {
     const handler = (noti) => {
-      // Chỉ prepend nếu đang ở trang 1
       if (page !== 1) return;
 
       setNotifications((prev) => {
-        // Chống trùng notification
         if (prev.some((n) => n._id === noti._id)) return prev;
         return [noti, ...prev].slice(0, PAGE_SIZE);
       });
@@ -127,33 +122,14 @@ function Notification_Page() {
     }
   };
 
-  const selection = window.getSelection();
-  if (selection && selection.toString().length > 0) return;
-
-  const handleClickNotification = async (noti) => {
-    // Nếu user đang select text thì không navigate
+  // Dùng onMouseUp để có thể check xem user đang select text không
+  // Nếu có text đang được bôi → không mark as read (tránh interrupt việc copy)
+  const handleMouseUpNotification = async (noti) => {
     const selection = window.getSelection();
     if (selection && selection.toString().length > 0) return;
 
     if (!noti.isRead) {
       await handleMarkAsRead(noti._id);
-    }
-
-    switch (noti.type) {
-      case "TASK":
-        if (noti.metadata?.taskId) navigate(`/tasks/${noti.metadata.taskId}`);
-        break;
-      case "TEAM":
-        if (noti.metadata?.teamId) navigate(`/teams/${noti.metadata.teamId}`);
-        break;
-      case "KPI":
-        navigate("/kpi");
-        break;
-      case "CHANNEL":
-        navigate("/channels");
-        break;
-      default:
-        break;
     }
   };
 
@@ -214,11 +190,13 @@ function Notification_Page() {
           notifications.map((noti) => (
             <ListGroup.Item
               key={noti._id}
-              action
-              onClick={() => handleClickNotification(noti)}
+              // Bỏ prop `action` để không block việc select text
+              // Thay bằng cursor pointer thủ công khi chưa đọc
+              onMouseUp={() => handleMouseUpNotification(noti)}
               className={`d-flex justify-content-between align-items-start ${
                 !noti.isRead ? "fw-bold bg-light" : ""
               }`}
+              style={{ cursor: !noti.isRead ? "pointer" : "default" }}
             >
               <div>
                 <div className="d-flex align-items-center gap-2 mb-1">

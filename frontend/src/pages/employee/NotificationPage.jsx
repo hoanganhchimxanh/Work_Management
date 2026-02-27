@@ -10,7 +10,6 @@ import {
   Pagination,
   Modal,
 } from "react-bootstrap";
-import { useNavigate } from "react-router-dom";
 
 import {
   fetchNotifications,
@@ -33,10 +32,8 @@ function Notification_Page() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedNoti, setSelectedNoti] = useState(null);
 
-  const navigate = useNavigate();
-
   /* =======================
-   * Load notifications
+   * Load notifications (REST)
    * ======================= */
   const loadNotifications = useCallback(
     async (currentPage = page) => {
@@ -64,7 +61,6 @@ function Notification_Page() {
    * ======================= */
   useEffect(() => {
     const handler = (noti) => {
-      // Chỉ prepend nếu đang ở trang 1
       if (page !== 1) return;
 
       setNotifications((prev) => {
@@ -74,22 +70,33 @@ function Notification_Page() {
     };
 
     socket.on("notification:new", handler);
-    return () => socket.off("notification:new", handler);
+
+    return () => {
+      socket.off("notification:new", handler);
+    };
   }, [page]);
 
   /* =======================
    * Actions
    * ======================= */
   const handleMarkAsRead = async (id) => {
-    await markNotificationRead(id);
-    setNotifications((prev) =>
-      prev.map((n) => (n._id === id ? { ...n, isRead: true } : n)),
-    );
+    try {
+      await markNotificationRead(id);
+      setNotifications((prev) =>
+        prev.map((n) => (n._id === id ? { ...n, isRead: true } : n)),
+      );
+    } catch (err) {
+      console.error("Mark read failed", err);
+    }
   };
 
   const handleMarkAllRead = async () => {
-    await markAllRead();
-    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+    try {
+      await markAllRead();
+      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+    } catch (err) {
+      console.error("Mark all read failed", err);
+    }
   };
 
   const handleConfirmDelete = (noti, e) => {
@@ -101,41 +108,28 @@ function Notification_Page() {
   const handleDelete = async () => {
     if (!selectedNoti) return;
 
-    await deleteNotification(selectedNoti._id);
+    try {
+      await deleteNotification(selectedNoti._id);
 
-    setNotifications((prev) => prev.filter((n) => n._id !== selectedNoti._id));
+      setNotifications((prev) =>
+        prev.filter((n) => n._id !== selectedNoti._id),
+      );
 
-    setShowDeleteModal(false);
-    setSelectedNoti(null);
+      setShowDeleteModal(false);
+      setSelectedNoti(null);
+    } catch (err) {
+      console.error("Delete notification failed", err);
+    }
   };
 
-  const selection = window.getSelection();
-  if (selection && selection.toString().length > 0) return;
-
-  const handleClickNotification = async (noti) => {
-    // Nếu user đang select text thì không navigate
+  // Dùng onMouseUp để có thể check xem user đang select text không
+  // Nếu có text đang được bôi → không mark as read (tránh interrupt việc copy)
+  const handleMouseUpNotification = async (noti) => {
     const selection = window.getSelection();
     if (selection && selection.toString().length > 0) return;
 
     if (!noti.isRead) {
       await handleMarkAsRead(noti._id);
-    }
-
-    switch (noti.type) {
-      case "TASK":
-        if (noti.metadata?.taskId) navigate(`/tasks/${noti.metadata.taskId}`);
-        break;
-      case "TEAM":
-        if (noti.metadata?.teamId) navigate(`/teams/${noti.metadata.teamId}`);
-        break;
-      case "KPI":
-        navigate("/kpi");
-        break;
-      case "CHANNEL":
-        navigate("/channels");
-        break;
-      default:
-        break;
     }
   };
 
@@ -196,11 +190,13 @@ function Notification_Page() {
           notifications.map((noti) => (
             <ListGroup.Item
               key={noti._id}
-              action
-              onClick={() => handleClickNotification(noti)}
+              // Bỏ prop `action` để không block việc select text
+              // Thay bằng cursor pointer thủ công khi chưa đọc
+              onMouseUp={() => handleMouseUpNotification(noti)}
               className={`d-flex justify-content-between align-items-start ${
                 !noti.isRead ? "fw-bold bg-light" : ""
               }`}
+              style={{ cursor: !noti.isRead ? "pointer" : "default" }}
             >
               <div>
                 <div className="d-flex align-items-center gap-2 mb-1">
