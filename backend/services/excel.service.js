@@ -93,7 +93,12 @@ class ExcelService {
         // afterImport hook
         let extraData = {};
         if (config.afterImport) {
-          extraData = await config.afterImport(newRecord, null, this.db);
+          extraData = await config.afterImport(
+            newRecord,
+            null,
+            this.db,
+            processedData.data,
+          );
         }
 
         results.success.push({
@@ -135,6 +140,7 @@ class ExcelService {
         const newBatch = await ResourceBatch.create({
           excelFileName,
           resources: createdResourceIds,
+          assignedUser: options.assignedUser || null,
           status: "ACTIVE",
         });
 
@@ -314,20 +320,33 @@ class ExcelService {
   }
 
   async _checkDuplicate(Model, data, config, session) {
-    const uniqueField = config.columns.find(
-      (col) => col.required && !col.isReference,
-    );
+    // Tình huống 1: Ưu tiên dùng uniqueField đã định nghĩa trong config
+    let uniqueFieldCol = null;
+    if (config.uniqueField) {
+      uniqueFieldCol = config.columns.find(
+        (col) => col.dbField === config.uniqueField,
+      );
+    }
 
-    if (!uniqueField) return null;
+    // Tình huống 2: Fallback lấy cột required đầu tiên không phải reference
+    if (!uniqueFieldCol) {
+      uniqueFieldCol = config.columns.find(
+        (col) => col.required && !col.isReference,
+      );
+    }
+
+    if (!uniqueFieldCol) return null;
 
     const query = {};
-    query[uniqueField.dbField] = data[uniqueField.dbField];
+    query[uniqueFieldCol.dbField] = data[uniqueFieldCol.dbField];
+
+    // Chánh check lỗi nếu giá trị null/undefined mặc dù là "unique"
+    if (!query[uniqueFieldCol.dbField]) return null;
 
     const existing = await Model.findOne(query);
     if (existing) {
-      return `${uniqueField.displayName} đã tồn tại: ${
-        data[uniqueField.dbField]
-      }`;
+      return `${uniqueField.displayName} đã tồn tại: ${data[uniqueField.dbField]
+        }`;
     }
 
     return null;

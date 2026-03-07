@@ -25,6 +25,7 @@ const createNew = async (req, res, next) => {
       taxForm,
       location,
       linkedChannelUrl,
+      adSenseLocation,
       status,
       note,
     } = req.body;
@@ -79,6 +80,7 @@ const createNew = async (req, res, next) => {
       taxForm: taxForm || "",
       location: location || "OFFICE",
       linkedChannelUrl: linkedChannelUrl || "",
+      adSenseLocation: adSenseLocation || "",
       status: status || "ACTIVE",
       note: note || "PENDING_ACTIVATION",
     });
@@ -125,19 +127,22 @@ const getAll = async (req, res, next) => {
       .sort({ createdAt: -1 })
       .lean();
 
-    // Đếm số kênh thuộc mỗi network
-    const networksWithCount = await Promise.all(
-      networks.map(async (network) => {
-        const channelCount = await Channel.countDocuments({
-          network: network._id,
-        });
+    // Tối ưu hóa: Đếm số kênh thuộc mỗi network trong 1 lượt query (tránh N+1)
+    const networkIds = networks.map((n) => n._id);
+    const channelStats = await Channel.aggregate([
+      { $match: { network: { $in: networkIds } } },
+      { $group: { _id: "$network", count: { $sum: 1 } } },
+    ]);
 
-        return {
-          ...network,
-          channelCount,
-        };
-      }),
-    );
+    const statsMap = channelStats.reduce((map, stat) => {
+      map[stat._id.toString()] = stat.count;
+      return map;
+    }, {});
+
+    const networksWithCount = networks.map((network) => ({
+      ...network,
+      channelCount: statsMap[network._id.toString()] || 0,
+    }));
 
     res.json({
       success: true,

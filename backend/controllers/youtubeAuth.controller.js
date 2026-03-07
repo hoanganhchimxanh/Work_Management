@@ -310,17 +310,19 @@ const getAuthorizedChannels = async (req, res, next) => {
 
     res.json({
       success: true,
-      data: authorizedChannels.map((auth) => ({
-        channelId: auth.channel._id,
-        channelName: auth.channel.name,
-        channelLink: auth.channel.link,
-        subscriber: auth.channel.subscriber,
-        status: auth.channel.status,
-        youtubeChannelId: auth.youtubeChannelId,
-        isAuthorized: true,
-        expiresAt: auth.expiresAt,
-        lastSyncedAt: auth.lastSyncedAt,
-      })),
+      data: authorizedChannels
+        .filter((auth) => auth.channel) // Lọc bỏ nếu channel không tồn tại
+        .map((auth) => ({
+          channelId: auth.channel._id,
+          channelName: auth.channel.name,
+          channelLink: auth.channel.link,
+          subscriber: auth.channel.subscriber,
+          status: auth.channel.status,
+          youtubeChannelId: auth.youtubeChannelId,
+          isAuthorized: true,
+          expiresAt: auth.expiresAt,
+          lastSyncedAt: auth.lastSyncedAt,
+        })),
     });
   } catch (err) {
     next(err);
@@ -339,19 +341,21 @@ const getAllAuthorizedChannels = async (req, res, next) => {
 
     res.json({
       success: true,
-      data: authorizedChannels.map((auth) => ({
-        userId: auth.user._id,
-        userName: auth.user.fullName,
-        userEmail: auth.user.phoneNumber,
-        channelId: auth.channel._id,
-        channelName: auth.channel.name,
-        channelLink: auth.channel.link,
-        subscriber: auth.channel.subscriber,
-        status: auth.channel.status,
-        youtubeChannelId: auth.youtubeChannelId,
-        expiresAt: auth.expiresAt,
-        lastSyncedAt: auth.lastSyncedAt,
-      })),
+      data: authorizedChannels
+        .filter((auth) => auth.user && auth.channel) // Lọc bỏ nếu user hoặc channel không tồn tại
+        .map((auth) => ({
+          userId: auth.user._id,
+          userName: auth.user.fullName,
+          userEmail: auth.user.phoneNumber,
+          channelId: auth.channel._id,
+          channelName: auth.channel.name,
+          channelLink: auth.channel.link,
+          subscriber: auth.channel.subscriber,
+          status: auth.channel.status,
+          youtubeChannelId: auth.youtubeChannelId,
+          expiresAt: auth.expiresAt,
+          lastSyncedAt: auth.lastSyncedAt,
+        })),
     });
   } catch (err) {
     next(err);

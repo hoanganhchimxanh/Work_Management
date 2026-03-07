@@ -113,11 +113,11 @@ const getAll = async (req, res, next) => {
 
       leader: team.leader
         ? {
-            _id: team.leader._id,
-            fullName: team.leader.fullName,
-            role: team.leader.role,
-            status: team.leader.status,
-          }
+          _id: team.leader._id,
+          fullName: team.leader.fullName,
+          role: team.leader.role,
+          status: team.leader.status,
+        }
         : null,
 
       members: team.members.map((m) => ({
@@ -170,11 +170,11 @@ const getById = async (req, res, next) => {
 
       leader: team.leader
         ? {
-            _id: team.leader._id,
-            fullName: team.leader.fullName,
-            role: team.leader.role,
-            status: team.leader.status,
-          }
+          _id: team.leader._id,
+          fullName: team.leader.fullName,
+          role: team.leader.role,
+          status: team.leader.status,
+        }
         : null,
 
       members: team.members.map((m) => ({
@@ -241,9 +241,12 @@ const editInfo = async (req, res, next) => {
       : members;
 
     // --- TÍNH TOÁN USERS CŨ & USERS MỚI ---
-
-    const oldUserIds = [oldLeader, ...team.members].filter(Boolean);
-    const newUserIds = [newLeader, ...cleanMembers].filter(Boolean);
+    const oldUserIds = [oldLeader, ...team.members]
+      .filter(Boolean)
+      .map((id) => id.toString());
+    const newUserIds = [newLeader, ...cleanMembers]
+      .filter(Boolean)
+      .map((id) => id.toString());
 
     const removedUsers = oldUserIds.filter((id) => !newUserIds.includes(id));
     const addedUsers = newUserIds.filter((id) => !oldUserIds.includes(id));
