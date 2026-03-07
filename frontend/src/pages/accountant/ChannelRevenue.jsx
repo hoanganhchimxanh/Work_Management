@@ -15,6 +15,9 @@ import { ArrowLeft, Lock, Unlock } from "react-bootstrap-icons";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import axios from "axios";
 
+// Custom hooks
+import useChannelRevenue from "../../hooks/accountant/useChannelRevenue";
+
 function ChannelRevenue() {
   const navigate = useNavigate();
   const { employeeId } = useParams();
@@ -31,11 +34,15 @@ function ChannelRevenue() {
     stateData.year || String(new Date().getFullYear()),
   );
 
-  // State cho data
-  const [employeeInfo, setEmployeeInfo] = useState(null);
-  const [channels, setChannels] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  // Use Custom Hook
+  const {
+    employeeInfo,
+    channels,
+    loading,
+    error,
+    setError,
+    totals: { totalEstimated, totalActual },
+  } = useChannelRevenue(employeeId, selectedMonth, selectedYear);
 
   // Danh sách tháng
   const months = [
@@ -55,97 +62,6 @@ function ChannelRevenue() {
 
   const years = ["2024", "2025", "2026", "2027"];
 
-  useEffect(() => {
-    if (employeeId) {
-      fetchEmployeeChannelsRevenue();
-    }
-  }, [employeeId, selectedMonth, selectedYear]);
-
-  const fetchEmployeeChannelsRevenue = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const token = localStorage.getItem("token");
-      const monthQuery = `${selectedYear}-${selectedMonth}`;
-
-      // Lấy thông tin nhân viên
-      const userResponse = await axios.get(
-        `http://localhost:9999/user/get-one/${employeeId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
-
-      setEmployeeInfo(userResponse.data.data);
-
-      // Lấy tất cả kênh của nhân viên
-      const channelsResponse = await axios.get(
-        `http://localhost:9999/channel/by-owner/${employeeId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
-
-      const userChannels = channelsResponse.data.data;
-
-      // Lấy doanh thu cho từng kênh
-      const channelsWithRevenue = await Promise.all(
-        userChannels.map(async (channel) => {
-          try {
-            const revenueResponse = await axios.get(
-              `http://localhost:9999/channel-revenue/${channel._id}/monthly`,
-              {
-                headers: { Authorization: `Bearer ${token}` },
-                params: {
-                  startMonth: monthQuery,
-                  endMonth: monthQuery,
-                },
-              },
-            );
-
-            const revenueData = revenueResponse.data.data;
-            const monthRevenue = revenueData.revenues[0] || null;
-
-            return {
-              ...channel,
-              estimatedRevenue: monthRevenue?.estimatedRevenue || 0,
-              actualRevenue: monthRevenue?.actualRevenue || 0,
-              locked: monthRevenue?.locked || false,
-              revenueId: monthRevenue?._id || null,
-              hasNetwork: !!channel.network,
-              networkName: channel.network?.name || null,
-            };
-          } catch (err) {
-            console.error(
-              `Error fetching revenue for channel ${channel._id}:`,
-              err,
-            );
-            return {
-              ...channel,
-              estimatedRevenue: 0,
-              actualRevenue: 0,
-              locked: false,
-              revenueId: null,
-              hasNetwork: !!channel.network,
-              networkName: channel.network?.name || null,
-            };
-          }
-        }),
-      );
-
-      setChannels(channelsWithRevenue);
-    } catch (err) {
-      console.error("Error fetching employee channels revenue:", err);
-      setError(
-        err.response?.data?.message ||
-          "Không thể tải dữ liệu. Vui lòng thử lại.",
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
@@ -155,12 +71,6 @@ function ChannelRevenue() {
 
   const monthLabel =
     months.find((m) => m.value === selectedMonth)?.label || "Tháng";
-
-  const totalEstimated = channels.reduce(
-    (sum, ch) => sum + ch.estimatedRevenue,
-    0,
-  );
-  const totalActual = channels.reduce((sum, ch) => sum + ch.actualRevenue, 0);
 
   if (loading) {
     return (
