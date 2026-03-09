@@ -8,6 +8,7 @@ const excelConfigs = {
     modelName: "User",
     sheetName: "Users",
     fileName: "users",
+    uniqueField: "phoneNumber",
 
     // ============== IMPORT ==============
     columns: [
@@ -255,9 +256,9 @@ const excelConfigs = {
     ],
 
     // ============== HOOKS ==============
-    afterImport: async (record, session, models) => {
+    afterImport: async (record, session, models, processedData) => {
       // Tạo account cho user
-      let loginEmail = record.loginEmail;
+      let loginEmail = processedData._tempLoginEmail;
 
       // Nếu không có loginEmail trong Excel, tạo tự động
       if (!loginEmail) {
@@ -361,6 +362,7 @@ const excelConfigs = {
     modelName: "Team",
     sheetName: "Teams",
     fileName: "teams",
+    uniqueField: "name",
 
     columns: [
       {
@@ -494,6 +496,7 @@ const excelConfigs = {
     modelName: "Resource",
     sheetName: "Resources",
     fileName: "resources",
+    uniqueField: "email",
 
     columns: [
       // Hỗ trợ cả 2 format: Google Workspace export và template tự tạo

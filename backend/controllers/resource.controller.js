@@ -659,7 +659,7 @@ const enableResource = async (req, res, next) => {
     // 🔔 SEND NOTIFICATION
     if (resource.assignedUser) {
       await sendNotification({
-        userId: notifyUserIds[0],
+        userId: resource.assignedUser,
         title: "Admin đã kích hoạt lại tài nguyên",
         message: `Tài nguyên ${resource.email} đã được admin kích hoạt lại.`,
         metadata: {

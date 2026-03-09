@@ -230,13 +230,14 @@ const assignOwner = async (req, res, next) => {
       .lean();
 
     // 🔔 SEND NOTIFICATION
-    if (userIds.length === 1) {
+    if (userId) {
       await sendNotification({
-        userId: userIds[0],
+        userId: userId,
         title: "Bạn đã được gán quản lý kênh mới",
-        message: `Bạn được làm quản lý cho kênh "${name}".`,
-        // type: "TEAM",
-        metadata: {},
+        message: `Bạn được làm quản lý cho kênh "${channel.name}".`,
+        metadata: {
+          channelId: channel._id,
+        },
       });
     }
 

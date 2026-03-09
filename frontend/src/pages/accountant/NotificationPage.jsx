@@ -7,114 +7,38 @@ import {
   Row,
   Col,
   Spinner,
+  Pagination,
+  Modal,
 } from "react-bootstrap";
-import { useNavigate } from "react-router-dom";
 
 import {
   fetchNotifications,
   markNotificationRead,
   markAllRead,
+  deleteNotification,
 } from "../../services/notification.service";
 
 import { socket } from "../../socket";
 
+// Custom hooks
+import useNotifications from "../../hooks/useNotifications";
+
 function Notification_Page() {
-  const [notifications, setNotifications] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
-
-  /* =======================
-   * Load notifications (REST)
-   * ======================= */
-  const loadNotifications = useCallback(async () => {
-    try {
-      setLoading(true);
-      const res = await fetchNotifications();
-      setNotifications(res.data.data || []);
-    } catch (err) {
-      console.error("Load notifications failed", err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadNotifications();
-  }, [loadNotifications]);
-
-  /* =======================
-   * Socket realtime
-   * ======================= */
-  useEffect(() => {
-    const handler = (noti) => {
-      setNotifications((prev) => {
-        // Chống trùng notification
-        if (prev.some((n) => n._id === noti._id)) return prev;
-        return [noti, ...prev];
-      });
-    };
-
-    socket.on("notification:new", handler);
-
-    return () => {
-      socket.off("notification:new", handler);
-    };
-  }, []);
-
-  /* =======================
-   * Actions
-   * ======================= */
-  const handleMarkAsRead = async (id) => {
-    try {
-      await markNotificationRead(id);
-      setNotifications((prev) =>
-        prev.map((n) => (n._id === id ? { ...n, isRead: true } : n))
-      );
-    } catch (err) {
-      console.error("Mark read failed", err);
-    }
-  };
-
-  const handleMarkAllRead = async () => {
-    try {
-      await markAllRead();
-      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
-    } catch (err) {
-      console.error("Mark all read failed", err);
-    }
-  };
-
-  const handleClickNotification = (noti) => {
-    if (!noti.isRead) {
-      handleMarkAsRead(noti._id);
-    }
-
-    // Điều hướng theo loại notification
-    switch (noti.type) {
-      case "TASK":
-        if (noti.metadata?.taskId) {
-          navigate(`/tasks/${noti.metadata.taskId}`);
-        }
-        break;
-
-      case "TEAM":
-        if (noti.metadata?.teamId) {
-          navigate(`/teams/${noti.metadata.teamId}`);
-        }
-        break;
-
-      case "KPI":
-        navigate("/kpi");
-        break;
-
-      case "CHANNEL":
-        navigate("/channels");
-        break;
-
-      default:
-        break;
-    }
-  };
+  const {
+    notifications,
+    loading,
+    page,
+    setPage,
+    totalPages,
+    showDeleteModal,
+    selectedNoti,
+    loadNotifications,
+    handleMarkAllRead,
+    openDeleteModal,
+    closeDeleteModal,
+    handleDelete,
+    handleMouseUpNotification,
+  } = useNotifications();
 
   /* =======================
    * UI helpers
@@ -144,11 +68,18 @@ function Notification_Page() {
 
   return (
     <Container fluid className="mt-4">
-      <Row className="mb-3">
+      <Row className="mb-3 align-items-center">
         <Col>
           <h3>Thông báo</h3>
         </Col>
-        <Col className="text-end">
+        <Col className="text-end d-flex justify-content-end gap-2">
+          <Button
+            size="sm"
+            variant="outline-primary"
+            onClick={() => loadNotifications(page)}
+          >
+            Làm mới
+          </Button>
           <Button
             size="sm"
             variant="outline-secondary"
@@ -166,11 +97,12 @@ function Notification_Page() {
           notifications.map((noti) => (
             <ListGroup.Item
               key={noti._id}
-              action
-              onClick={() => handleClickNotification(noti)}
-              className={`d-flex justify-content-between align-items-start ${
-                !noti.isRead ? "fw-bold bg-light" : ""
-              }`}
+              // Bỏ prop `action` để không block việc select text
+              // Thay bằng cursor pointer thủ công khi chưa đọc
+              onMouseUp={() => handleMouseUpNotification(noti)}
+              className={`d-flex justify-content-between align-items-start ${!noti.isRead ? "fw-bold bg-light" : ""
+                }`}
+              style={{ cursor: !noti.isRead ? "pointer" : "default" }}
             >
               <div>
                 <div className="d-flex align-items-center gap-2 mb-1">
@@ -183,15 +115,67 @@ function Notification_Page() {
                 </div>
               </div>
 
-              {!noti.isRead && (
-                <Badge bg="danger" pill>
-                  Mới
-                </Badge>
-              )}
+              <div className="d-flex flex-column align-items-end gap-2">
+                {!noti.isRead && (
+                  <Badge bg="danger" pill>
+                    Mới
+                  </Badge>
+                )}
+                <Button
+                  size="sm"
+                  variant="outline-danger"
+                  onClick={(e) => openDeleteModal(noti, e)}
+                >
+                  Xóa
+                </Button>
+              </div>
             </ListGroup.Item>
           ))
         )}
       </ListGroup>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <Pagination className="justify-content-center mt-3">
+          <Pagination.Prev
+            disabled={page === 1}
+            onClick={() => setPage((p) => p - 1)}
+          />
+          {[...Array(totalPages)].map((_, i) => (
+            <Pagination.Item
+              key={i}
+              active={i + 1 === page}
+              onClick={() => setPage(i + 1)}
+            >
+              {i + 1}
+            </Pagination.Item>
+          ))}
+          <Pagination.Next
+            disabled={page === totalPages}
+            onClick={() => setPage((p) => p + 1)}
+          />
+        </Pagination>
+      )}
+
+      {/* Confirm Delete Modal */}
+      <Modal
+        show={showDeleteModal}
+        onHide={closeDeleteModal}
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Xóa thông báo</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>Bạn có chắc chắn muốn xóa thông báo này không?</Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={closeDeleteModal}>
+            Hủy
+          </Button>
+          <Button variant="danger" onClick={handleDelete}>
+            Xóa
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </Container>
   );
 }

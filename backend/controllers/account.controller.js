@@ -28,11 +28,27 @@ const login = async (req, res, next) => {
       });
     }
 
+    // Kiểm tra liên kết User
+    if (!account.user) {
+      return res.status(404).json({
+        success: false,
+        message: "Tài khoản không được liên kết với hồ sơ người dùng!",
+      });
+    }
+
     // Kiểm tra tài khoản có active không
     if (!account.isActive) {
       return res.status(403).json({
         success: false,
         message: "Tài khoản đã bị vô hiệu hóa!",
+      });
+    }
+
+    // Kiểm tra trạng thái người dùng (Ví dụ: đã nghỉ việc)
+    if (account.user.status === "QUIT") {
+      return res.status(403).json({
+        success: false,
+        message: "Người dùng đã nghỉ việc, không thể đăng nhập!",
       });
     }
 
@@ -79,6 +95,13 @@ const changePassword = async (req, res, next) => {
       });
     }
 
+    if (!account.user) {
+      return res.status(404).json({
+        success: false,
+        message: "Tài khoản không có thông tin user đi kèm!",
+      });
+    }
+
     const userIdParam = account.user._id.toString();
     const userIdFromToken = req.user.userId?.toString() || req.user.userId;
     const { newPassword } = req.body;
@@ -98,14 +121,7 @@ const changePassword = async (req, res, next) => {
       });
     }
 
-    // Lấy user
-    const user = await User.findById(userIdParam);
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User không tồn tại!",
-      });
-    }
+    const { user } = account;
 
     // Mã hoá mật khẩu
     const hashedPw = await bcrypt.hash(newPassword, 10);
@@ -211,6 +227,13 @@ const autoResetPassword = async (req, res, next) => {
       return res.status(404).json({
         success: false,
         message: "Không tìm thấy tài khoản!",
+      });
+    }
+
+    if (!account.user) {
+      return res.status(404).json({
+        success: false,
+        message: "Tài khoản này chưa được liên kết với hồ sơ người dùng!",
       });
     }
 

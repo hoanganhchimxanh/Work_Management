@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const db = require("../models");
 const User = db.User;
 const Account = db.Account;
@@ -154,35 +155,50 @@ const getAll = async (req, res, next) => {
 
     const users = await User.find(filter).populate("team", "name").lean();
 
-    const usersWithDetails = await Promise.all(
-      users.map(async (user) => {
-        // Lấy tài khoản đăng nhập của user
-        const account = await Account.findOne({ user: user._id }).lean();
+    // Tối ưu hóa: Lấy tất cả account và channel của các user này trong 1 lượt query (tránh N+1)
+    const userIds = users.map((u) => u._id);
+    const [accounts, channels] = await Promise.all([
+      Account.find({ user: { $in: userIds } }).lean(),
+      Channel.find({ assignedUser: { $in: userIds } }).lean(),
+    ]);
 
-        // Lấy các kênh mà user đang quản lý
-        const channels = await Channel.find({ assignedUser: user._id }).lean();
+    // Tạo map để lookup nhanh
+    const accountMap = accounts.reduce((map, acc) => {
+      map[acc.user.toString()] = acc;
+      return map;
+    }, {});
 
-        return {
-          userId: user._id,
-          fullName: user.fullName,
-          phoneNumber: user.phoneNumber,
-          facebookLink: user.facebookLink,
-          bankInfo: user.bankInfo,
-          role: user.role,
-          loginEmail: account ? account.email : null,
-          hasAccount: !!account,
-          accountIsActive: account ? account.isActive : false,
-          status: user.status,
-          team: user.team ? user.team.name : null,
-          joinDate: user.joinDate,
-          responsibilities: user.responsibilities,
-          note: user.note,
-          isFirstLogin: user.isFirstLogin,
-          channelCount: channels.length,
-          createdAt: user.createdAt,
-        };
-      }),
-    );
+    const channelMap = channels.reduce((map, ch) => {
+      const uId = ch.assignedUser.toString();
+      if (!map[uId]) map[uId] = [];
+      map[uId].push(ch);
+      return map;
+    }, {});
+
+    const usersWithDetails = users.map((user) => {
+      const account = accountMap[user._id.toString()];
+      const userChannels = channelMap[user._id.toString()] || [];
+
+      return {
+        userId: user._id,
+        fullName: user.fullName,
+        phoneNumber: user.phoneNumber,
+        facebookLink: user.facebookLink,
+        bankInfo: user.bankInfo,
+        role: user.role,
+        loginEmail: account ? account.email : null,
+        hasAccount: !!account,
+        accountIsActive: account ? account.isActive : false,
+        status: user.status,
+        team: user.team ? user.team.name : null,
+        joinDate: user.joinDate,
+        responsibilities: user.responsibilities,
+        note: user.note,
+        isFirstLogin: user.isFirstLogin,
+        channelCount: userChannels.length,
+        createdAt: user.createdAt,
+      };
+    });
 
     res.json({ success: true, data: usersWithDetails });
   } catch (err) {
@@ -225,9 +241,9 @@ const getPersonal = async (req, res, next) => {
         status: user.status,
         team: user.team
           ? {
-              _id: user.team._id,
-              name: user.team.name,
-            }
+            _id: user.team._id,
+            name: user.team.name,
+          }
           : null,
         joinDate: user.joinDate,
         responsibilities: user.responsibilities,
