@@ -10,6 +10,7 @@ import {
   InputGroup,
 } from "react-bootstrap";
 import axios from "axios";
+import config from "../../../../configs/api";
 
 const AddNetworkModal = ({ show, onHide, onSubmit }) => {
   const [formData, setFormData] = useState({
@@ -58,7 +59,7 @@ const AddNetworkModal = ({ show, onHide, onSubmit }) => {
       }
 
       // FIX: Thêm http:// vào URL
-      const response = await axios.get("http://localhost:9999/user/get-all", {
+      const response = await axios.get(`${config.backendBase}/user/get-all`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
