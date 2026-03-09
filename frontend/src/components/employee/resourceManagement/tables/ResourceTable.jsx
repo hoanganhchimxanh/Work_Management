@@ -56,7 +56,18 @@ function ResourceTable({ resources, onManageChannel, onRemoveChannel }) {
                   {resource.assignedChannel ? (
                     <div>
                       <div className="fw-medium">
-                        {resource.assignedChannel.name}
+                        {resource.assignedChannel.link ? (
+                          <a
+                            href={resource.assignedChannel.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-decoration-none"
+                          >
+                            {resource.assignedChannel.name}
+                          </a>
+                        ) : (
+                          resource.assignedChannel.name
+                        )}
                       </div>
                       <small className="text-muted">
                         {resource.assignedChannel.status}

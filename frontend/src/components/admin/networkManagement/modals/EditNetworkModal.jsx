@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Modal, Button, Form, Row, Col, Alert, Spinner } from "react-bootstrap";
+import axios from "axios";
+import config from "../../../../configs/api";
 
 const EditNetworkModal = ({ show, onHide, network, onSubmit }) => {
   const [formData, setFormData] = useState({
@@ -22,12 +24,48 @@ const EditNetworkModal = ({ show, onHide, network, onSubmit }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // State để lưu danh sách nhân viên
+  const [employees, setEmployees] = useState([]);
+  const [loadingEmployees, setLoadingEmployees] = useState(false);
+
   // Load data khi modal mở và có network
+  useEffect(() => {
+    if (show) {
+      fetchEmployees();
+    }
+  }, [show]);
+
+  const fetchEmployees = async () => {
+    setLoadingEmployees(true);
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      const response = await axios.get(`${config.backendBase}/user/get-all`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.data.success) {
+        setEmployees(response.data.data || []);
+      }
+    } catch (err) {
+      console.error("Lỗi khi tải danh sách nhân viên:", err);
+    } finally {
+      setLoadingEmployees(false);
+    }
+  };
+
   useEffect(() => {
     if (show && network) {
       setFormData({
         pubId: network.pubId || "",
-        employment: network.employment || "",
+        employment:
+          network.employment?._id ||
+          network.employment?.userId ||
+          network.employment ||
+          "",
         profileAdsenseId: network.profileAdsenseId || "",
         emailAddress: network.emailAddress || "",
         password: network.password || "",
@@ -163,13 +201,20 @@ const EditNetworkModal = ({ show, onHide, network, onSubmit }) => {
             <Col md={12} className="mb-3">
               <Form.Group>
                 <Form.Label>Employment (Nhân viên phụ trách)</Form.Label>
-                <Form.Control
-                  type="text"
+                <Form.Select
                   name="employment"
                   value={formData.employment}
                   onChange={handleChange}
-                  placeholder="Nguyễn Văn A"
-                />
+                  disabled={loadingEmployees}
+                >
+                  <option value="">-- Chọn nhân viên --</option>
+                  {employees.map((emp) => (
+                    <option key={emp.userId} value={emp.userId}>
+                      {emp.fullName} - {emp.phoneNumber}
+                      {emp.team && ` (${emp.team})`}
+                    </option>
+                  ))}
+                </Form.Select>
                 <Form.Text className="text-muted">
                   Tên hoặc thông tin nhân viên quản lý
                 </Form.Text>

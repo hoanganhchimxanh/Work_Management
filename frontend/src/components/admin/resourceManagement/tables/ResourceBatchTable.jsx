@@ -333,14 +333,37 @@ const ResourceBatchTable = React.forwardRef(({ onBatchUpdated }, ref) => {
                                             <td>
                                               {resource.assignedUser
                                                 ?.fullName || (
-                                                <span className="text-muted">
-                                                  Chưa gán
-                                                </span>
-                                              )}
+                                                  <span className="text-muted">
+                                                    Chưa gán
+                                                  </span>
+                                                )}
                                             </td>
                                             <td>
-                                              {resource.assignedChannel
-                                                ?.name || (
+                                              {resource.assignedChannel ? (
+                                                resource.assignedChannel.link ? (
+                                                  <a
+                                                    href={
+                                                      resource.assignedChannel
+                                                        .link
+                                                    }
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="text-decoration-none fw-bold"
+                                                  >
+                                                    {
+                                                      resource.assignedChannel
+                                                        .name
+                                                    }
+                                                  </a>
+                                                ) : (
+                                                  <strong>
+                                                    {
+                                                      resource.assignedChannel
+                                                        .name
+                                                    }
+                                                  </strong>
+                                                )
+                                              ) : (
                                                 <span className="text-muted">
                                                   Chưa gán
                                                 </span>
