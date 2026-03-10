@@ -249,18 +249,15 @@ const syncRevenueFromAnalytics = async (req, res, next) => {
       });
     }
 
-    // Chỉ sync đến THÁNG TRƯỚC (tháng hiện tại chưa hoàn thành)
+    // Chỉ sync đến THÁNG HIỆN TẠI (không sync tương lai)
     const now = new Date();
     const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 
     let adjustedEndMonth = endMonth;
-    if (endMonth >= currentMonth) {
-      const prevMonth = new Date(now);
-      prevMonth.setMonth(prevMonth.getMonth() - 1);
-      adjustedEndMonth = `${prevMonth.getFullYear()}-${String(prevMonth.getMonth() + 1).padStart(2, "0")}`;
-
+    if (endMonth > currentMonth) {
+      adjustedEndMonth = currentMonth;
       console.log(
-        `⚠️ Adjusted endMonth from ${endMonth} to ${adjustedEndMonth} (current/future month excluded)`,
+        `⚠️ Adjusted endMonth from ${endMonth} to ${adjustedEndMonth} (future month excluded)`,
       );
     }
 
@@ -360,6 +357,8 @@ const syncRevenueFromAnalytics = async (req, res, next) => {
           revenueDoc.totalViews = totalViews || 0;
           revenueDoc.usRevenue = usRevenue || 0; // ✅ Lấy từ API
           revenueDoc.usViews = usViews || 0;
+          // Tự động khóa các tháng trong quá khứ, trừ tháng hiện tại
+          revenueDoc.locked = month < currentMonth;
           await revenueDoc.save();
         } else {
           revenueDoc = await ChannelRevenue.create({
@@ -369,6 +368,8 @@ const syncRevenueFromAnalytics = async (req, res, next) => {
             totalViews: totalViews || 0,
             usRevenue: usRevenue || 0, // ✅ Lấy từ API
             usViews: usViews || 0,
+            // Tự động khóa các tháng trong quá khứ, trừ tháng hiện tại
+            locked: month < currentMonth,
           });
         }
 

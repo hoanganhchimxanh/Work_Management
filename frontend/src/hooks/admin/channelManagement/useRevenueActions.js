@@ -13,7 +13,7 @@ export const useRevenueActions = (
   const handleSyncAnalytics = async () => {
     if (
       !window.confirm(
-        "Đồng bộ doanh thu và views từ YouTube Analytics?\n\nDữ liệu sẽ bao gồm: Doanh thu ước tính, Tổng views, và Views từ Mỹ.\n\n⚠️ Lưu ý: Chỉ sync đến THÁNG TRƯỚC (tháng hiện tại chưa có đủ dữ liệu).",
+        "Đồng bộ doanh thu và views từ YouTube Analytics?\n\nDữ liệu sẽ bao gồm: Doanh thu ước tính, Tổng views, và Views từ Mỹ.\n\n⚠️ Lưu ý: Các tháng trong quá khứ sẽ tự động bị khóa sau khi đồng bộ.",
       )
     ) {
       return;
@@ -22,18 +22,16 @@ export const useRevenueActions = (
     try {
       const token = getToken();
 
-      // ✅ FIX: Sync 12 tháng GẦN NHẤT (không bao gồm tháng hiện tại)
+      // ✅ Sync 12 tháng gần nhất (bao gồm cả tháng hiện tại)
       const now = new Date();
 
-      // endMonth = tháng trước
-      const prevMonth = new Date(now);
-      prevMonth.setMonth(prevMonth.getMonth() - 1);
-      const endMonth = `${prevMonth.getFullYear()}-${String(
-        prevMonth.getMonth() + 1,
+      // endMonth = tháng hiện tại
+      const endMonth = `${now.getFullYear()}-${String(
+        now.getMonth() + 1,
       ).padStart(2, "0")}`;
 
-      // startMonth = 11 tháng trước endMonth = 12 tháng trước tháng hiện tại
-      const startDate = new Date(prevMonth);
+      // startMonth = 11 tháng trước
+      const startDate = new Date(now);
       startDate.setMonth(startDate.getMonth() - 11);
       const startMonth = `${startDate.getFullYear()}-${String(
         startDate.getMonth() + 1,
