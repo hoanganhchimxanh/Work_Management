@@ -1,10 +1,12 @@
 // src/pages/NetworkManagement/NetworkManagement.jsx
 import React, { useState, useEffect } from "react";
 import { Container, Alert } from "react-bootstrap";
+import api from "../../services/api.service";
+import Loader from "../../components/common/Loader";
+import ErrorAlert from "../../components/common/ErrorAlert";
 import NetworkFilters from "../../components/accountant/networkManagement/others/NetworkFilters";
 import NetworkTable from "../../components/accountant/networkManagement/tables/NetworkTable";
 
-import config from "../../configs/api";
 
 const NetworkManagement = () => {
   const [networks, setNetworks] = useState([]);
@@ -15,38 +17,27 @@ const NetworkManagement = () => {
     location: "",
     country: "",
   });
+  const [error, setError] = useState(null);
   const [alert, setAlert] = useState(null);
-
-  const getAuthToken = () => {
-    return localStorage.getItem("token") || "";
-  };
 
   const fetchNetworks = async () => {
     setLoading(true);
+    setError(null);
     try {
-      const queryParams = new URLSearchParams();
-      if (filters.status) queryParams.append("status", filters.status);
-      if (filters.location) queryParams.append("location", filters.location);
-      if (filters.country) queryParams.append("country", filters.country);
+      const params = {};
+      if (filters.status) params.status = filters.status;
+      if (filters.location) params.location = filters.location;
+      if (filters.country) params.country = filters.country;
 
-      const response = await fetch(
-        `${config.backendBase}/network/get-all?${queryParams}`,
-        {
-          headers: {
-            Authorization: `Bearer ${getAuthToken()}`,
-            "Content-Type": "application/json",
-          },
-        },
-      );
-
-      const data = await response.json();
-      if (data.success) {
-        setNetworks(data.data);
+      const response = await api.get("/network/get-all", { params });
+      
+      if (response.data.success) {
+        setNetworks(response.data.data);
       } else {
-        showAlert("Lỗi khi tải dữ liệu networks", "danger");
+        setError("Lỗi khi tải dữ liệu networks");
       }
     } catch (error) {
-      showAlert("Lỗi khi tải dữ liệu networks", "danger");
+      setError("Lỗi khi tải dữ liệu networks");
       console.error("Error fetching networks:", error);
     } finally {
       setLoading(false);
@@ -78,26 +69,17 @@ const NetworkManagement = () => {
 
   const handleExport = async () => {
     try {
-      const queryParams = new URLSearchParams();
-      if (filters.status) queryParams.append("status", filters.status);
-      if (filters.location) queryParams.append("location", filters.location);
-      if (filters.country) queryParams.append("country", filters.country);
+      const params = {};
+      if (filters.status) params.status = filters.status;
+      if (filters.location) params.location = filters.location;
+      if (filters.country) params.country = filters.country;
 
-      const response = await fetch(
-        `${config.backendBase}/excel/export-network-excel?${queryParams}`,
-        {
-          headers: {
-            Authorization: `Bearer ${getAuthToken()}`,
-          },
-        },
-      );
+      const response = await api.get("/excel/export-network-excel", {
+        params,
+        responseType: "blob"
+      });
 
-      if (!response.ok) {
-        throw new Error("Export failed");
-      }
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
+      const url = window.URL.createObjectURL(new Blob([response.data]));
       const a = document.createElement("a");
       a.href = url;
       a.download = `networks_${new Date().toISOString().split("T")[0]}.xlsx`;
@@ -113,12 +95,16 @@ const NetworkManagement = () => {
     }
   };
 
+  if (loading) return <Loader fullPage />;
+
   return (
     <Container fluid className="py-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h2>Quản lý Network</h2>
       </div>
 
+      <ErrorAlert error={error} onClose={() => setError(null)} />
+      
       {alert && (
         <Alert
           variant={alert.variant}
@@ -139,7 +125,7 @@ const NetworkManagement = () => {
         <strong>Tổng số network:</strong> {filteredNetworks.length}
       </div>
 
-      <NetworkTable networks={filteredNetworks} loading={loading} />
+      <NetworkTable networks={filteredNetworks} />
     </Container>
   );
 };
