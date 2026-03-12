@@ -36,7 +36,7 @@ const getAuthUrl = async (req, res, next) => {
       });
     }
 
-    if (channel.assignedUser.toString() !== userId) {
+    if (!channel.assignedUser || channel.assignedUser.toString() !== userId) {
       return res.status(403).json({
         success: false,
         message: "Bạn không có quyền kết nối kênh này!",
@@ -146,10 +146,12 @@ const handleCallback = async (req, res, next) => {
     }
 
     // Redirect về frontend với success message
-    res.redirect(`http://localhost:3000/employee/channels?auth=success`);
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+    res.redirect(`${frontendUrl}/employee/channels?auth=success`);
   } catch (err) {
     console.error("OAuth callback error:", err);
-    res.redirect(`http://localhost:3000/employee/channels?auth=error`);
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+    res.redirect(`${frontendUrl}/employee/channels?auth=error`);
   }
 };
 

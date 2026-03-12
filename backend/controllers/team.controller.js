@@ -102,7 +102,8 @@ const getAll = async (req, res, next) => {
         path: "members",
         select: "fullName role status",
       })
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
     const formatted = teams.map((team) => ({
       _id: team._id,
@@ -152,7 +153,8 @@ const getById = async (req, res, next) => {
       .populate({
         path: "members",
         select: "fullName role status",
-      });
+      })
+      .lean();
 
     if (!team) {
       return res.status(404).json({
@@ -265,7 +267,7 @@ const editInfo = async (req, res, next) => {
     team.name = name ?? team.name;
     team.leader = newLeader;
     team.members = cleanMembers;
-    team.status = status;
+    if (status !== undefined) team.status = status;
 
     await team.save();
 

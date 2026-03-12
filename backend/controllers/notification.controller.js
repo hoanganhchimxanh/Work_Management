@@ -6,7 +6,7 @@ const { getIO } = require("../socket");
  * GET /notification
  * Lấy danh sách thông báo của user (có phân trang)
  */
-const getMyNotifications = async (req, res) => {
+const getMyNotifications = async (req, res, next) => {
   try {
     const userId = req.user.userId;
 
@@ -33,10 +33,7 @@ const getMyNotifications = async (req, res) => {
       },
     });
   } catch (err) {
-    return res.status(500).json({
-      success: false,
-      message: "Không thể lấy danh sách thông báo",
-    });
+    next(err);
   }
 };
 
@@ -44,7 +41,7 @@ const getMyNotifications = async (req, res) => {
  * GET /notification/unread-count
  * Đếm số thông báo chưa đọc
  */
-const getUnreadCount = async (req, res) => {
+const getUnreadCount = async (req, res, next) => {
   try {
     const userId = req.user.userId;
 
@@ -58,10 +55,7 @@ const getUnreadCount = async (req, res) => {
       unreadCount: count,
     });
   } catch (err) {
-    return res.status(500).json({
-      success: false,
-      message: "Không thể lấy số thông báo chưa đọc",
-    });
+    next(err);
   }
 };
 
@@ -69,7 +63,7 @@ const getUnreadCount = async (req, res) => {
  * PATCH /notification/:id/read
  * Đánh dấu 1 thông báo đã đọc
  */
-const markAsRead = async (req, res) => {
+const markAsRead = async (req, res, next) => {
   try {
     const { id } = req.params;
     const userId = req.user.userId;
@@ -94,7 +88,7 @@ const markAsRead = async (req, res) => {
 
     res.status(200).json({ success: true });
   } catch (err) {
-    res.status(500).json({ success: false });
+    next(err);
   }
 };
 
@@ -102,7 +96,7 @@ const markAsRead = async (req, res) => {
  * PATCH /notification/read-all
  * Đánh dấu tất cả thông báo của user là đã đọc (realtime)
  */
-const markAllAsRead = async (req, res) => {
+const markAllAsRead = async (req, res, next) => {
   try {
     const userId = req.user.userId;
 
@@ -123,10 +117,7 @@ const markAllAsRead = async (req, res) => {
       message: "Đã đánh dấu tất cả thông báo là đã đọc",
     });
   } catch (err) {
-    return res.status(500).json({
-      success: false,
-      message: "Không thể cập nhật thông báo",
-    });
+    next(err);
   }
 };
 
@@ -134,7 +125,7 @@ const markAllAsRead = async (req, res) => {
  * DELETE /notification/:id
  * Xóa 1 thông báo
  */
-const deleteNotification = async (req, res) => {
+const deleteNotification = async (req, res, next) => {
   try {
     const userId = req.user.userId;
     const { id } = req.params;
@@ -156,10 +147,7 @@ const deleteNotification = async (req, res) => {
       message: "Đã xóa thông báo",
     });
   } catch (err) {
-    return res.status(500).json({
-      success: false,
-      message: "Không thể xóa thông báo",
-    });
+    next(err);
   }
 };
 

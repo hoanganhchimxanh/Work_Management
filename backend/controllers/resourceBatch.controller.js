@@ -6,7 +6,7 @@ const mongoose = require("mongoose");
 /**
  * Lấy tất cả các batch với filtering và pagination
  */
-const getAllBatches = async (req, res) => {
+const getAllBatches = async (req, res, next) => {
   try {
     const { assignedUser, status, page = 1, limit = 20 } = req.query;
 
@@ -38,20 +38,15 @@ const getAllBatches = async (req, res) => {
         totalPages: Math.ceil(total / parseInt(limit)),
       },
     });
-  } catch (error) {
-    console.error("Error in getAllBatches:", error);
-    res.status(500).json({
-      success: false,
-      message: "Lỗi server khi lấy danh sách batch",
-      error: error.message,
-    });
+  } catch (err) {
+    next(err);
   }
 };
 
 /**
  * Lấy một batch theo ID
  */
-const getBatchById = async (req, res) => {
+const getBatchById = async (req, res, next) => {
   try {
     const { id } = req.params;
 
@@ -99,20 +94,15 @@ const getBatchById = async (req, res) => {
         stats,
       },
     });
-  } catch (error) {
-    console.error("Error in getBatchById:", error);
-    res.status(500).json({
-      success: false,
-      message: "Lỗi server khi lấy thông tin batch",
-      error: error.message,
-    });
+  } catch (err) {
+    next(err);
   }
 };
 
 /**
  * Tạo mới một batch (thường dùng khi import Excel)
  */
-const createBatch = async (req, res) => {
+const createBatch = async (req, res, next) => {
   try {
     const { excelFileName, resources, assignedUser, status } = req.body;
 
@@ -160,20 +150,15 @@ const createBatch = async (req, res) => {
       message: "Tạo batch thành công",
       data: populatedBatch,
     });
-  } catch (error) {
-    console.error("Error in createBatch:", error);
-    res.status(500).json({
-      success: false,
-      message: "Lỗi server khi tạo batch",
-      error: error.message,
-    });
+  } catch (err) {
+    next(err);
   }
 };
 
 /**
  * Cập nhật batch
  */
-const updateBatch = async (req, res) => {
+const updateBatch = async (req, res, next) => {
   try {
     const { id } = req.params;
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -228,20 +213,15 @@ const updateBatch = async (req, res) => {
       message: "Cập nhật batch thành công",
       data: updatedBatch,
     });
-  } catch (error) {
-    console.error("Error in updateBatch:", error);
-    res.status(500).json({
-      success: false,
-      message: "Lỗi server khi cập nhật batch",
-      error: error.message,
-    });
+  } catch (err) {
+    next(err);
   }
 };
 
 /**
  * Xóa batch
  */
-const deleteBatch = async (req, res) => {
+const deleteBatch = async (req, res, next) => {
   try {
     const { id } = req.params;
 
@@ -276,20 +256,15 @@ const deleteBatch = async (req, res) => {
       message: "Đã xóa batch và toàn bộ resources liên quan",
       deletedResourcesCount: resourceIds.length,
     });
-  } catch (error) {
-    console.error("Error in deleteBatch:", error);
-    res.status(500).json({
-      success: false,
-      message: "Lỗi server khi xóa batch",
-      error: error.message,
-    });
+  } catch (err) {
+    next(err);
   }
 };
 
 /**
  * Lấy danh sách resources thuộc một batch
  */
-const getBatchResources = async (req, res) => {
+const getBatchResources = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { status, page = 1, limit = 50 } = req.query;
@@ -345,20 +320,15 @@ const getBatchResources = async (req, res) => {
         },
       },
     });
-  } catch (error) {
-    console.error("Error in getBatchResources:", error);
-    res.status(500).json({
-      success: false,
-      message: "Lỗi server khi lấy resources của batch",
-      error: error.message,
-    });
+  } catch (err) {
+    next(err);
   }
 };
 
 /**
  * ✅ MỚI: Lấy batches của user hiện tại
  */
-const getMyBatches = async (req, res) => {
+const getMyBatches = async (req, res, next) => {
   try {
     const userId = req.user.userId;
     const { status, page = 1, limit = 20 } = req.query;
@@ -389,20 +359,15 @@ const getMyBatches = async (req, res) => {
         totalPages: Math.ceil(total / parseInt(limit)),
       },
     });
-  } catch (error) {
-    console.error("Error in getMyBatches:", error);
-    res.status(500).json({
-      success: false,
-      message: "Lỗi server khi lấy batches của user",
-      error: error.message,
-    });
+  } catch (err) {
+    next(err);
   }
 };
 
 /**
  * ✅ MỚI: Lấy thống kê batches
  */
-const getBatchStats = async (req, res) => {
+const getBatchStats = async (req, res, next) => {
   try {
     const { assignedUser } = req.query;
 
@@ -455,17 +420,12 @@ const getBatchStats = async (req, res) => {
         recentBatches: result.recentBatches,
       },
     });
-  } catch (error) {
-    console.error("Error in getBatchStats:", error);
-    res.status(500).json({
-      success: false,
-      message: "Lỗi server khi lấy thống kê batch",
-      error: error.message,
-    });
+  } catch (err) {
+    next(err);
   }
 };
 
-const assignUserToBatch = async (req, res) => {
+const assignUserToBatch = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { userId, force = false } = req.body;
@@ -536,13 +496,8 @@ const assignUserToBatch = async (req, res) => {
       message: "Assign user cho batch thành công",
       data: updatedBatch,
     });
-  } catch (error) {
-    console.error("Error in assignUserToBatch:", error);
-    res.status(500).json({
-      success: false,
-      message: "Lỗi server khi assign user cho batch",
-      error: error.message,
-    });
+  } catch (err) {
+    next(err);
   }
 };
 

@@ -516,8 +516,12 @@ const getTaskStats = async (req, res, next) => {
     const { assignedToUser, assignedToTeam } = req.query;
 
     const filter = {};
-    if (assignedToUser) filter.assignedToUser = assignedToUser;
-    if (assignedToTeam) filter.assignedToTeam = assignedToTeam;
+    if (assignedToUser) {
+      filter.assignedToUser = new mongoose.Types.ObjectId(assignedToUser);
+    }
+    if (assignedToTeam) {
+      filter.assignedToTeam = new mongoose.Types.ObjectId(assignedToTeam);
+    }
 
     const stats = await Task.aggregate([
       { $match: filter },

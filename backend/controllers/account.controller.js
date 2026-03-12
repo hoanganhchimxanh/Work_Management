@@ -86,7 +86,16 @@ const login = async (req, res, next) => {
 // Đổi mật khẩu
 const changePassword = async (req, res, next) => {
   try {
-    const account = await Account.findById(req.params.id).populate("user");
+    const accountId = req.params.id;
+
+    if (!mongoose.Types.ObjectId.isValid(accountId)) {
+      return res.status(400).json({
+        success: false,
+        message: "ID tài khoản không hợp lệ!",
+      });
+    }
+
+    const account = await Account.findById(accountId).populate("user");
 
     if (!account) {
       return res.status(404).json({
@@ -164,6 +173,13 @@ const register = async (req, res, next) => {
       return res.status(400).json({
         success: false,
         message: "Thiếu dữ liệu đầu vào!",
+      });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({
+        success: false,
+        message: "userId không hợp lệ!",
       });
     }
 

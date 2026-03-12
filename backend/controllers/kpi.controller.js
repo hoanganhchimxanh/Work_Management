@@ -9,6 +9,102 @@ const {
   sendBulkNotification,
 } = require("../services/notification.service");
 
+// ===== HELPERS =====
+
+/**
+ * Tính trạng thái KPI dựa trên ngày hiện tại
+ */
+const getKpiStatus = (kpi, now = new Date()) => {
+  if (now >= new Date(kpi.startDate) && now <= new Date(kpi.endDate)) {
+    return "ongoing";
+  } else if (now > new Date(kpi.endDate)) {
+    return "completed";
+  }
+  return "upcoming";
+};
+
+/**
+ * Tính tiến độ thực tế của KPI (doanh thu + BKT)
+ */
+const calculateKpiProgress = async (kpi, now = new Date()) => {
+  let actualRevenue = 0;
+  let actualBkt = 0;
+
+  const hasStarted = now >= new Date(kpi.startDate);
+  if (!hasStarted) {
+    return { actualRevenue, actualBkt, revenueProgress: 0, bktProgress: 0 };
+  }
+
+  try {
+    // Xác định danh sách channels cần tính
+    let channels = [];
+
+    if (kpi.user) {
+      channels = await db.Channel.find({
+        assignedUser: kpi.user._id || kpi.user,
+      }).lean();
+    } else if (kpi.team) {
+      const teamUsers = await db.User.find({
+        team: kpi.team._id || kpi.team,
+      }).lean();
+      const userIds = teamUsers.map((u) => u._id);
+      channels = await db.Channel.find({
+        assignedUser: { $in: userIds },
+      }).lean();
+    }
+
+    if (channels.length === 0) {
+      return { actualRevenue, actualBkt, revenueProgress: 0, bktProgress: 0 };
+    }
+
+    const channelIds = channels.map((ch) => ch._id);
+
+    // Tính tổng revenue
+    const revenueData = await db.ChannelAnalytics.aggregate([
+      {
+        $match: {
+          channel: { $in: channelIds },
+          date: {
+            $gte: new Date(kpi.startDate),
+            $lte: new Date(kpi.endDate),
+          },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalRevenue: { $sum: "$estimatedRevenue" },
+        },
+      },
+    ]);
+
+    actualRevenue = revenueData[0]?.totalRevenue || 0;
+
+    // Đếm số kênh được BKT trong khoảng thời gian KPI
+    actualBkt = channels.filter((ch) => {
+      if (!ch.isMonetized || !ch.monetizeDate) return false;
+      const monetizeDate = new Date(ch.monetizeDate);
+      const kpiStart = new Date(kpi.startDate);
+      const kpiEnd = new Date(kpi.endDate);
+      return monetizeDate >= kpiStart && monetizeDate <= kpiEnd;
+    }).length;
+  } catch (error) {
+    console.error("Error calculating KPI progress:", error);
+  }
+
+  const revenueProgress =
+    kpi.revenueTarget > 0
+      ? Math.min(100, Math.round((actualRevenue / kpi.revenueTarget) * 100))
+      : 0;
+
+  const bktProgress =
+    kpi.bktTarget > 0
+      ? Math.min(100, Math.round((actualBkt / kpi.bktTarget) * 100))
+      : 0;
+
+  return { actualRevenue, actualBkt, revenueProgress, bktProgress };
+};
+
 // Thêm KPI mới
 const createNew = async (req, res, next) => {
   try {
@@ -369,138 +465,16 @@ const getAllWithProgress = async (req, res, next) => {
       .sort({ startDate: -1 })
       .lean();
 
-    // Thêm status (ongoing, completed, upcoming)
     const now = new Date();
 
     const kpisWithProgressPromises = kpis.map(async (kpi) => {
-      let kpiStatus = "upcoming";
-      if (now >= new Date(kpi.startDate) && now <= new Date(kpi.endDate)) {
-        kpiStatus = "ongoing";
-      } else if (now > new Date(kpi.endDate)) {
-        kpiStatus = "completed";
-      }
-
-      // Tính toán tiến độ thực tế
-      let actualRevenue = 0;
-      let actualBkt = 0;
-
-      // Chỉ tính tiến độ nếu đã đến ngày bắt đầu
-      const hasStarted = now >= new Date(kpi.startDate);
-
-      try {
-        // Lấy dữ liệu revenue từ ChannelAnalytics
-        if (hasStarted && kpi.user) {
-          // Tìm các channel của user
-          const channels = await db.Channel.find({
-            assignedUser: kpi.user._id || kpi.user,
-          }).lean();
-
-          const channelIds = channels.map((ch) => ch._id);
-
-          // Tính tổng revenue trong khoảng thời gian KPI
-          const revenueData = await db.ChannelAnalytics.aggregate([
-            {
-              $match: {
-                channel: { $in: channelIds },
-                date: {
-                  $gte: new Date(kpi.startDate),
-                  $lte: new Date(kpi.endDate),
-                },
-              },
-            },
-            {
-              $group: {
-                _id: null,
-                totalRevenue: { $sum: "$estimatedRevenue" },
-              },
-            },
-          ]);
-
-          actualRevenue = revenueData[0]?.totalRevenue || 0;
-
-          // ✅ FIX: Đếm số kênh được BKT TRONG khoảng thời gian KPI
-          // Chỉ đếm kênh nếu:
-          // 1. isMonetized = true
-          // 2. monetizeDate nằm trong khoảng [startDate, endDate]
-          actualBkt = channels.filter((ch) => {
-            if (!ch.isMonetized || !ch.monetizeDate) return false;
-
-            const monetizeDate = new Date(ch.monetizeDate);
-            const kpiStart = new Date(kpi.startDate);
-            const kpiEnd = new Date(kpi.endDate);
-
-            // Kênh được bật kiếm tiền trong khoảng thời gian KPI
-            return monetizeDate >= kpiStart && monetizeDate <= kpiEnd;
-          }).length;
-        } else if (hasStarted && kpi.team) {
-          // Tìm các user thuộc team
-          const teamUsers = await db.User.find({
-            team: kpi.team._id || kpi.team,
-          }).lean();
-          const userIds = teamUsers.map((u) => u._id);
-
-          // Tìm các channel của team
-          const channels = await db.Channel.find({
-            assignedUser: { $in: userIds },
-          }).lean();
-
-          const channelIds = channels.map((ch) => ch._id);
-
-          // Tính tổng revenue
-          const revenueData = await db.ChannelAnalytics.aggregate([
-            {
-              $match: {
-                channel: { $in: channelIds },
-                date: {
-                  $gte: new Date(kpi.startDate),
-                  $lte: new Date(kpi.endDate),
-                },
-              },
-            },
-            {
-              $group: {
-                _id: null,
-                totalRevenue: { $sum: "$estimatedRevenue" },
-              },
-            },
-          ]);
-
-          actualRevenue = revenueData[0]?.totalRevenue || 0;
-
-          // ✅ FIX: Đếm số kênh được BKT TRONG khoảng thời gian KPI
-          actualBkt = channels.filter((ch) => {
-            if (!ch.isMonetized || !ch.monetizeDate) return false;
-
-            const monetizeDate = new Date(ch.monetizeDate);
-            const kpiStart = new Date(kpi.startDate);
-            const kpiEnd = new Date(kpi.endDate);
-
-            // Kênh được bật kiếm tiền trong khoảng thời gian KPI
-            return monetizeDate >= kpiStart && monetizeDate <= kpiEnd;
-          }).length;
-        }
-      } catch (error) {
-        console.error("Error calculating KPI progress:", error);
-      }
-
-      // Tính phần trăm hoàn thành
-      const revenueProgress =
-        kpi.revenueTarget > 0
-          ? Math.min(100, Math.round((actualRevenue / kpi.revenueTarget) * 100))
-          : 0;
-
-      const bktProgress =
-        kpi.bktTarget > 0
-          ? Math.min(100, Math.round((actualBkt / kpi.bktTarget) * 100))
-          : 0;
+      const kpiStatus = getKpiStatus(kpi, now);
+      const progress = await calculateKpiProgress(kpi, now);
 
       return {
         ...kpi,
         status: kpiStatus,
-        actualRevenue,
-        actualBkt,
-        revenueProgress,
-        bktProgress,
+        ...progress,
       };
     });
 
@@ -544,135 +518,16 @@ const getMyKPIsWithProgress = async (req, res, next) => {
       .sort({ startDate: -1 })
       .lean();
 
-    // Thêm status và progress
     const now = new Date();
 
     const kpisWithProgressPromises = kpis.map(async (kpi) => {
-      let kpiStatus = "upcoming";
-      if (now >= new Date(kpi.startDate) && now <= new Date(kpi.endDate)) {
-        kpiStatus = "ongoing";
-      } else if (now > new Date(kpi.endDate)) {
-        kpiStatus = "completed";
-      }
-
-      // Tính toán tiến độ thực tế
-      let actualRevenue = 0;
-      let actualBkt = 0;
-
-      // Chỉ tính tiến độ nếu đã đến ngày bắt đầu
-      const hasStarted = now >= new Date(kpi.startDate);
-
-      try {
-        // Lấy dữ liệu revenue từ ChannelAnalytics
-        if (hasStarted && kpi.user) {
-          // Tìm các channel của user
-          const channels = await db.Channel.find({
-            assignedUser: kpi.user._id || kpi.user,
-          }).lean();
-
-          const channelIds = channels.map((ch) => ch._id);
-
-          // Tính tổng revenue trong khoảng thời gian KPI
-          const revenueData = await db.ChannelAnalytics.aggregate([
-            {
-              $match: {
-                channel: { $in: channelIds },
-                date: {
-                  $gte: new Date(kpi.startDate),
-                  $lte: new Date(kpi.endDate),
-                },
-              },
-            },
-            {
-              $group: {
-                _id: null,
-                totalRevenue: { $sum: "$estimatedRevenue" },
-              },
-            },
-          ]);
-
-          actualRevenue = revenueData[0]?.totalRevenue || 0;
-
-          // ✅ FIX: Đếm số kênh được BKT TRONG khoảng thời gian KPI
-          actualBkt = channels.filter((ch) => {
-            if (!ch.isMonetized || !ch.monetizeDate) return false;
-
-            const monetizeDate = new Date(ch.monetizeDate);
-            const kpiStart = new Date(kpi.startDate);
-            const kpiEnd = new Date(kpi.endDate);
-
-            // Kênh được bật kiếm tiền trong khoảng thời gian KPI
-            return monetizeDate >= kpiStart && monetizeDate <= kpiEnd;
-          }).length;
-        } else if (hasStarted && kpi.team) {
-          // Tìm các user thuộc team
-          const teamUsers = await db.User.find({
-            team: kpi.team._id || kpi.team,
-          }).lean();
-          const userIds = teamUsers.map((u) => u._id);
-
-          // Tìm các channel của team
-          const channels = await db.Channel.find({
-            assignedUser: { $in: userIds },
-          }).lean();
-
-          const channelIds = channels.map((ch) => ch._id);
-
-          // Tính tổng revenue
-          const revenueData = await db.ChannelAnalytics.aggregate([
-            {
-              $match: {
-                channel: { $in: channelIds },
-                date: {
-                  $gte: new Date(kpi.startDate),
-                  $lte: new Date(kpi.endDate),
-                },
-              },
-            },
-            {
-              $group: {
-                _id: null,
-                totalRevenue: { $sum: "$estimatedRevenue" },
-              },
-            },
-          ]);
-
-          actualRevenue = revenueData[0]?.totalRevenue || 0;
-
-          // ✅ FIX: Đếm số kênh được BKT TRONG khoảng thời gian KPI
-          actualBkt = channels.filter((ch) => {
-            if (!ch.isMonetized || !ch.monetizeDate) return false;
-
-            const monetizeDate = new Date(ch.monetizeDate);
-            const kpiStart = new Date(kpi.startDate);
-            const kpiEnd = new Date(kpi.endDate);
-
-            // Kênh được bật kiếm tiền trong khoảng thời gian KPI
-            return monetizeDate >= kpiStart && monetizeDate <= kpiEnd;
-          }).length;
-        }
-      } catch (error) {
-        console.error("Error calculating KPI progress:", error);
-      }
-
-      // Tính phần trăm hoàn thành
-      const revenueProgress =
-        kpi.revenueTarget > 0
-          ? Math.min(100, Math.round((actualRevenue / kpi.revenueTarget) * 100))
-          : 0;
-
-      const bktProgress =
-        kpi.bktTarget > 0
-          ? Math.min(100, Math.round((actualBkt / kpi.bktTarget) * 100))
-          : 0;
+      const kpiStatus = getKpiStatus(kpi, now);
+      const progress = await calculateKpiProgress(kpi, now);
 
       return {
         ...kpi,
         status: kpiStatus,
-        actualRevenue,
-        actualBkt,
-        revenueProgress,
-        bktProgress,
+        ...progress,
       };
     });
 

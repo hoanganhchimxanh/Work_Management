@@ -246,8 +246,15 @@ const updateNetwork = async (req, res, next) => {
       }
     }
 
-    // Cập nhật các field
-    Object.keys(updateData).forEach((key) => {
+    // Cập nhật các field (whitelist để tránh ghi đè field nội bộ)
+    const allowedFields = [
+      "pubId", "employment", "reminderDate", "profileAdsenseId",
+      "emailAddress", "password", "recoveryEmail", "twoFA",
+      "creationDate", "taxForm", "location", "linkedChannelUrl",
+      "adSenseLocation", "status", "note",
+    ];
+
+    allowedFields.forEach((key) => {
       if (updateData[key] !== undefined) {
         network[key] = updateData[key];
       }
