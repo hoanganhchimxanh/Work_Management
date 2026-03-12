@@ -140,7 +140,16 @@ const editChannelInfo = async (req, res, next) => {
 
     // Cập nhật các field
     if (name) channel.name = name;
-    if (link !== undefined) channel.link = link;
+    if (link !== undefined && link !== channel.link) {
+      const existingChannel = await Channel.findOne({ link });
+      if (existingChannel) {
+        return res.status(400).json({
+          success: false,
+          message: "Kênh này đã tồn tại!",
+        });
+      }
+      channel.link = link;
+    }
     if (assignedUser !== undefined) channel.assignedUser = assignedUser;
     if (network !== undefined) channel.network = network;
     if (status) channel.status = status;
