@@ -11,15 +11,6 @@ import {
   Modal,
 } from "react-bootstrap";
 
-import {
-  fetchNotifications,
-  markNotificationRead,
-  markAllRead,
-  deleteNotification,
-} from "../../services/notification.service";
-
-import { socket } from "../../socket";
-
 // Custom hooks
 import useNotifications from "../../hooks/useNotifications";
 
