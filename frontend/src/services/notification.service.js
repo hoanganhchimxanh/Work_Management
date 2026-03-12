@@ -1,38 +1,22 @@
-import axios from "axios";
-import config from "../configs/api";
-
-const getAuthHeader = () => ({
-  headers: {
-    Authorization: `Bearer ${localStorage.getItem("token")}`,
-  },
-});
+import api from "./api.service";
 
 export const fetchNotifications = (page = 1, limit = 20) =>
-  axios.get(
-    `${config.backendBase}/notification?page=${page}&limit=${limit}`,
-    getAuthHeader(),
-  );
+  api.get("/notification", {
+    params: { page, limit },
+  });
 
 export const fetchUnreadCount = () =>
-  axios.get(`${config.backendBase}/notification/unread-count`, getAuthHeader());
+  api.get("/notification/unread-count");
 
 export const markNotificationRead = (id) =>
-  axios.patch(
-    `${config.backendBase}/notification/${id}/read`,
-    {},
-    getAuthHeader(),
-  );
+  api.patch(`/notification/${id}/read`);
 
 export const markAllRead = () =>
-  axios.patch(
-    `${config.backendBase}/notification/read-all`,
-    {},
-    getAuthHeader(),
-  );
+  api.patch("/notification/read-all");
 
 /**
  * DELETE /notification/:id
  * Xóa 1 notification
  */
 export const deleteNotification = (id) =>
-  axios.delete(`${config.backendBase}/notification/${id}`, getAuthHeader());
+  api.delete(`/notification/${id}`);

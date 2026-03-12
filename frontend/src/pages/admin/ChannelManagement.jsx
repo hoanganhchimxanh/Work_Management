@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Container, Row, Col, Button, Spinner, Alert } from "react-bootstrap";
-import axios from "axios";
-
-import config from "../../configs/api";
+import api from "../../services/api.service";
+import Loader from "../../components/common/Loader";
+import ErrorAlert from "../../components/common/ErrorAlert";
 import ChannelFilter from "../../components/admin/channelManagement/others/ChannelFilter";
 import ChannelTable from "../../components/admin/channelManagement/tables/ChannelTable";
 
@@ -20,8 +20,6 @@ function ChannelManagement() {
   const [filterStatus, setFilterStatus] = useState("");
   const [sortBy, setSortBy] = useState("");
 
-  const getToken = () => localStorage.getItem("token");
-
   useEffect(() => {
     fetchData();
   }, []);
@@ -31,34 +29,22 @@ function ChannelManagement() {
       setLoading(true);
       setError(null);
 
-      const token = getToken();
-
       const [channelsRes, usersRes, networksRes, analyticsRes] =
         await Promise.all([
-          axios.get(`${config.backendBase}/channel/get-all`, {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          axios.get(`${config.backendBase}/user/get-all`, {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          axios.get(`${config.backendBase}/network/get-all`, {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          axios.get(
-            `${config.backendBase}/youtube-analytics/get-all-analytics`,
-            {
-              params: {
-                startDate: "2024-01-01",
-                endDate: new Date().toISOString().split("T")[0],
-              },
-              headers: { Authorization: `Bearer ${token}` },
+          api.get("/channel/get-all"),
+          api.get("/user/get-all"),
+          api.get("/network/get-all"),
+          api.get("/youtube-analytics/get-all-analytics", {
+            params: {
+              startDate: "2024-01-01",
+              endDate: new Date().toISOString().split("T")[0],
             },
-          ),
+          }),
         ]);
 
       // Merge analytics vào channel
-      const channelsWithAnalytics = channelsRes.data.data.map((channel) => {
-        const analytics = analyticsRes.data.data.channels.find(
+      const channelsWithAnalytics = (channelsRes.data.data || []).map((channel) => {
+        const analytics = analyticsRes.data.data?.channels?.find(
           (a) => a.channelId === channel._id,
         );
 
@@ -71,8 +57,8 @@ function ChannelManagement() {
       });
 
       setChannels(channelsWithAnalytics);
-      setUsers(usersRes.data.data);
-      setNetworks(networksRes.data.data);
+      setUsers(usersRes.data.data || []);
+      setNetworks(networksRes.data.data || []);
     } catch (err) {
       setError(err.response?.data?.message || "Lỗi khi tải dữ liệu");
     } finally {
@@ -111,23 +97,11 @@ function ChannelManagement() {
   const filteredChannels = getFilteredChannels();
 
   if (loading) {
-    return (
-      <Container
-        fluid
-        className="d-flex justify-content-center align-items-center"
-        style={{ minHeight: 400 }}
-      >
-        <Spinner animation="border" />
-      </Container>
-    );
+    return <Loader fullPage />;
   }
 
   if (error) {
-    return (
-      <Container fluid className="mt-4">
-        <Alert variant="danger">{error}</Alert>
-      </Container>
-    );
+    return <ErrorAlert error={error} container />;
   }
 
   return (

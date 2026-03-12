@@ -143,7 +143,7 @@ const excelConfigs = {
       { key: "stt", displayName: "STT", width: 5 },
       { key: "fullName", displayName: "Họ và tên", width: 25 },
       { key: "phoneNumber", displayName: "Số điện thoại", width: 20 },
-      { key: "facebookLink", displayName: "Facebook Link", width: 40 },
+      { key: "facebookLink", displayName: "Link Facebook", width: 40 },
       { key: "bankName", displayName: "Tên ngân hàng", width: 25 },
       { key: "accountNumber", displayName: "Số tài khoản", width: 20 },
       { key: "loginEmail", displayName: "Email đăng nhập", width: 30 },
@@ -299,24 +299,24 @@ const excelConfigs = {
           }).lean();
 
           return {
-            stt: index + 1,
-            fullName: user.fullName,
-            phoneNumber: user.phoneNumber,
-            facebookLink: user.facebookLink || "",
-            bankName: user.bankInfo?.bankName || "",
-            accountNumber: user.bankInfo?.accountNumber || "",
-            loginEmail: account?.email || "",
-            role: user.role,
-            status: user.status,
-            teamName: user.team?.name || "",
-            accountIsActive: account?.isActive ? "Có" : "Không",
-            isFirstLogin: user.isFirstLogin ? "Có" : "Không",
-            joinDate: user.joinDate
+            "STT": index + 1,
+            "Họ và tên": user.fullName,
+            "Số điện thoại": user.phoneNumber,
+            "Link Facebook": user.facebookLink || "",
+            "Tên ngân hàng": user.bankInfo?.bankName || "",
+            "Số tài khoản": user.bankInfo?.accountNumber || "",
+            "Email đăng nhập": account?.email || "",
+            "Vai trò": user.role,
+            "Trạng thái": user.status,
+            "Team": user.team?.name || "",
+            "TK hoạt động": account?.isActive ? "Có" : "Không",
+            "Lần đầu đăng nhập": user.isFirstLogin ? "Có" : "Không",
+            "Ngày vào làm": user.joinDate
               ? new Date(user.joinDate).toLocaleDateString("vi-VN")
               : "",
-            responsibilities: user.responsibilities || "",
-            note: user.note || "",
-            createdAt: new Date(user.createdAt).toLocaleDateString("vi-VN"),
+            "Nhiệm vụ/Mảng": user.responsibilities || "",
+            "Ghi chú": user.note || "",
+            "Ngày tạo": new Date(user.createdAt).toLocaleDateString("vi-VN"),
           };
         }),
       );
@@ -473,15 +473,15 @@ const excelConfigs = {
 
     prepareExportData: async (records) => {
       return records.map((team, index) => ({
-        stt: index + 1,
-        name: team.name,
-        status: team.status,
-        leaderName: team.leader?.fullName || "",
-        leaderEmail: team.leader?.phoneNumber || "",
-        memberCount: team.members?.length || 0,
-        memberNames: team.members?.map((m) => m.fullName).join(", ") || "",
-        memberEmails: team.members?.map((m) => m.phoneNumber).join(", ") || "",
-        createdAt: new Date(team.createdAt).toLocaleDateString("vi-VN"),
+        "STT": index + 1,
+        "Tên Team": team.name,
+        "Trạng thái": team.status,
+        "Leader": team.leader?.fullName || "",
+        "Email Leader": team.leader?.phoneNumber || "",
+        "Số thành viên": team.members?.length || 0,
+        "Danh sách thành viên": team.members?.map((m) => m.fullName).join(", ") || "",
+        "Email thành viên": team.members?.map((m) => m.phoneNumber).join(", ") || "",
+        "Ngày tạo": new Date(team.createdAt).toLocaleDateString("vi-VN"),
       }));
     },
 
@@ -560,7 +560,7 @@ const excelConfigs = {
     exportColumns: [
       { key: "stt", displayName: "STT", width: 5 },
       { key: "email", displayName: "Email", width: 35 },
-      { key: "recoveryEmail", displayName: "Recovery Email", width: 35 },
+      { key: "recoveryEmail", displayName: "Email khôi phục", width: 35 },
       { key: "status", displayName: "Trạng thái", width: 15 },
       { key: "assignedUserName", displayName: "User được gán", width: 25 },
       { key: "assignedUserEmail", displayName: "Email User", width: 35 },
@@ -621,16 +621,16 @@ const excelConfigs = {
 
     prepareExportData: async (records) => {
       return records.map((resource, index) => ({
-        stt: index + 1,
-        email: resource.email,
-        recoveryEmail: resource.recoveryEmail,
-        status: resource.status,
-        assignedUserName: resource.assignedUser?.fullName || "",
-        assignedUserEmail: resource.assignedUser?.phoneNumber || "",
-        assignedChannelName: resource.assignedChannel?.name || "",
-        assignedChannelLink: resource.assignedChannel?.link || "",
-        note: resource.note || "",
-        createdAt: new Date(resource.createdAt).toLocaleDateString("vi-VN"),
+        "STT": index + 1,
+        "Email": resource.email,
+        "Email khôi phục": resource.recoveryEmail,
+        "Trạng thái": resource.status,
+        "User được gán": resource.assignedUser?.fullName || "",
+        "Email User": resource.assignedUser?.phoneNumber || "",
+        "Channel được gán": resource.assignedChannel?.name || "",
+        "Link Channel": resource.assignedChannel?.link || "",
+        "Ghi chú": resource.note || "",
+        "Ngày tạo": new Date(resource.createdAt).toLocaleDateString("vi-VN"),
       }));
     },
 
@@ -661,13 +661,13 @@ const excelConfigs = {
       { key: "employmentName", displayName: "Nhân viên phụ trách", width: 30 },
       { key: "profileAdsenseId", displayName: "Profile AdSense ID", width: 25 },
       { key: "adSenseLocation", displayName: "Địa chỉ AdSense", width: 40 },
-      { key: "emailAddress", displayName: "Email Address", width: 30 },
-      { key: "recoveryEmail", displayName: "Recovery Email", width: 30 },
-      { key: "twoFA", displayName: "2FA", width: 10 },
+      { key: "emailAddress", displayName: "Địa chỉ Email", width: 30 },
+      { key: "recoveryEmail", displayName: "Email khôi phục", width: 30 },
+      { key: "twoFA", displayName: "Xác thực 2 yếu tố", width: 10 },
       { key: "creationDate", displayName: "Ngày tạo Profile", width: 15 },
-      { key: "taxForm", displayName: "Tax Form", width: 20 },
+      { key: "taxForm", displayName: "Mẫu thuế", width: 20 },
       { key: "location", displayName: "Vị trí", width: 15 },
-      { key: "linkedChannelUrl", displayName: "Linked Channel", width: 50 },
+      { key: "linkedChannelUrl", displayName: "Kênh liên kết", width: 50 },
       { key: "status", displayName: "Trạng thái", width: 15 },
       { key: "note", displayName: "Ghi chú", width: 30 },
       { key: "reminderDate", displayName: "Ngày nhắc nhở", width: 15 },
@@ -676,26 +676,26 @@ const excelConfigs = {
 
     prepareExportData: async (records) => {
       return records.map((network, index) => ({
-        stt: index + 1,
-        pubId: network.pubId || "",
-        employmentName: network.employment?.fullName || "",
-        profileAdsenseId: network.profileAdsenseId,
-        adSenseLocation: network.adSenseLocation || "",
-        emailAddress: network.emailAddress || "",
-        recoveryEmail: network.recoveryEmail || "",
-        twoFA: network.twoFA ? "Yes" : "No",
-        creationDate: network.creationDate
+        "STT": index + 1,
+        "PUB-ID": network.pubId || "",
+        "Nhân viên phụ trách": network.employment?.fullName || "",
+        "Profile AdSense ID": network.profileAdsenseId,
+        "Địa chỉ AdSense": network.adSenseLocation || "",
+        "Địa chỉ Email": network.emailAddress || "",
+        "Email khôi phục": network.recoveryEmail || "",
+        "Xác thực 2 yếu tố": network.twoFA ? "Có" : "Không",
+        "Ngày tạo Profile": network.creationDate
           ? new Date(network.creationDate).toLocaleDateString("vi-VN")
           : "",
-        taxForm: network.taxForm || "",
-        location: network.location || "",
-        linkedChannelUrl: network.linkedChannelUrl || "",
-        status: network.status || "",
-        note: network.note || "",
-        reminderDate: network.reminderDate
+        "Mẫu thuế": network.taxForm || "",
+        "Vị trí": network.location || "",
+        "Kênh liên kết": network.linkedChannelUrl || "",
+        "Trạng thái": network.status || "",
+        "Ghi chú": network.note || "",
+        "Ngày nhắc nhở": network.reminderDate
           ? new Date(network.reminderDate).toLocaleDateString("vi-VN")
           : "",
-        channelCount: network.channelCount || 0,
+        "Số kênh": network.channelCount || 0,
       }));
     },
   },

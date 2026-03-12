@@ -11,13 +11,13 @@ import {
   InputGroup,
 } from "react-bootstrap";
 import { Search, FunnelFill, ArrowClockwise } from "react-bootstrap-icons";
-import axios from "axios";
-import { jwtDecode } from "jwt-decode";
+import api from "../../services/api.service";
+import Loader from "../../components/common/Loader";
+import ErrorAlert from "../../components/common/ErrorAlert";
+import TablePagination from "../../components/common/TablePagination";
 import ResourceStats from "../../components/employee/resourceManagement/others/ResourceStats";
 import ResourceTable from "../../components/employee/resourceManagement/tables/ResourceTable";
 import ManageChannelModal from "../../components/employee/resourceManagement/modals/ManageChannelModal";
-
-import config from "../../configs/api";
 
 function ResourceManagement() {
   // States
@@ -25,8 +25,12 @@ function ResourceManagement() {
   const [stats, setStats] = useState(null);
   const [channels, setChannels] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(null);
   const [success, setSuccess] = useState("");
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
 
   // Filter states
   const [statusFilter, setStatusFilter] = useState("");
@@ -36,47 +40,20 @@ function ResourceManagement() {
   const [showManageChannelModal, setShowManageChannelModal] = useState(false);
   const [selectedResource, setSelectedResource] = useState(null);
 
-  // Get userId from token
-  const token = localStorage.getItem("token");
-  let userId = null;
-  if (token) {
-    try {
-      const decoded = jwtDecode(token);
-      userId = decoded.userId;
-    } catch (err) {
-      console.error("Error decoding token:", err);
-    }
-  }
-
-  // Get auth config
-  const getAuthConfig = () => {
-    return {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    };
-  };
-
   // Fetch employee's resources and channels
   const fetchData = async () => {
     setLoading(true);
-    setError("");
+    setError(null);
     try {
       // Fetch resources và channels của employee
       const [resourcesRes, channelsRes] = await Promise.all([
-        axios.get(
-          `${config.backendBase}/resource/my-resources`,
-          getAuthConfig(),
-        ),
-        axios.get(
-          `${config.backendBase}/channel/by-owner/${userId}`,
-          getAuthConfig(),
-        ),
+        api.get("/resource/my-resources"),
+        api.get("/channel/my-channels"), // Giả sử API endpoint này tồn tại hoặc tương đương
       ]);
 
-      const myResources = resourcesRes.data.data;
+      const myResources = resourcesRes.data.data || [];
       setResources(myResources);
-      setChannels(channelsRes.data.data);
+      setChannels(channelsRes.data.data || []);
 
       // Calculate stats from fetched resources
       const calculatedStats = {
@@ -97,20 +74,14 @@ function ResourceManagement() {
   };
 
   useEffect(() => {
-    if (userId) {
-      fetchData();
-    }
+    fetchData();
   }, []);
 
   // Gán kênh cho resource
   const handleAssignChannel = async (resourceId, channelId) => {
     try {
-      setError("");
-      await axios.post(
-        `${config.backendBase}/resource/assign-to-channel/${resourceId}`,
-        { channelId },
-        getAuthConfig(),
-      );
+      setError(null);
+      await api.post(`/resource/assign-to-channel/${resourceId}`, { channelId });
       setSuccess("Gán kênh cho resource thành công!");
       setShowManageChannelModal(false);
       setSelectedResource(null);
@@ -118,7 +89,6 @@ function ResourceManagement() {
       setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
       setError(err.response?.data?.message || "Có lỗi xảy ra khi gán kênh");
-      console.error("Error assigning channel:", err);
     }
   };
 
@@ -129,19 +99,13 @@ function ResourceManagement() {
     }
 
     try {
-      setError("");
-      // Gọi API update với assignedChannel = null
-      await axios.put(
-        `${config.backendBase}/resource/update/${resourceId}`,
-        { assignedChannel: null },
-        getAuthConfig(),
-      );
+      setError(null);
+      await api.put(`/resource/update/${resourceId}`, { assignedChannel: null });
       setSuccess("Đã bỏ kênh khỏi resource!");
       fetchData();
       setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
       setError(err.response?.data?.message || "Có lỗi xảy ra khi bỏ kênh");
-      console.error("Error removing channel:", err);
     }
   };
 
@@ -157,13 +121,15 @@ function ResourceManagement() {
     return matchSearch && matchStatus;
   });
 
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredResources.length / itemsPerPage);
+  const paginatedResources = filteredResources.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   if (loading) {
-    return (
-      <Container className="py-5 text-center">
-        <Spinner animation="border" variant="primary" />
-        <p className="mt-3 text-muted">Đang tải dữ liệu...</p>
-      </Container>
-    );
+    return <Loader fullPage />;
   }
 
   return (
@@ -177,11 +143,8 @@ function ResourceManagement() {
       </div>
 
       {/* Alerts */}
-      {error && (
-        <Alert variant="danger" dismissible onClose={() => setError("")}>
-          {error}
-        </Alert>
-      )}
+      <ErrorAlert error={error} onClose={() => setError(null)} />
+      
       {success && (
         <Alert variant="success" dismissible onClose={() => setSuccess("")}>
           {success}
@@ -205,7 +168,10 @@ function ResourceManagement() {
                   type="text"
                   placeholder="Tìm theo email..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setCurrentPage(1);
+                  }}
                 />
               </InputGroup>
             </Col>
@@ -217,7 +183,10 @@ function ResourceManagement() {
               </Form.Label>
               <Form.Select
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
               >
                 <option value="">Tất cả</option>
                 <option value="AVAILABLE">Khả dụng</option>
@@ -247,12 +216,18 @@ function ResourceManagement() {
         </h5>
       </div>
       <ResourceTable
-        resources={filteredResources}
+        resources={paginatedResources}
         onManageChannel={(resource) => {
           setSelectedResource(resource);
           setShowManageChannelModal(true);
         }}
         onRemoveChannel={handleRemoveChannel}
+      />
+
+      <TablePagination 
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
       />
 
       {/* Manage Channel Modal */}
