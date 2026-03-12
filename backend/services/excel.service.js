@@ -345,8 +345,9 @@ class ExcelService {
 
     const existing = await Model.findOne(query);
     if (existing) {
-      return `${uniqueField.displayName} đã tồn tại: ${data[uniqueField.dbField]
-        }`;
+      return `${uniqueFieldCol.displayName} đã tồn tại: ${
+        data[uniqueFieldCol.dbField]
+      }`;
     }
 
     return null;
