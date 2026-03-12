@@ -44,6 +44,17 @@ const createByAdmin = async (req, res, next) => {
       });
     }
 
+    // Kiểm tra email đăng nhập đã tồn tại chưa (nếu có gửi lên)
+    if (loginEmail) {
+      const existingAccount = await Account.findOne({ email: loginEmail });
+      if (existingAccount) {
+        return res.status(400).json({
+          success: false,
+          message: "Email đăng nhập đã được sử dụng!",
+        });
+      }
+    }
+
     // Tạo user với status ACTIVE
     const newUser = await User.create({
       fullName,
@@ -59,17 +70,14 @@ const createByAdmin = async (req, res, next) => {
       isFirstLogin: true,
     });
 
+    // Cập nhật members array trong Team (nếu có chọn team)
+    if (team) {
+      await Team.findByIdAndUpdate(team, { $addToSet: { members: newUser._id } });
+    }
+
     // Tạo tài khoản đăng nhập tự động (nếu có loginEmail)
     let accountData = null;
     if (loginEmail) {
-      // Kiểm tra email đăng nhập đã tồn tại chưa
-      const existingAccount = await Account.findOne({ email: loginEmail });
-      if (existingAccount) {
-        return res.status(400).json({
-          success: false,
-          message: "Email đăng nhập đã được sử dụng!",
-        });
-      }
 
       const tempPassword = generator.generate({
         length: 10,
@@ -292,20 +300,56 @@ const updateUser = async (req, res, next) => {
       });
     }
 
+    const oldTeam = user.team ? user.team.toString() : null;
+
     // Cập nhật các field nếu có
     if (fullName) user.fullName = fullName;
-    if (phoneNumber) user.phoneNumber = phoneNumber;
+    if (phoneNumber && phoneNumber !== user.phoneNumber) {
+      const existingUser = await User.findOne({ phoneNumber });
+      if (existingUser) {
+        return res.status(400).json({
+          success: false,
+          message: "Số điện thoại này đã được sử dụng!",
+        });
+      }
+      user.phoneNumber = phoneNumber;
+    }
     if (facebookLink !== undefined) user.facebookLink = facebookLink;
     if (bankInfo) user.bankInfo = bankInfo;
     if (role) user.role = role;
     if (status) user.status = status;
-    if (team !== undefined) user.team = team;
+    if (team !== undefined) user.team = team || null;
     if (joinDate !== undefined) user.joinDate = joinDate;
     if (responsibilities !== undefined)
       user.responsibilities = responsibilities;
     if (note !== undefined) user.note = note;
 
     await user.save();
+
+    // Đồng bộ lại mảng members/leader của Team nếu team bị thay đổi
+    const newTeam = user.team ? user.team.toString() : null;
+    if (newTeam !== oldTeam) {
+      // 1. Xóa user khỏi team cũ
+      if (oldTeam) {
+        const oldTeamDoc = await Team.findById(oldTeam);
+        if (oldTeamDoc) {
+          if (oldTeamDoc.leader && oldTeamDoc.leader.toString() === userId) {
+            oldTeamDoc.leader = null;
+          }
+          oldTeamDoc.members = oldTeamDoc.members.filter(
+            (m) => m && m.toString() !== userId
+          );
+          await oldTeamDoc.save();
+        }
+      }
+
+      // 2. Thêm user vào team mới
+      if (newTeam) {
+        await Team.findByIdAndUpdate(newTeam, {
+          $addToSet: { members: userId },
+        });
+      }
+    }
 
     const updatedUser = await User.findById(userId)
       .populate("team", "name")
