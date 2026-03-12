@@ -23,6 +23,7 @@ import {
 import { useChannelRevenue } from "../../../../hooks/admin/channelManagement/useChannelRevenue";
 import { useRevenueActions } from "../../../../hooks/admin/channelManagement/useRevenueActions";
 import { useRevenueUtils } from "../../../../hooks/admin/channelManagement/useRevenueUtils";
+import { useState } from "react";
 
 function ChannelMonthRevenueModal({ show, onHide, channelId, channelName }) {
   const {
@@ -43,6 +44,14 @@ function ChannelMonthRevenueModal({ show, onHide, channelId, channelName }) {
   } = useRevenueActions(channelId, revenues, setRevenues, fetchRevenueData);
 
   const { formatNumber, getFormulaText } = useRevenueUtils(channelData);
+
+  // Phân trang
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 12;
+
+  const totalPages = Math.ceil((revenues?.length || 0) / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const currentRevenues = revenues?.slice(startIndex, startIndex + itemsPerPage) || [];
 
   // Helper để render tooltip
   const renderTooltip = (text) => <Tooltip id="button-tooltip">{text}</Tooltip>;
@@ -246,7 +255,7 @@ function ChannelMonthRevenueModal({ show, onHide, channelId, channelName }) {
                       </td>
                     </tr>
                   ) : (
-                    revenues.map((rev) => (
+                    currentRevenues.map((rev) => (
                       <tr
                         key={rev.month}
                         className={rev.locked ? "table-light" : ""}
@@ -436,6 +445,36 @@ function ChannelMonthRevenueModal({ show, onHide, channelId, channelName }) {
                 </div>
               </div>
             </Alert>
+
+            {/* Phân trang */}
+            {totalPages > 1 && (
+              <div className="d-flex justify-content-between align-items-center mt-3">
+                <div className="text-muted small">
+                  Hiển thị từ {startIndex + 1} đến {Math.min(startIndex + itemsPerPage, revenues.length)} trong tổng số {revenues.length} tháng
+                </div>
+                <div className="d-flex gap-2">
+                  <Button
+                    variant="outline-secondary"
+                    size="sm"
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  >
+                    Trang trước
+                  </Button>
+                  <div className="px-3 py-1 bg-light border rounded">
+                    {currentPage} / {totalPages}
+                  </div>
+                  <Button
+                    variant="outline-secondary"
+                    size="sm"
+                    disabled={currentPage === totalPages}
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  >
+                    Trang sau
+                  </Button>
+                </div>
+              </div>
+            )}
           </>
         )}
       </Modal.Body>

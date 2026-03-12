@@ -130,7 +130,7 @@ export const useRevenueActions = (
         {},
         {
           headers: { Authorization: `Bearer ${token}` },
-        },
+        }
       );
 
       fetchRevenueData();
@@ -154,7 +154,7 @@ export const useRevenueActions = (
         `${config.backendBase}/channel-revenue/${channelId}/monthly/${month}`,
         {
           headers: { Authorization: `Bearer ${token}` },
-        },
+        }
       );
 
       alert("Đã xóa thành công!");
