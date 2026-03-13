@@ -41,6 +41,13 @@ class ExcelService {
     // Array để lưu IDs của các records được tạo thành công (cho ResourceBatch)
     const createdResourceIds = [];
 
+    // --- MỚI: PREFETCH DATA ---
+    const cache = await this._prefetchReferencesAndDuplicates(Model, data, config);
+
+    let validDataToInsert = [];
+    let validProcessedData = [];
+    let validRows = [];
+
     // Xử lý từng row một cách độc lập
     for (let i = 0; i < data.length; i++) {
       const row = data[i];
@@ -48,7 +55,7 @@ class ExcelService {
 
       try {
         // Validate và transform data
-        const processedData = await this._processRowData(row, config, null);
+        const processedData = await this._processRowDataWithCache(row, config, cache);
 
         if (processedData.error) {
           results.errors.push({
@@ -60,11 +67,10 @@ class ExcelService {
         }
 
         // Kiểm tra duplicate
-        const duplicateCheck = await this._checkDuplicate(
-          Model,
+        const duplicateCheck = this._checkDuplicateWithCache(
           processedData.data,
           config,
-          null,
+          cache
         );
 
         if (duplicateCheck) {
@@ -87,31 +93,9 @@ class ExcelService {
           ? config.beforeCreate(finalData)
           : finalData;
 
-        // Tạo record
-        const newRecord = await Model.create(dataToCreate);
-
-        // afterImport hook
-        let extraData = {};
-        if (config.afterImport) {
-          extraData = await config.afterImport(
-            newRecord,
-            null,
-            this.db,
-            processedData.data,
-          );
-        }
-
-        results.success.push({
-          row: rowNumber,
-          id: newRecord._id,
-          ...this._getSuccessInfo(newRecord, config),
-          ...extraData,
-        });
-
-        // ✅ Lưu ID cho ResourceBatch (chỉ với entity type = resource)
-        if (entityType === "resource") {
-          createdResourceIds.push(newRecord._id);
-        }
+        validDataToInsert.push(dataToCreate);
+        validProcessedData.push(processedData.data);
+        validRows.push(rowNumber);
       } catch (err) {
         results.errors.push({
           row: rowNumber,
@@ -121,10 +105,52 @@ class ExcelService {
       }
     }
 
-    if (results.success.length === 0) {
+    if (results.success.length === 0 && validDataToInsert.length === 0) {
       console.error("IMPORT FAILED - ALL ROWS INVALID");
       console.error("ERROR DETAILS:", JSON.stringify(results.errors, null, 2));
       throw new Error("Không có bản ghi hợp lệ để import");
+    }
+
+    // --- MỚI: BULK INSERT & AFTER IMPORT ---
+    if (validDataToInsert.length > 0) {
+      try {
+        const insertedRecords = await Model.insertMany(validDataToInsert);
+
+        for (let i = 0; i < insertedRecords.length; i++) {
+          const newRecord = insertedRecords[i];
+          const rowNumber = validRows[i];
+          const processedRawData = validProcessedData[i];
+
+          let extraData = {};
+          if (config.afterImport) {
+            try {
+              extraData = await config.afterImport(
+                newRecord,
+                null,
+                this.db,
+                processedRawData,
+              );
+            } catch (afterImportErr) {
+              console.error(`Lỗi afterImport ở dòng ${rowNumber}:`, afterImportErr);
+            }
+          }
+
+          results.success.push({
+            row: rowNumber,
+            id: newRecord._id,
+            ...this._getSuccessInfo(newRecord, config),
+            ...extraData,
+          });
+
+          // ✅ Lưu ID cho ResourceBatch (chỉ với entity type = resource)
+          if (entityType === "resource") {
+            createdResourceIds.push(newRecord._id);
+          }
+        }
+      } catch (insertErr) {
+        console.error("Bulk Insert Failed:", insertErr);
+        throw new Error("Lỗi insert dữ liệu vào mongDB. Vui lòng kiểm tra lại định dạng dữ liệu: " + insertErr.message);
+      }
     }
 
     // ✅ TẠO RESOURCE BATCH (chỉ cho resource imports)
@@ -253,7 +279,7 @@ class ExcelService {
 
   // ==================== PRIVATE METHODS ====================
 
-  async _processRowData(row, config, session) {
+  async _processRowDataWithCache(row, config, cache) {
     const processedData = {};
     let error = null;
 
@@ -282,11 +308,7 @@ class ExcelService {
       }
 
       if (col.isReference) {
-        const refValue = await this._resolveReference(
-          col,
-          transformedValue,
-          session,
-        );
+        const refValue = this._resolveReferenceWithCache(col, transformedValue, cache);
         if (col.required && !refValue) {
           error = `Không tìm thấy ${col.referenceModel} với ${col.referenceField}: ${value}`;
           break;
@@ -300,27 +322,23 @@ class ExcelService {
     return { data: processedData, error };
   }
 
-  async _resolveReference(col, value, session) {
-    const RefModel = this.db[col.referenceModel];
+  _resolveReferenceWithCache(col, value, cache) {
+    if (!cache.references[col.dbField]) return null;
 
     if (col.isArray) {
-      const values = value.split(col.delimiter || ",").map((v) => v.trim());
-      const query = {};
-      query[col.referenceField] = { $in: values };
-
-      const refs = await RefModel.find(query).lean();
-      return refs.map((ref) => ref[col.referenceKey]);
+      const values = value.toString().split(col.delimiter || ",").map((v) => v.trim());
+      const refs = [];
+      for (const v of values) {
+         const id = cache.references[col.dbField].get(v);
+         if (id) refs.push(id);
+      }
+      return refs;
     } else {
-      const query = {};
-      query[col.referenceField] = value;
-
-      const ref = await RefModel.findOne(query).lean();
-      return ref ? ref[col.referenceKey] : null;
+      return cache.references[col.dbField].get(value.toString().trim());
     }
   }
 
-  async _checkDuplicate(Model, data, config, session) {
-    // Tình huống 1: Ưu tiên dùng uniqueField đã định nghĩa trong config
+  _checkDuplicateWithCache(data, config, cache) {
     let uniqueFieldCol = null;
     if (config.uniqueField) {
       uniqueFieldCol = config.columns.find(
@@ -328,7 +346,6 @@ class ExcelService {
       );
     }
 
-    // Tình huống 2: Fallback lấy cột required đầu tiên không phải reference
     if (!uniqueFieldCol) {
       uniqueFieldCol = config.columns.find(
         (col) => col.required && !col.isReference,
@@ -337,20 +354,72 @@ class ExcelService {
 
     if (!uniqueFieldCol) return null;
 
-    const query = {};
-    query[uniqueFieldCol.dbField] = data[uniqueFieldCol.dbField];
+    const value = data[uniqueFieldCol.dbField];
+    if (!value) return null;
 
-    // Chánh check lỗi nếu giá trị null/undefined mặc dù là "unique"
-    if (!query[uniqueFieldCol.dbField]) return null;
-
-    const existing = await Model.findOne(query);
-    if (existing) {
-      return `${uniqueFieldCol.displayName} đã tồn tại: ${
-        data[uniqueFieldCol.dbField]
-      }`;
+    if (cache.duplicates.has(value)) {
+      return `${uniqueFieldCol.displayName} đã tồn tại: ${value}`;
     }
 
+    cache.duplicates.add(value);
     return null;
+  }
+
+  async _prefetchReferencesAndDuplicates(Model, data, config) {
+    const cache = { duplicates: new Set(), references: {} };
+
+    // 1. Prefetch duplicates
+    let uniqueFieldCol = null;
+    if (config.uniqueField) {
+       uniqueFieldCol = config.columns.find((c) => c.dbField === config.uniqueField);
+    }
+    if (!uniqueFieldCol) {
+       uniqueFieldCol = config.columns.find((c) => c.required && !c.isReference);
+    }
+    
+    if (uniqueFieldCol) {
+       const uniqueValues = data
+         .map(row => row[uniqueFieldCol.excelKey] || row[uniqueFieldCol.altExcelKey])
+         .filter(Boolean);
+
+       if (uniqueValues.length > 0) {
+         const query = { [uniqueFieldCol.dbField]: { $in: uniqueValues } };
+         const existingRecords = await Model.find(query).select(uniqueFieldCol.dbField).lean();
+         existingRecords.forEach(r => cache.duplicates.add(r[uniqueFieldCol.dbField]));
+       }
+    }
+
+    // 2. Prefetch references
+    for (const col of config.columns) {
+       if (col.isReference && col.referenceModel) {
+          const RefModel = this.db[col.referenceModel];
+          cache.references[col.dbField] = new Map();
+          
+          let values = [];
+          data.forEach(row => {
+            const val = row[col.excelKey] || row[col.altExcelKey];
+            if (val) {
+               if (col.isArray) {
+                 values.push(...val.toString().split(col.delimiter || ",").map(v => v.trim()));
+               } else {
+                 values.push(val.toString().trim());
+               }
+            }
+          });
+          
+          values = [...new Set(values)];
+          if (values.length > 0) {
+             const query = { [col.referenceField]: { $in: values } };
+             const selectFields = `${col.referenceField} ${col.referenceKey}`;
+             const refs = await RefModel.find(query).select(selectFields).lean();
+             refs.forEach(r => {
+                 cache.references[col.dbField].set(r[col.referenceField], r[col.referenceKey]);
+             });
+          }
+       }
+    }
+
+    return cache;
   }
 
   _getSuccessInfo(record, config) {
