@@ -9,6 +9,7 @@ import {
   Spinner,
   InputGroup,
 } from "react-bootstrap";
+import { Eye, EyeSlash } from "react-bootstrap-icons";
 import useAddNetworkModal from "../../../../hooks/admin/networkManagement/useAddNetworkModal";
 
 const AddNetworkModal = ({ show, onHide, onSubmit }) => {
@@ -142,9 +143,11 @@ const AddNetworkModal = ({ show, onHide, onSubmit }) => {
                   <Button
                     variant="outline-secondary"
                     onClick={() => setShowPassword(!showPassword)}
+                    tabIndex="-1"
                   >
-                    {showPassword ? "Ẩn" : "Hiện"}
+                    {showPassword ? <EyeSlash size={18} /> : <Eye size={18} />}
                   </Button>
+
                 </InputGroup>
               </Form.Group>
             </Col>

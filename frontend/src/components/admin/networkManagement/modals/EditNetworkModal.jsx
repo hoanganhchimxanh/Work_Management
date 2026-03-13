@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Modal, Button, Form, Row, Col, Alert, Spinner } from "react-bootstrap";
+import { Modal, Button, Form, Row, Col, Alert, Spinner, InputGroup } from "react-bootstrap";
+import { Eye, EyeSlash } from "react-bootstrap-icons";
 import axios from "axios";
 import config from "../../../../configs/api";
 
@@ -23,6 +24,7 @@ const EditNetworkModal = ({ show, onHide, network, onSubmit }) => {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   // State để lưu danh sách nhân viên
   const [employees, setEmployees] = useState([]);
@@ -242,13 +244,22 @@ const EditNetworkModal = ({ show, onHide, network, onSubmit }) => {
             <Col md={6} className="mb-3">
               <Form.Group>
                 <Form.Label>Password</Form.Label>
-                <Form.Control
-                  type="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  placeholder="••••••••"
-                />
+                <InputGroup>
+                  <Form.Control
+                    type={showPassword ? "text" : "password"}
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    placeholder="••••••••"
+                  />
+                  <Button
+                    variant="outline-secondary"
+                    onClick={() => setShowPassword(!showPassword)}
+                    tabIndex="-1"
+                  >
+                    {showPassword ? <EyeSlash size={18} /> : <Eye size={18} />}
+                  </Button>
+                </InputGroup>
                 <Form.Text className="text-muted">
                   Để trống nếu không muốn thay đổi
                 </Form.Text>
