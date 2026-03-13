@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import {
   Modal,
   Button,
@@ -9,160 +9,22 @@ import {
   Spinner,
   InputGroup,
 } from "react-bootstrap";
-import axios from "axios";
-import config from "../../../../configs/api";
+import useAddNetworkModal from "../../../../hooks/admin/networkManagement/useAddNetworkModal";
 
 const AddNetworkModal = ({ show, onHide, onSubmit }) => {
-  const [formData, setFormData] = useState({
-    pubId: "",
-    employment: "",
-    profileAdsenseId: "",
-    emailAddress: "",
-    password: "",
-    recoveryEmail: "",
-    twoFA: false,
-    creationDate: "",
-    taxForm: "",
-    location: "OFFICE",
-    linkedChannelUrl: "",
-    status: "ACTIVE",
-    reminderDate: "",
-    note: "PENDING_ACTIVATION",
-  });
-
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-
-  // State để lưu danh sách nhân viên
-  const [employees, setEmployees] = useState([]);
-  const [loadingEmployees, setLoadingEmployees] = useState(false);
-
-  // Lấy danh sách nhân viên khi modal được mở
-  useEffect(() => {
-    if (show) {
-      fetchEmployees();
-    }
-  }, [show]);
-
-  const fetchEmployees = async () => {
-    setLoadingEmployees(true);
-    setError(""); // Reset error trước khi fetch
-
-    try {
-      const token = localStorage.getItem("token");
-
-      if (!token) {
-        setError("Không tìm thấy token xác thực!");
-        setLoadingEmployees(false);
-        return;
-      }
-
-      // FIX: Thêm http:// vào URL
-      const response = await axios.get(`${config.backendBase}/user/get-all`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        params: {
-          status: "ACTIVE", // Chỉ lấy nhân viên đang hoạt động
-        },
-      });
-
-      console.log("Response từ API:", response.data); // Debug log
-
-      if (response.data.success) {
-        setEmployees(response.data.data || []);
-        console.log(
-          "Đã load được",
-          response.data.data?.length || 0,
-          "nhân viên",
-        );
-      } else {
-        setError("Không thể tải danh sách nhân viên!");
-      }
-    } catch (err) {
-      console.error("Lỗi khi tải danh sách nhân viên:", err);
-
-      // Hiển thị thông báo lỗi chi tiết hơn
-      if (err.response) {
-        // Server trả về error
-        setError(
-          `Lỗi server: ${err.response.data?.message || err.response.statusText}`,
-        );
-      } else if (err.request) {
-        // Request được gửi nhưng không nhận được response
-        setError("Không thể kết nối đến server. Vui lòng kiểm tra kết nối!");
-      } else {
-        // Lỗi khác
-        setError(`Lỗi: ${err.message}`);
-      }
-    } finally {
-      setLoadingEmployees(false);
-    }
-  };
-
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
-
-    if (!formData.profileAdsenseId.trim()) {
-      setError("Profile AdSense ID là bắt buộc!");
-      return;
-    }
-    if (!formData.employment) {
-      setError("Vui lòng chọn nhân viên phụ trách!");
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const payload = {
-        ...formData,
-        pubId: formData.pubId || undefined,
-        reminderDate: formData.reminderDate || null,
-        creationDate: formData.creationDate || null,
-      };
-
-      await onSubmit(payload);
-      handleClose();
-    } catch (err) {
-      setError(err.message || "Lỗi khi tạo network!");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleClose = () => {
-    setError("");
-    setShowPassword(false);
-    setFormData({
-      pubId: "",
-      employment: "",
-      profileAdsenseId: "",
-      emailAddress: "",
-      password: "",
-      recoveryEmail: "",
-      twoFA: false,
-      creationDate: "",
-      taxForm: "",
-      location: "OFFICE",
-      linkedChannelUrl: "",
-      status: "ACTIVE",
-      reminderDate: "",
-      note: "PENDING_ACTIVATION",
-    });
-    setEmployees([]); // Clear danh sách nhân viên khi đóng modal
-    onHide();
-  };
+  const {
+    formData,
+    loading,
+    error,
+    setError,
+    showPassword,
+    setShowPassword,
+    employees,
+    loadingEmployees,
+    handleChange,
+    handleSubmit,
+    handleClose,
+  } = useAddNetworkModal(show, onSubmit, onHide);
 
   return (
     <Modal show={show} onHide={handleClose} size="lg" centered>

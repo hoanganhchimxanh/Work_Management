@@ -1,101 +1,17 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { Modal, Form, Button, Alert } from "react-bootstrap";
-import axios from "axios";
-
-import config from "../../../../configs/api";
+import useTaskModal from "../../../../hooks/admin/kpiTaskManagement/useTaskModal";
 
 function TaskModal({ show, onHide, task, users, teams, onSaved }) {
-  const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    assignedToUser: "",
-    assignedToTeam: "",
-    status: "PENDING",
-    deadline: "",
-  });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [assignType, setAssignType] = useState("user"); // 'user' or 'team'
-
-  useEffect(() => {
-    if (task) {
-      setFormData({
-        title: task.title || "",
-        description: task.description || "",
-        assignedToUser: task.assignedToUser?._id || "",
-        assignedToTeam: task.assignedToTeam?._id || "",
-        status: task.status || "PENDING",
-        deadline: task.deadline ? task.deadline.split("T")[0] : "",
-      });
-      setAssignType(task.assignedToUser ? "user" : "team");
-    } else {
-      setFormData({
-        title: "",
-        description: "",
-        assignedToUser: "",
-        assignedToTeam: "",
-        status: "PENDING",
-        deadline: "",
-      });
-      setAssignType("user");
-    }
-    setError(null);
-  }, [task, show]);
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError(null);
-
-    if (!formData.title) {
-      setError("Vui lòng nhập tiêu đề công việc");
-      return;
-    }
-
-    if (assignType === "user" && !formData.assignedToUser) {
-      setError("Vui lòng chọn nhân viên");
-      return;
-    }
-
-    if (assignType === "team" && !formData.assignedToTeam) {
-      setError("Vui lòng chọn team");
-      return;
-    }
-
-    try {
-      setLoading(true);
-
-      const payload = {
-        title: formData.title,
-        description: formData.description,
-        assignedToUser: assignType === "user" ? formData.assignedToUser : null,
-        assignedToTeam: assignType === "team" ? formData.assignedToTeam : null,
-        status: formData.status,
-        deadline: formData.deadline || null,
-      };
-
-      if (task) {
-        // Update task
-        await axios.put(
-          `${config.backendBase}/task/update/${task._id}`,
-          payload,
-        );
-      } else {
-        // Create new task
-        await axios.post(`${config.backendBase}/task/create-new`, payload);
-      }
-
-      onSaved();
-    } catch (err) {
-      setError(err.response?.data?.message || "Có lỗi xảy ra");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const {
+    formData,
+    loading,
+    error,
+    assignType,
+    setAssignType,
+    handleChange,
+    handleSubmit,
+  } = useTaskModal(task, show, onSaved);
 
   const activeUsers = users?.filter((u) => u.status === "ACTIVE") || [];
   const activeTeams = teams?.filter((t) => t.status === "AVAILABLE") || [];

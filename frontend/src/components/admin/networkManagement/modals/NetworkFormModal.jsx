@@ -1,100 +1,13 @@
-// src/pages/NetworkManagement/components/NetworkFormModal.jsx
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { Modal, Button, Form, Row, Col } from "react-bootstrap";
+import useNetworkFormModal from "../../../../../hooks/admin/networkManagement/useNetworkFormModal";
 
 const NetworkFormModal = ({ show, network, users, onHide, onSave }) => {
-  const [formData, setFormData] = useState({
-    assignedUser: "",
-    profileAdsenseId: "",
-    emailAddress: "",
-    recoveryEmail: "",
-    creationDate: "",
-    taxName: "",
-    location: "OFFICE",
-    linkedChannelUrl: "",
-    emailChannel: "",
-    channelJoinDate: "",
-    country: "VN",
-    status: "ACTIVE",
-    reminderDate: "",
-    note: "",
-  });
-
-  const [errors, setErrors] = useState({});
-
-  useEffect(() => {
-    if (network) {
-      setFormData({
-        assignedUser: network.assignedUser?._id || "",
-        profileAdsenseId: network.profileAdsenseId || "",
-        emailAddress: network.emailAddress || "",
-        recoveryEmail: network.recoveryEmail || "",
-        creationDate: network.creationDate
-          ? network.creationDate.split("T")[0]
-          : "",
-        taxName: network.taxName || "",
-        location: network.location || "OFFICE",
-        linkedChannelUrl: network.linkedChannelUrl || "",
-        emailChannel: network.emailChannel || "",
-        channelJoinDate: network.channelJoinDate
-          ? network.channelJoinDate.split("T")[0]
-          : "",
-        country: network.country || "VN",
-        status: network.status || "ACTIVE",
-        reminderDate: network.reminderDate
-          ? network.reminderDate.split("T")[0]
-          : "",
-        note: network.note || "",
-      });
-    } else {
-      setFormData({
-        assignedUser: "",
-        profileAdsenseId: "",
-        emailAddress: "",
-        recoveryEmail: "",
-        creationDate: "",
-        taxName: "",
-        location: "OFFICE",
-        linkedChannelUrl: "",
-        emailChannel: "",
-        channelJoinDate: "",
-        country: "VN",
-        status: "ACTIVE",
-        reminderDate: "",
-        note: "",
-      });
-    }
-    setErrors({});
-  }, [network, show]);
-
-  const validateForm = () => {
-    const newErrors = {};
-
-    if (!formData.assignedUser)
-      newErrors.assignedUser = "Vui lòng chọn nhân viên";
-    if (!formData.profileAdsenseId)
-      newErrors.profileAdsenseId = "Vui lòng nhập Profile AdSense ID";
-    if (!formData.emailAddress) newErrors.emailAddress = "Vui lòng nhập email";
-    if (!formData.creationDate)
-      newErrors.creationDate = "Vui lòng chọn ngày tạo";
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (validateForm()) {
-      onSave(formData);
-    }
-  };
-
-  const handleChange = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: "" }));
-    }
-  };
+  const { formData, errors, handleChange, handleSubmit } = useNetworkFormModal(
+    network,
+    show,
+    onSave
+  );
 
   return (
     <Modal show={show} onHide={onHide} size="lg">
