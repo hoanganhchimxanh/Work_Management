@@ -142,10 +142,18 @@ const deleteNotification = async (req, res, next) => {
       });
     }
 
+    const unreadCount = await Notification.countDocuments({
+      user: userId,
+      isRead: false,
+    });
+    const io = getIO();
+    io.to(userId.toString()).emit("notification:unread-count", { unreadCount });
+
     return res.status(200).json({
       success: true,
       message: "Đã xóa thông báo",
     });
+
   } catch (err) {
     next(err);
   }

@@ -262,11 +262,6 @@ function ResourceManagement() {
           {error}
         </Alert>
       )}
-      {success && (
-        <Alert variant="success" dismissible onClose={() => setSuccess("")}>
-          {success}
-        </Alert>
-      )}
 
       {bulkAssignMode && activeTab === "resources" && (
         <Alert variant="info">

@@ -7,7 +7,6 @@ function UserModal({ show, onHide, user, teams, onSaved }) {
     formData,
     loading,
     error,
-    successMessage,
     handleChange,
     handleSubmit,
   } = useUserModal(user, show, onSaved, onHide);
@@ -22,11 +21,6 @@ function UserModal({ show, onHide, user, teams, onSaved }) {
       <Form onSubmit={handleSubmit}>
         <Modal.Body>
           {error && <Alert variant="danger">{error}</Alert>}
-          {successMessage && (
-            <Alert variant="success" style={{ whiteSpace: "pre-line" }}>
-              {successMessage}
-            </Alert>
-          )}
 
           <Row>
             <Col md={6}>

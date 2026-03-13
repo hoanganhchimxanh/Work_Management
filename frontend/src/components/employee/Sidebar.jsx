@@ -60,7 +60,7 @@ const Sidebar = () => {
   }, []);
 
   useEffect(() => {
-    if (location.pathname === "/empolyee/notifications") {
+    if (location.pathname.includes("/notifications")) {
       fetchUnreadCount().then((res) => {
         setHasUnreadNotification(res.data.unreadCount > 0);
       });
@@ -124,7 +124,7 @@ const Sidebar = () => {
           <span className="ms-3 d-flex align-items-center gap-2">
             <span>{item.label}</span>
 
-            {item.to === "/employee/notifications" && hasUnreadNotification && (
+            {item.to.includes("notifications") && hasUnreadNotification && (
               <span
                 style={{
                   width: "8px",

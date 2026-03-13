@@ -39,12 +39,9 @@ function TeamTable({ teams, loading, onEdit, onRefresh, onDeleted }) {
     try {
       setDeleting(teamId);
       await axios.delete(`${config.backendBase}/team/delete-team/${teamId}`);
+      // Thông báo thành công sẽ được hiển thị qua GlobalNotificationToast nếu backend được cấu hình gửi notify
       onDeleted();
     } catch (err) {
-      alert(
-        "Không thể xóa đội nhóm: " +
-          (err.response?.data?.message || err.message),
-      );
     } finally {
       setDeleting(null);
     }

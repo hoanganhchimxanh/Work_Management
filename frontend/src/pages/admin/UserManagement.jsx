@@ -129,12 +129,6 @@ function UserManagement() {
         </Alert>
       )}
 
-      {success && (
-        <Alert variant="success" dismissible onClose={() => {}}>
-          {success}
-        </Alert>
-      )}
-
       <Row className="mb-3">
         <Col>
           <div className="d-flex justify-content-between align-items-center">

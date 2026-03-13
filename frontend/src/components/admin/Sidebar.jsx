@@ -61,7 +61,7 @@ const Sidebar = () => {
   }, []);
 
   useEffect(() => {
-    if (location.pathname === "/admin/notifications") {
+    if (location.pathname.includes("/notifications")) {
       fetchUnreadCount().then((res) => {
         setHasUnreadNotification(res.data.unreadCount > 0);
       });

@@ -108,12 +108,7 @@ function UserTable({ users, loading, onEdit, onRefresh, teams }) {
 
       const newPassword = response.data?.data?.newPassword;
 
-      alert(
-        `Cấp lại mật khẩu thành công!\n\n` +
-          `Người dùng: ${fullName}\n` +
-          `Mật khẩu mới: ${newPassword}`,
-      );
-
+      // Thông báo thành công sẽ được hiển thị qua GlobalNotificationToast từ Backend
       onRefresh();
     } catch (err) {
       alert(
@@ -138,7 +133,9 @@ function UserTable({ users, loading, onEdit, onRefresh, teams }) {
         },
       });
 
-      alert("Đã xóa người dùng thành công!");
+      // Thông báo thành công sẽ được hiển thị qua GlobalNotificationToast nếu có trigger từ backend
+      // Lưu ý: Hiện tại backend deleteUser chưa gửi notification, nên có thể cần bổ sung ở backend
+      // Tuy nhiên user muốn xóa hết popup cũ nên tôi sẽ xóa trước.
       onRefresh();
     } catch (err) {
       alert("Không thể xóa: " + (err.response?.data?.message || err.message));

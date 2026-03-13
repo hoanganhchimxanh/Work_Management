@@ -326,6 +326,23 @@ const updateUser = async (req, res, next) => {
 
     await user.save();
 
+    // 🔔 Gửi thông báo cập nhật thành công (cho Admin)
+    try {
+      const admins = await User.find({ role: "ADMIN" }).select("_id").lean();
+      for (const admin of admins) {
+        await sendNotification({
+          userId: admin._id,
+          title: "Cập nhật nhân viên",
+          message: `Thông tin của nhân viên ${user.fullName} đã được cập nhật thành công.`,
+          type: "SYSTEM",
+          metadata: { userId: user._id, action: "USER_UPDATED" }
+        });
+      }
+    } catch (err) {
+      console.error("Notification error:", err);
+    }
+
+
     // Đồng bộ lại mảng members/leader của Team nếu team bị thay đổi
     const newTeam = user.team ? user.team.toString() : null;
     if (newTeam !== oldTeam) {
@@ -460,6 +477,23 @@ const deleteUser = async (req, res, next) => {
 
     user.status = "QUIT";
     await user.save();
+
+    // 🔔 Gửi thông báo xóa/cho nghỉ thành công
+    try {
+      const admins = await User.find({ role: "ADMIN" }).select("_id").lean();
+      for (const admin of admins) {
+        await sendNotification({
+          userId: admin._id,
+          title: "Thông báo hệ thống",
+          message: `Nhân viên ${user.fullName} đã được chuyển trạng thái sang QUIT (Nghỉ việc).`,
+          type: "SYSTEM",
+          metadata: { userId: user._id, action: "USER_DELETED" }
+        });
+      }
+    } catch (err) {
+      console.error("Notification error:", err);
+    }
+
 
     // Vô hiệu hóa tài khoản đăng nhập của user
     await Account.updateOne({ user: userId }, { isActive: false });

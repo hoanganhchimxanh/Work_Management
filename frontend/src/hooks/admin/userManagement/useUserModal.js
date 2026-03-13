@@ -20,7 +20,6 @@ function useUserModal(user, show, onSaved, onHide) {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [successMessage, setSuccessMessage] = useState(null);
 
   useEffect(() => {
     if (user) {
@@ -57,7 +56,6 @@ function useUserModal(user, show, onSaved, onHide) {
       });
     }
     setError(null);
-    setSuccessMessage(null);
   }, [user, show]);
 
   const handleChange = (e) => {
@@ -80,7 +78,6 @@ function useUserModal(user, show, onSaved, onHide) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
-    setSuccessMessage(null);
 
     if (!formData.fullName || !formData.phoneNumber) {
       setError(
@@ -113,14 +110,13 @@ function useUserModal(user, show, onSaved, onHide) {
           `${config.backendBase}/user/update/${user.userId}`,
           payload,
         );
-        setSuccessMessage("Cập nhật người dùng thành công!");
       } else {
         // Create new user (by admin)
         payload.loginEmail = formData.loginEmail || null;
 
         const token = localStorage.getItem("token");
 
-        const response = await axios.post(
+        await axios.post(
           `${config.backendBase}/user/create-by-admin`,
           payload,
           {
@@ -129,17 +125,10 @@ function useUserModal(user, show, onSaved, onHide) {
             },
           },
         );
-
-        if (response.data.data?.account) {
-          setSuccessMessage(
-            `Tạo người dùng thành công!\nEmail đăng nhập: ${response.data.data.account.email}\nMật khẩu tạm: ${response.data.data.account.tempPassword}`,
-          );
-        } else {
-          setSuccessMessage("Tạo người dùng thành công!");
-        }
       }
 
       // Call onSaved after successful operation
+      // Red dot and Toast will show up from backend notification
       setTimeout(() => {
         if (onSaved) {
           onSaved();
@@ -147,7 +136,7 @@ function useUserModal(user, show, onSaved, onHide) {
         if (onHide) {
           onHide();
         }
-      }, 2000);
+      }, 500); // Reduced delay since we don't need to show local success message
     } catch (err) {
       console.error("Error in handleSubmit:", err);
       setError(err.response?.data?.message || "Có lỗi xảy ra");
@@ -160,7 +149,6 @@ function useUserModal(user, show, onSaved, onHide) {
     formData,
     loading,
     error,
-    successMessage,
     handleChange,
     handleSubmit,
   };

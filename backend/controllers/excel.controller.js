@@ -49,7 +49,27 @@ const importExcel = (entityType) => async (req, res, next) => {
       response.warning = `Import thành công nhưng không tạo được batch: ${results.batchError}`;
     }
 
+    // 🔔 Gửi thông báo kết quả import qua Toast
+    try {
+      await db.Notification.create({
+        user: req.user.userId,
+        title: "Kết quả Import Excel",
+        message: `Đã hoàn tất import ${entityType}: ${results.success.length}/${results.total} thành công.`,
+        type: "SYSTEM",
+        metadata: { entityType, successCount: results.success.length, total: results.total }
+      });
+      
+      // Emit socket realtime cho chính người thực hiện
+      const { getIO } = require("../socket");
+      const io = getIO();
+      const notification = await db.Notification.findOne({ user: req.user.userId }).sort({ createdAt: -1 });
+      io.to(req.user.userId.toString()).emit("notification:new", notification);
+    } catch (notifyErr) {
+      console.error("Notify import error:", notifyErr);
+    }
+
     return res.json(response);
+
   } catch (err) {
     next(err);
   }
