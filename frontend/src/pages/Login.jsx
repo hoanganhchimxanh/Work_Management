@@ -8,7 +8,9 @@ import {
   Row,
   Alert,
   Card,
+  InputGroup,
 } from "react-bootstrap";
+import { Eye, EyeSlash } from "react-bootstrap-icons";
 import { AuthContext } from "../contexts/AuthContext";
 import "../styles/login.style.css";
 
@@ -17,6 +19,8 @@ function Login() {
   const [password, setPassword] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
 
   const { login } = useContext(AuthContext);
 
@@ -86,13 +90,24 @@ function Login() {
 
               <Form.Group className="mb-3">
                 <Form.Label>Mật khẩu</Form.Label>
-                <Form.Control
-                  type="password"
-                  placeholder="Nhập mật khẩu"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
+                <InputGroup>
+                  <Form.Control
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Nhập mật khẩu"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                  <Button
+                    variant="outline-secondary"
+                    onClick={() => setShowPassword(!showPassword)}
+                    tabIndex="-1"
+                    className="bg-white border-start-0"
+                    style={{ borderColor: "#ced4da" }}
+                  >
+                    {showPassword ? <EyeSlash size={18} /> : <Eye size={18} />}
+                  </Button>
+                </InputGroup>
               </Form.Group>
 
               <Button
