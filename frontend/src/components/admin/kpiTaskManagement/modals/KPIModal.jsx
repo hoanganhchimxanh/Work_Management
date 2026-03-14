@@ -110,7 +110,7 @@ function KPIModal({ show, onHide, kpi, users, teams, onSaved }) {
                 min="0"
                 step="1000"
               />
-              <InputGroup.Text>VNĐ</InputGroup.Text>
+              <InputGroup.Text>USD</InputGroup.Text>
             </InputGroup>
           </Form.Group>
 
