@@ -100,7 +100,7 @@ function KPIModal({ show, onHide, kpi, users, teams, onSaved }) {
           )}
 
           <Form.Group className="mb-3">
-            <Form.Label>KPI Doanh thu (VNĐ)</Form.Label>
+            <Form.Label>KPI Doanh thu (USD)</Form.Label>
             <InputGroup>
               <Form.Control
                 type="number"
