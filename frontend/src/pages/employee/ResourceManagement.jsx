@@ -48,7 +48,7 @@ function ResourceManagement() {
       // Fetch resources và channels của employee
       const [resourcesRes, channelsRes] = await Promise.all([
         api.get("/resource/my-resources"),
-        api.get("/channel/my-channels"), // Giả sử API endpoint này tồn tại hoặc tương đương
+        api.get("/channel/my-channels"),
       ]);
 
       const myResources = resourcesRes.data.data || [];
@@ -100,7 +100,7 @@ function ResourceManagement() {
 
     try {
       setError(null);
-      await api.put(`/resource/update/${resourceId}`, { assignedChannel: null });
+      await api.post(`/resource/unassign-from-channel/${resourceId}`);
       setSuccess("Đã bỏ kênh khỏi resource!");
       fetchData();
       setTimeout(() => setSuccess(""), 3000);

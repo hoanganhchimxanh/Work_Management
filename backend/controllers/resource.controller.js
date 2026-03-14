@@ -407,6 +407,49 @@ const assignToChannel = async (req, res, next) => {
   }
 };
 
+// Gỡ channel khỏi resource
+const unassignFromChannel = async (req, res, next) => {
+  try {
+    const resourceId = req.params.id;
+
+    const resource = await Resource.findById(resourceId);
+
+    if (!resource) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy resource!",
+      });
+    }
+
+    // Kiểm tra quyền (nếu là EMPLOYEE thì phải là resource của mình)
+    if (
+      req.user.role === "EMPLOYEE" &&
+      resource.assignedUser?.toString() !== req.user.userId
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "Bạn không có quyền gỡ kênh của resource này!",
+      });
+    }
+
+    resource.assignedChannel = null;
+    await resource.save();
+
+    const updatedResource = await Resource.findById(resourceId)
+      .populate("assignedUser", "fullName phoneNumber role")
+      .populate("assignedChannel", "name link status")
+      .lean();
+
+    res.json({
+      success: true,
+      message: "Đã gỡ kênh khỏi resource thành công!",
+      data: updatedResource,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // Gán nhiều resources cho một user
 const bulkAssignToUser = async (req, res, next) => {
   try {
@@ -688,6 +731,7 @@ module.exports = {
   assignToChannel,
   bulkAssignToUser,
   unassign,
+  unassignFromChannel,
   getMyResources,
   getResourceStats,
   disableResource,

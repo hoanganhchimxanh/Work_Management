@@ -22,6 +22,14 @@ router.post(
   channelController.addNew,
 );
 
+// Lấy kênh của user hiện tại
+router.get(
+  "/my-channels",
+  authenticateJWT,
+  authorizeRoles(["EMPLOYEE", "ADMIN", "ACCOUNTANT"]),
+  channelController.getMyChannels,
+);
+
 // Lấy tất cả kênh
 router.get(
   "/get-all",

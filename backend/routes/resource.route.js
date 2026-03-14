@@ -68,8 +68,15 @@ router.post(
 router.post(
   "/assign-to-channel/:id",
   authenticateJWT,
-  authorizeRoles(["EMPLOYEE", "ADMIN"]),
   resourceController.assignToChannel
+);
+
+// Gỡ channel khỏi resource
+router.post(
+  "/unassign-from-channel/:id",
+  authenticateJWT,
+  authorizeRoles(["EMPLOYEE", "ADMIN"]),
+  resourceController.unassignFromChannel
 );
 
 // Gán nhiều resources cho user

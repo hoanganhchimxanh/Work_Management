@@ -296,6 +296,24 @@ const getByNetwork = async (req, res, next) => {
   }
 };
 
+// Lấy các kênh của user hiện tại
+const getMyChannels = async (req, res, next) => {
+  try {
+    const userId = req.user.userId;
+
+    const channels = await Channel.find({ assignedUser: userId })
+      .populate("network", "name status")
+      .lean();
+
+    res.json({
+      success: true,
+      data: channels,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   addNew,
   getAll,
@@ -305,4 +323,5 @@ module.exports = {
   assignOwner,
   getByOwner,
   getByNetwork,
+  getMyChannels,
 };
