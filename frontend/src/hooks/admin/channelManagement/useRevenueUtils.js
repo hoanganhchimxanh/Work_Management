@@ -65,30 +65,11 @@ export const useRevenueUtils = (channelData) => {
                 </>
               ) : (
                 <>
-                  <div className="text-muted mb-2">
-                    <em>
-                      <i className="bi bi-person me-1"></i>
-                      Kênh không có Network:
-                    </em>
-                  </div>
                   <code className="d-block bg-white p-2 rounded border">
                     DT Thực tế = <br />
                     &nbsp;&nbsp;[ (DT từ Mỹ × (100% - %Thuế Mỹ)) + DT Ngoài Mỹ ]{" "}
                     <br />
                     &nbsp;&nbsp;× (100% - %Thuế TNCN)
-                  </code>
-                  <br />
-                  <div className="text-muted mb-2">
-                    <em>
-                      <i className="bi bi-person me-1"></i>
-                      Kênh có Network:
-                    </em>
-                  </div>
-                  <code className="d-block bg-white p-2 rounded border">
-                    DT Thực tế = <br />
-                    &nbsp;&nbsp;[ (DT từ Mỹ × (100% - %Thuế Mỹ)) + DT Ngoài Mỹ ]{" "}
-                    <br />
-                    &nbsp;&nbsp;× (100% - %Net network - %Thuế TNCN)
                   </code>
                 </>
               )}
